@@ -1,0 +1,178 @@
+//
+//  HTTPClient.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
+import Foundation
+
+enum NetworkError: Error {
+    case invalidURL
+    case noData
+    case decodingError
+    case networkError(Error)
+    case serverError(statusCode: Int)
+    case unauthorized
+    case custom(message: String)
+    
+    var localizedDescription: String {
+        switch self {
+        case .invalidURL:
+            return "无效的URL"
+        case .noData:
+            return "无返回数据"
+        case .decodingError:
+            return "数据解析失败"
+        case .networkError(let error):
+            return "网络错误: \(error.localizedDescription)"
+        case .serverError(let statusCode):
+            return "服务器错误: \(statusCode)"
+        case .unauthorized:
+            return "未授权，请重新登录"
+        case .custom(let message):
+            return message
+        }
+    }
+}
+
+class HTTPClient {
+    static let shared = HTTPClient()
+    private let session: URLSession
+    private let baseURL = Constants.baseURL
+    
+    private init() {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = Constants.Timeout.request
+        configuration.timeoutIntervalForResource = Constants.Timeout.resource
+        self.session = URLSession(configuration: configuration)
+    }
+    
+    // 通用请求方法
+    func request<T: Codable>(
+        endpoint: APIEndpoint,
+        method: String? = nil,
+        parameters: [String: Any]? = nil,
+        completion: @escaping (Result<BaseResponse<T>, NetworkError>) -> Void
+    ) {
+        guard let url = endpoint.url(baseURL: baseURL) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method ?? endpoint.method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // 添加Authorization header
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        // 添加请求参数
+        if let parameters = parameters {
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+            } catch {
+                completion(.failure(.custom(message: "参数序列化失败")))
+                return
+            }
+        }
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            // 处理HTTP状态码
+            switch httpResponse.statusCode {
+            case 200...299:
+                break
+            case 401:
+                DispatchQueue.main.async {
+                    completion(.failure(.unauthorized))
+                }
+                return
+            default:
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            // 打印响应数据（调试用）
+            #if DEBUG
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Response: \(jsonString)")
+            }
+            #endif
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<T>.self, from: data)
+                
+                // 如果返回了token，保存它
+                if let token = response.token {
+                    TokenManager.shared.saveToken(token)
+                }
+                
+                DispatchQueue.main.async {
+                    completion(.success(response))
+                }
+            } catch {
+                print("Decoding error: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+    
+    // 简化版请求方法，用于不需要data的情况
+    func requestWithoutData(
+        endpoint: APIEndpoint,
+        method: String? = nil,
+        parameters: [String: Any]? = nil,
+        completion: @escaping (Result<BaseResponse<EmptyData>, NetworkError>) -> Void
+    ) {
+        request(endpoint: endpoint, method: method, parameters: parameters, completion: completion)
+    }
+    
+    // 异步/等待版本的请求方法（iOS 15+）
+    @available(iOS 15.0, *)
+    func requestAsync<T: Codable>(
+        endpoint: APIEndpoint,
+        method: String? = nil,
+        parameters: [String: Any]? = nil
+    ) async throws -> BaseResponse<T> {
+        return try await withCheckedThrowingContinuation { continuation in
+            request(endpoint: endpoint, method: method, parameters: parameters) { (result: Result<BaseResponse<T>, NetworkError>) in
+                switch result {
+                case .success(let response):
+                    continuation.resume(returning: response)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}
