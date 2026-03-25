@@ -9,27 +9,31 @@ import SwiftUI
 
 struct Dimens {
     // 头像尺寸
-    struct Avatar {
-        static let small: CGFloat = 30
-        static let middle: CGFloat = 50
-        static let big: CGFloat = 100
-    }
+    static let smallAvater: CGFloat = 30
+    static let middleAvater: CGFloat = 50
+    static let bigAvater: CGFloat = 100
     
     // 图标尺寸
-    struct Icon {
-        static let small: CGFloat = 15
-        static let middle: CGFloat = 25
-        static let big: CGFloat = 50
-    }
+    static let smallIcon: CGFloat = 15
+    static let middleIcon: CGFloat = 25
+    static let bigIcon: CGFloat = 50
+    
+    static let smallFont:CGFloat = 15
+    static let middleFont:CGFloat = 20
+    static let bigFont:CGFloat = 30
 }
 
 // 扩展CGFloat以便更方便使用
 extension CGFloat {
-    static let avatarSmall = Dimens.Avatar.small
-    static let avatarMiddle = Dimens.Avatar.middle
-    static let avatarBig = Dimens.Avatar.big
+    static let smallAvater = Dimens.smallAvater
+    static let middleAvater = Dimens.middleAvater
+    static let bigAvater = Dimens.bigAvater
     
-    static let iconSmall = Dimens.Icon.small
-    static let iconMiddle = Dimens.Icon.middle
-    static let iconBig = Dimens.Icon.big
+    static let smallIcon = Dimens.smallIcon
+    static let middleIcon = Dimens.middleIcon
+    static let bigIcon = Dimens.bigIcon
+    
+    static let smallFont:CGFloat = Dimens.smallFont
+    static let middleFont:CGFloat = Dimens.middleFont
+    static let bigFont:CGFloat = Dimens.bigFont
 }

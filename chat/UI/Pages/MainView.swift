@@ -11,7 +11,7 @@ struct MainView: View {
     var body: some View {
         ZStack {
             // 设置背景颜色
-            Color.themeBackground
+            Colors.pageBackgroundColor
                 .ignoresSafeArea()
             
             VStack {
@@ -19,7 +19,7 @@ struct MainView: View {
                 
                 // 中间显示文字
                 Text("Hellow SwiftUI")
-                    .font(.system(size: 24, weight: .medium))
+                    .font(.system(size: .bigFont, weight: .medium))
                     .foregroundColor(.themePrimary)
                     .padding()
                 
@@ -30,6 +30,3 @@ struct MainView: View {
     }
 }
 
-#Preview {
-    MainView()
-}
