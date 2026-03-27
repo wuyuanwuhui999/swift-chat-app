@@ -20,4 +20,10 @@ struct Constants {
     struct Cache {
         static let maxAge: TimeInterval = 3600 * 24 * 30 // 1个月
     }
+    
+    // API路径
+    struct API {
+        static let login = "/service/user/login"
+        static let getUserData = "/service/data/getUserData"
+    }
 }

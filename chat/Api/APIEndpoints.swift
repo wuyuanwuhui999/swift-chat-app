@@ -5,6 +5,7 @@
 //  Created by 吴文强 on 2026/3/25.
 //
 
+// config/APIEndpoints.swift
 import Foundation
 
 enum APIEndpoint {
@@ -15,11 +16,12 @@ enum APIEndpoint {
     case getMessages(page: Int, size: Int)
     case sendMessage
     case logout
+    case getUserData
     
     var path: String {
         switch self {
         case .login:
-            return "/api/auth/login"
+            return Constants.API.login
         case .register:
             return "/api/auth/register"
         case .getUserInfo:
@@ -30,6 +32,8 @@ enum APIEndpoint {
             return "/api/messages/send"
         case .logout:
             return "/api/auth/logout"
+        case .getUserData:
+            return Constants.API.getUserData
         }
     }
     
@@ -37,7 +41,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendMessage:
             return "POST"
-        case .getUserInfo, .getMessages:
+        case .getUserInfo, .getMessages, .getUserData:
             return "GET"
         case .logout:
             return "POST"

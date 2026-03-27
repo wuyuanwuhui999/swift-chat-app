@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CommonCrypto
 
 enum NetworkError: Error {
     case invalidURL
@@ -175,4 +176,69 @@ class HTTPClient {
             }
         }
     }
+}
+
+extension String {
+    var md5: String {
+        let data = Data(self.utf8)
+        let hash = data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) -> [UInt8] in
+            var hash = [UInt8](repeating: 0, count: Int(CC_MD5_DIGEST_LENGTH))
+            CC_MD5(bytes.baseAddress, CC_LONG(data.count), &hash)
+            return hash
+        }
+        return hash.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// 在 HTTPClient 中添加新的请求方法
+extension HTTPClient {
+    // 登录专用方法
+    func login(userAccount: String, password: String, completion: @escaping (Result<LoginResponse, NetworkError>) -> Void) {
+        let encryptedPassword = password.md5
+        let parameters: [String: Any] = [
+            "userAccount": userAccount,
+            "password": encryptedPassword
+        ]
+        
+        request(endpoint: .login, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let userData = response.data, let token = response.token {
+                    let loginResponse = LoginResponse(userData: userData, token: token)
+                    completion(.success(loginResponse))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "登录失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    // 获取用户数据
+    func getUserData(completion: @escaping (Result<UserData, NetworkError>) -> Void) {
+        request(endpoint: .getUserData) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let userData = response.data {
+                    // 如果有新token，保存它
+                    if let token = response.token {
+                        TokenManager.shared.saveToken(token)
+                        AppState.shared.updateToken(token)
+                    }
+                    completion(.success(userData))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "获取用户信息失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+}
+
+// 登录响应模型
+struct LoginResponse {
+    let userData: UserData
+    let token: String
 }

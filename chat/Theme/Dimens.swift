@@ -18,9 +18,17 @@ struct Dimens {
     static let middleIcon: CGFloat = 25
     static let bigIcon: CGFloat = 50
     
-    static let smallFont:CGFloat = 15
+    // 字体大小
+    static let normalFont:CGFloat = 17
     static let middleFont:CGFloat = 20
     static let bigFont:CGFloat = 30
+    
+    static let middleMargin:CGFloat = 10
+    
+    static let btnHeight:CGFloat = 50
+    static let inputHeight:CGFloat = 50
+    
+    static let borderRadius:CGFloat = 10
 }
 
 // 扩展CGFloat以便更方便使用
@@ -33,7 +41,14 @@ extension CGFloat {
     static let middleIcon = Dimens.middleIcon
     static let bigIcon = Dimens.bigIcon
     
-    static let smallFont:CGFloat = Dimens.smallFont
+    static let normalFont:CGFloat = Dimens.normalFont
     static let middleFont:CGFloat = Dimens.middleFont
     static let bigFont:CGFloat = Dimens.bigFont
+    
+    static let margin:CGFloat = Dimens.middleMargin
+    
+    static let btnHeight:CGFloat = Dimens.btnHeight
+    
+    static let inputHeight:CGFloat = Dimens.inputHeight
+
 }
