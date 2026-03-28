@@ -1,21 +1,14 @@
-//
-//  Dimens.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/24.
-//
-
 import SwiftUI
 
 struct Dimens {
     // 头像尺寸
     static let smallAvater: CGFloat = 30
     static let middleAvater: CGFloat = 50
-    static let bigAvater: CGFloat = 100
+    static let bigAvater: CGFloat = 80
     
     // 图标尺寸
     static let smallIcon: CGFloat = 15
-    static let middleIcon: CGFloat = 25
+    static let middleIcon: CGFloat = 30
     static let bigIcon: CGFloat = 50
     
     // 字体大小
@@ -23,12 +16,13 @@ struct Dimens {
     static let middleFont:CGFloat = 20
     static let bigFont:CGFloat = 30
     
-    static let middleMargin:CGFloat = 10
+    static let middleMargin: CGFloat = 15
+    static let largeMargin: CGFloat = 20
     
-    static let btnHeight:CGFloat = 50
-    static let inputHeight:CGFloat = 50
+    static let btnHeight: CGFloat = 50
+    static let inputHeight: CGFloat = 50
     
-    static let borderRadius:CGFloat = 10
+    static let borderRadius: CGFloat = 10
 }
 
 // 扩展CGFloat以便更方便使用
@@ -41,14 +35,13 @@ extension CGFloat {
     static let middleIcon = Dimens.middleIcon
     static let bigIcon = Dimens.bigIcon
     
-    static let normalFont:CGFloat = Dimens.normalFont
-    static let middleFont:CGFloat = Dimens.middleFont
-    static let bigFont:CGFloat = Dimens.bigFont
+    static let normalFont: CGFloat = Dimens.normalFont
+    static let middleFont: CGFloat = Dimens.middleFont
+    static let bigFont: CGFloat = Dimens.bigFont
     
-    static let margin:CGFloat = Dimens.middleMargin
+    static let middleMargin: CGFloat = Dimens.middleMargin
+    static let largeMargin: CGFloat = Dimens.largeMargin
     
-    static let btnHeight:CGFloat = Dimens.btnHeight
-    
-    static let inputHeight:CGFloat = Dimens.inputHeight
-
+    static let btnHeight: CGFloat = Dimens.btnHeight
+    static let inputHeight: CGFloat = Dimens.inputHeight
 }

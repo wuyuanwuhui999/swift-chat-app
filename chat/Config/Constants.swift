@@ -1,10 +1,3 @@
-//
-//  Constants.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/24.
-//
-
 import Foundation
 
 struct Constants {
@@ -24,6 +17,10 @@ struct Constants {
     // API路径
     struct API {
         static let login = "/service/user/login"
+        static let register = "/service/user/register"
         static let getUserData = "/service/data/getUserData"
+        static let logout = "/service/user/logout"
+        static let sendEmailVertifyCode = "/service/user/sendEmailVertifyCode"
+        static let loginByEmail = "/service/user/loginByEmail"
     }
 }

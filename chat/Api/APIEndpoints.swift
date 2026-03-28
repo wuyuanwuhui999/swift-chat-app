@@ -1,64 +1,42 @@
-//
-//  APIEndpoints.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/25.
-//
-
-// config/APIEndpoints.swift
 import Foundation
 
 enum APIEndpoint {
     // 定义所有接口路径
     case login
     case register
-    case getUserInfo
-    case getMessages(page: Int, size: Int)
-    case sendMessage
     case logout
     case getUserData
+    case sendEmailVertifyCode
+    case loginByEmail
     
     var path: String {
         switch self {
         case .login:
             return Constants.API.login
         case .register:
-            return "/api/auth/register"
-        case .getUserInfo:
-            return "/api/user/info"
-        case .getMessages:
-            return "/api/messages"
-        case .sendMessage:
-            return "/api/messages/send"
+            return Constants.API.register
         case .logout:
-            return "/api/auth/logout"
+            return Constants.API.logout
         case .getUserData:
             return Constants.API.getUserData
+        case .sendEmailVertifyCode:
+            return Constants.API.sendEmailVertifyCode
+        case .loginByEmail:
+            return Constants.API.loginByEmail
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendMessage:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout:
             return "POST"
-        case .getUserInfo, .getMessages, .getUserData:
+        case .getUserData:
             return "GET"
-        case .logout:
-            return "POST"
         }
     }
     
     func url(baseURL: String) -> URL? {
-        var components = URLComponents(string: baseURL + path)
-        
-        // 处理分页参数
-        if case .getMessages(let page, let size) = self {
-            components?.queryItems = [
-                URLQueryItem(name: "page", value: "\(page)"),
-                URLQueryItem(name: "size", value: "\(size)")
-            ]
-        }
-        
+        let components = URLComponents(string: baseURL + path)
         return components?.url
     }
 }

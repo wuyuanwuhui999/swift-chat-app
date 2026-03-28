@@ -1,10 +1,3 @@
-//
-//  HomePage.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/27.
-//
-// UI/Pages/HomePage.swift
 import SwiftUI
 
 struct HomePage: View {

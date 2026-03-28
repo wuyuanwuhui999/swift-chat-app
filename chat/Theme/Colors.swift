@@ -17,6 +17,8 @@ struct Colors {
     // 白色
     static let whiteColor = Color.white
     
+    static let blackColor = Color.black;
+    
     // 页面背景颜色
     static let pageBackgroundColor = Color(red: 239/255, green: 239/255, blue: 239/255)
 }
@@ -27,4 +29,5 @@ extension Color {
     static let themeGray = Colors.grayColor
     static let themeWhite = Colors.whiteColor
     static let themeBackground = Colors.pageBackgroundColor
+    static let blackColor = Colors.blackColor
 }

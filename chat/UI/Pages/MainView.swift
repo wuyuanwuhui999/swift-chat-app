@@ -1,10 +1,3 @@
-//
-//  MainView.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/24.
-//
-
 import SwiftUI
 
 struct MainView: View {

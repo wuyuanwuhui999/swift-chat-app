@@ -1,10 +1,3 @@
-//
-//  UserData.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/27.
-//
-
 import Foundation
 
 struct UserData: Codable {
@@ -19,9 +12,9 @@ struct UserData: Codable {
     let birthday: String
     let sex: Int
     let role: String?
-    let password: String
+    let password: String?  // 改为可选类型，因为服务器可能返回 null
     let sign: String
-    let region: String
+    let region: String?     // 改为可选类型
     let disabled: Int?
     let permission: Int?
     

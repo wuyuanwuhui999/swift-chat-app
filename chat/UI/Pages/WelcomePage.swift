@@ -1,9 +1,3 @@
-//
-//  WelcomePage.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/27.
-//
 import SwiftUI
 
 struct WelcomePage: View {
@@ -24,13 +18,13 @@ struct WelcomePage: View {
                     Image(uiImage: logoImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: Dimens.bigIcon, height: Dimens.bigIcon)
+                        .frame(width: Dimens.bigAvater, height: Dimens.bigAvater)
                 } else {
                     // 占位符，如果没有logo图片
                     Image(systemName: "person.circle.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: Dimens.bigIcon, height: Dimens.bigIcon)
+                        .frame(width: Dimens.bigAvater, height: Dimens.bigAvater)
                         .foregroundColor(.themePrimary)
                 }
                 
@@ -63,18 +57,24 @@ struct WelcomePage: View {
                         print("获取用户信息失败: \(error.localizedDescription)")
                         AppState.shared.clearUserData()
                         AppState.shared.isLoggedIn = false
-                        showLoginPage = true
+                        // 延时1秒后显示登录页
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                            showLoginPage = true
+                        }
                     }
                     isCheckingLogin = false
                 }
             }
         } else {
-            // 没有token，直接跳转到登录页
-            isCheckingLogin = false
-            AppState.shared.isLoggedIn = false
-            showLoginPage = true
+            // 没有token，延时1秒后跳转到登录页
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                isCheckingLogin = false
+                AppState.shared.isLoggedIn = false
+                showLoginPage = true
+            }
         }
     }
+
 }
 
 #Preview {
