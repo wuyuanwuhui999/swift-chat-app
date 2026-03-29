@@ -8,11 +8,77 @@
 
 /* Begin PBXBuildFile section */
 		F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */; };
+		F1BCCAEE2F79EDFA004CFEB0 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = F1BCCAED2F79EDEF004CFEB0 /* README.md */; };
+		F1BCCB0F2F79F209004CFEB0 /* 租户管理2.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0A2F79F209004CFEB0 /* 租户管理2.png */; };
+		F1BCCB102F79F209004CFEB0 /* 登录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF02F79F209004CFEB0 /* 登录.png */; };
+		F1BCCB112F79F209004CFEB0 /* ai聊天菜单功能.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0B2F79F209004CFEB0 /* ai聊天菜单功能.png */; };
+		F1BCCB122F79F209004CFEB0 /* ai聊天会话记录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0C2F79F209004CFEB0 /* ai聊天会话记录.png */; };
+		F1BCCB132F79F209004CFEB0 /* 更改用户信息4.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF42F79F209004CFEB0 /* 更改用户信息4.png */; };
+		F1BCCB142F79F209004CFEB0 /* ai聊天切换模型.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0D2F79F209004CFEB0 /* ai聊天切换模型.png */; };
+		F1BCCB152F79F209004CFEB0 /* 忘记密码.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFB2F79F209004CFEB0 /* 忘记密码.png */; };
+		F1BCCB162F79F209004CFEB0 /* 添加用户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF92F79F209004CFEB0 /* 添加用户.png */; };
+		F1BCCB172F79F209004CFEB0 /* 修改密码.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFD2F79F209004CFEB0 /* 修改密码.png */; };
+		F1BCCB182F79F209004CFEB0 /* 更改用户信息2.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF22F79F209004CFEB0 /* 更改用户信息2.png */; };
+		F1BCCB192F79F209004CFEB0 /* 添加租户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */; };
+		F1BCCB1A2F79F209004CFEB0 /* 修改密码页面.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFE2F79F209004CFEB0 /* 修改密码页面.png */; };
+		F1BCCB1B2F79F209004CFEB0 /* 用户信息.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB022F79F209004CFEB0 /* 用户信息.png */; };
+		F1BCCB1C2F79F209004CFEB0 /* 账号密码登录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */; };
+		F1BCCB1D2F79F209004CFEB0 /* 我的文档.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */; };
+		F1BCCB1E2F79F209004CFEB0 /* 修改用户信息.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFF2F79F209004CFEB0 /* 修改用户信息.png */; };
+		F1BCCB1F2F79F209004CFEB0 /* 邮箱验证码登录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */; };
+		F1BCCB202F79F209004CFEB0 /* 上传文档.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF62F79F209004CFEB0 /* 上传文档.png */; };
+		F1BCCB212F79F209004CFEB0 /* 重置密码.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB062F79F209004CFEB0 /* 重置密码.png */; };
+		F1BCCB222F79F209004CFEB0 /* 更改用户信息3.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF32F79F209004CFEB0 /* 更改用户信息3.png */; };
+		F1BCCB232F79F209004CFEB0 /* 重置密码页面.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB072F79F209004CFEB0 /* 重置密码页面.png */; };
+		F1BCCB242F79F209004CFEB0 /* 找回密码页面.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB052F79F209004CFEB0 /* 找回密码页面.png */; };
+		F1BCCB252F79F209004CFEB0 /* 查询文档.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAEF2F79F209004CFEB0 /* 查询文档.png */; };
+		F1BCCB262F79F209004CFEB0 /* 选择文档.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB002F79F209004CFEB0 /* 选择文档.png */; };
+		F1BCCB272F79F209004CFEB0 /* 租户管理.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB092F79F209004CFEB0 /* 租户管理.png */; };
+		F1BCCB282F79F209004CFEB0 /* rag文档查询.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0E2F79F209004CFEB0 /* rag文档查询.png */; };
+		F1BCCB292F79F209004CFEB0 /* 注册页面.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB082F79F209004CFEB0 /* 注册页面.png */; };
+		F1BCCB2A2F79F209004CFEB0 /* 切换租户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF52F79F209004CFEB0 /* 切换租户.png */; };
+		F1BCCB2B2F79F209004CFEB0 /* 设置提示词.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF72F79F209004CFEB0 /* 设置提示词.png */; };
+		F1BCCB2C2F79F209004CFEB0 /* 提示词列表.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF82F79F209004CFEB0 /* 提示词列表.png */; };
+		F1BCCB2D2F79F209004CFEB0 /* 选择文档目录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB012F79F209004CFEB0 /* 选择文档目录.png */; };
+		F1BCCB2E2F79F209004CFEB0 /* 更改用户信息1.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		F1BCCA5C2F72D836004CFEB0 /* chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = chat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "提示词.txt"; sourceTree = "<group>"; };
+		F1BCCAED2F79EDEF004CFEB0 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = README.md; sourceTree = "<group>"; };
+		F1BCCAEF2F79F209004CFEB0 /* 查询文档.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "查询文档.png"; sourceTree = "<group>"; };
+		F1BCCAF02F79F209004CFEB0 /* 登录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "登录.png"; sourceTree = "<group>"; };
+		F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息1.png"; sourceTree = "<group>"; };
+		F1BCCAF22F79F209004CFEB0 /* 更改用户信息2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息2.png"; sourceTree = "<group>"; };
+		F1BCCAF32F79F209004CFEB0 /* 更改用户信息3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息3.png"; sourceTree = "<group>"; };
+		F1BCCAF42F79F209004CFEB0 /* 更改用户信息4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息4.png"; sourceTree = "<group>"; };
+		F1BCCAF52F79F209004CFEB0 /* 切换租户.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "切换租户.png"; sourceTree = "<group>"; };
+		F1BCCAF62F79F209004CFEB0 /* 上传文档.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "上传文档.png"; sourceTree = "<group>"; };
+		F1BCCAF72F79F209004CFEB0 /* 设置提示词.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "设置提示词.png"; sourceTree = "<group>"; };
+		F1BCCAF82F79F209004CFEB0 /* 提示词列表.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "提示词列表.png"; sourceTree = "<group>"; };
+		F1BCCAF92F79F209004CFEB0 /* 添加用户.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "添加用户.png"; sourceTree = "<group>"; };
+		F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "添加租户.png"; sourceTree = "<group>"; };
+		F1BCCAFB2F79F209004CFEB0 /* 忘记密码.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "忘记密码.png"; sourceTree = "<group>"; };
+		F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "我的文档.png"; sourceTree = "<group>"; };
+		F1BCCAFD2F79F209004CFEB0 /* 修改密码.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "修改密码.png"; sourceTree = "<group>"; };
+		F1BCCAFE2F79F209004CFEB0 /* 修改密码页面.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "修改密码页面.png"; sourceTree = "<group>"; };
+		F1BCCAFF2F79F209004CFEB0 /* 修改用户信息.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "修改用户信息.png"; sourceTree = "<group>"; };
+		F1BCCB002F79F209004CFEB0 /* 选择文档.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "选择文档.png"; sourceTree = "<group>"; };
+		F1BCCB012F79F209004CFEB0 /* 选择文档目录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "选择文档目录.png"; sourceTree = "<group>"; };
+		F1BCCB022F79F209004CFEB0 /* 用户信息.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "用户信息.png"; sourceTree = "<group>"; };
+		F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "邮箱验证码登录.png"; sourceTree = "<group>"; };
+		F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "账号密码登录.png"; sourceTree = "<group>"; };
+		F1BCCB052F79F209004CFEB0 /* 找回密码页面.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "找回密码页面.png"; sourceTree = "<group>"; };
+		F1BCCB062F79F209004CFEB0 /* 重置密码.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "重置密码.png"; sourceTree = "<group>"; };
+		F1BCCB072F79F209004CFEB0 /* 重置密码页面.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "重置密码页面.png"; sourceTree = "<group>"; };
+		F1BCCB082F79F209004CFEB0 /* 注册页面.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "注册页面.png"; sourceTree = "<group>"; };
+		F1BCCB092F79F209004CFEB0 /* 租户管理.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "租户管理.png"; sourceTree = "<group>"; };
+		F1BCCB0A2F79F209004CFEB0 /* 租户管理2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "租户管理2.png"; sourceTree = "<group>"; };
+		F1BCCB0B2F79F209004CFEB0 /* ai聊天菜单功能.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ai聊天菜单功能.png"; sourceTree = "<group>"; };
+		F1BCCB0C2F79F209004CFEB0 /* ai聊天会话记录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ai聊天会话记录.png"; sourceTree = "<group>"; };
+		F1BCCB0D2F79F209004CFEB0 /* ai聊天切换模型.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ai聊天切换模型.png"; sourceTree = "<group>"; };
+		F1BCCB0E2F79F209004CFEB0 /* rag文档查询.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "rag文档查询.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +103,39 @@
 		F1BCCA532F72D836004CFEB0 = {
 			isa = PBXGroup;
 			children = (
+				F1BCCAED2F79EDEF004CFEB0 /* README.md */,
+				F1BCCAEF2F79F209004CFEB0 /* 查询文档.png */,
+				F1BCCAF02F79F209004CFEB0 /* 登录.png */,
+				F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */,
+				F1BCCAF22F79F209004CFEB0 /* 更改用户信息2.png */,
+				F1BCCAF32F79F209004CFEB0 /* 更改用户信息3.png */,
+				F1BCCAF42F79F209004CFEB0 /* 更改用户信息4.png */,
+				F1BCCAF52F79F209004CFEB0 /* 切换租户.png */,
+				F1BCCAF62F79F209004CFEB0 /* 上传文档.png */,
+				F1BCCAF72F79F209004CFEB0 /* 设置提示词.png */,
+				F1BCCAF82F79F209004CFEB0 /* 提示词列表.png */,
+				F1BCCAF92F79F209004CFEB0 /* 添加用户.png */,
+				F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */,
+				F1BCCAFB2F79F209004CFEB0 /* 忘记密码.png */,
+				F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */,
+				F1BCCAFD2F79F209004CFEB0 /* 修改密码.png */,
+				F1BCCAFE2F79F209004CFEB0 /* 修改密码页面.png */,
+				F1BCCAFF2F79F209004CFEB0 /* 修改用户信息.png */,
+				F1BCCB002F79F209004CFEB0 /* 选择文档.png */,
+				F1BCCB012F79F209004CFEB0 /* 选择文档目录.png */,
+				F1BCCB022F79F209004CFEB0 /* 用户信息.png */,
+				F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */,
+				F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */,
+				F1BCCB052F79F209004CFEB0 /* 找回密码页面.png */,
+				F1BCCB062F79F209004CFEB0 /* 重置密码.png */,
+				F1BCCB072F79F209004CFEB0 /* 重置密码页面.png */,
+				F1BCCB082F79F209004CFEB0 /* 注册页面.png */,
+				F1BCCB092F79F209004CFEB0 /* 租户管理.png */,
+				F1BCCB0A2F79F209004CFEB0 /* 租户管理2.png */,
+				F1BCCB0B2F79F209004CFEB0 /* ai聊天菜单功能.png */,
+				F1BCCB0C2F79F209004CFEB0 /* ai聊天会话记录.png */,
+				F1BCCB0D2F79F209004CFEB0 /* ai聊天切换模型.png */,
+				F1BCCB0E2F79F209004CFEB0 /* rag文档查询.png */,
 				F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */,
 				F1BCCA5E2F72D836004CFEB0 /* chat */,
 				F1BCCA5D2F72D836004CFEB0 /* Products */,
@@ -115,6 +214,38 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F1BCCB0F2F79F209004CFEB0 /* 租户管理2.png in Resources */,
+				F1BCCB102F79F209004CFEB0 /* 登录.png in Resources */,
+				F1BCCB112F79F209004CFEB0 /* ai聊天菜单功能.png in Resources */,
+				F1BCCB122F79F209004CFEB0 /* ai聊天会话记录.png in Resources */,
+				F1BCCB132F79F209004CFEB0 /* 更改用户信息4.png in Resources */,
+				F1BCCB142F79F209004CFEB0 /* ai聊天切换模型.png in Resources */,
+				F1BCCB152F79F209004CFEB0 /* 忘记密码.png in Resources */,
+				F1BCCB162F79F209004CFEB0 /* 添加用户.png in Resources */,
+				F1BCCB172F79F209004CFEB0 /* 修改密码.png in Resources */,
+				F1BCCB182F79F209004CFEB0 /* 更改用户信息2.png in Resources */,
+				F1BCCB192F79F209004CFEB0 /* 添加租户.png in Resources */,
+				F1BCCB1A2F79F209004CFEB0 /* 修改密码页面.png in Resources */,
+				F1BCCB1B2F79F209004CFEB0 /* 用户信息.png in Resources */,
+				F1BCCB1C2F79F209004CFEB0 /* 账号密码登录.png in Resources */,
+				F1BCCB1D2F79F209004CFEB0 /* 我的文档.png in Resources */,
+				F1BCCB1E2F79F209004CFEB0 /* 修改用户信息.png in Resources */,
+				F1BCCB1F2F79F209004CFEB0 /* 邮箱验证码登录.png in Resources */,
+				F1BCCB202F79F209004CFEB0 /* 上传文档.png in Resources */,
+				F1BCCB212F79F209004CFEB0 /* 重置密码.png in Resources */,
+				F1BCCB222F79F209004CFEB0 /* 更改用户信息3.png in Resources */,
+				F1BCCB232F79F209004CFEB0 /* 重置密码页面.png in Resources */,
+				F1BCCB242F79F209004CFEB0 /* 找回密码页面.png in Resources */,
+				F1BCCB252F79F209004CFEB0 /* 查询文档.png in Resources */,
+				F1BCCB262F79F209004CFEB0 /* 选择文档.png in Resources */,
+				F1BCCB272F79F209004CFEB0 /* 租户管理.png in Resources */,
+				F1BCCB282F79F209004CFEB0 /* rag文档查询.png in Resources */,
+				F1BCCB292F79F209004CFEB0 /* 注册页面.png in Resources */,
+				F1BCCB2A2F79F209004CFEB0 /* 切换租户.png in Resources */,
+				F1BCCB2B2F79F209004CFEB0 /* 设置提示词.png in Resources */,
+				F1BCCB2C2F79F209004CFEB0 /* 提示词列表.png in Resources */,
+				F1BCCB2D2F79F209004CFEB0 /* 选择文档目录.png in Resources */,
+				F1BCCB2E2F79F209004CFEB0 /* 更改用户信息1.png in Resources */,
 				F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -126,6 +257,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F1BCCAEE2F79EDFA004CFEB0 /* README.md in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
