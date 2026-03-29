@@ -20,6 +20,7 @@ struct Dimens {
     static let largeMargin: CGFloat = 20
     
     static let btnHeight: CGFloat = 50
+    static let smallBtnHeight:CGFloat = 40
     static let inputHeight: CGFloat = 50
     
     static let borderRadius: CGFloat = 10
@@ -43,5 +44,6 @@ extension CGFloat {
     static let largeMargin: CGFloat = Dimens.largeMargin
     
     static let btnHeight: CGFloat = Dimens.btnHeight
+    static let smallBtnHeight:CGFloat = Dimens.smallBtnHeight
     static let inputHeight: CGFloat = Dimens.inputHeight
 }

@@ -15,7 +15,7 @@ struct ChatActionButtons: View {
                     .font(.system(size: Dimens.normalFont))
                     .foregroundColor(showThink ? Colors.primaryColor : Colors.grayColor)
                     .padding(.horizontal, Dimens.middleMargin)
-                    .frame(height: Dimens.btnHeight)
+                    .frame(height: .smallBtnHeight)
                     .background(Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
@@ -31,7 +31,7 @@ struct ChatActionButtons: View {
                     .font(.system(size: Dimens.normalFont))
                     .foregroundColor(Colors.blackColor)
                     .padding(.horizontal, Dimens.middleMargin)
-                    .frame(height: Dimens.btnHeight)
+                    .frame(height: .smallBtnHeight)
                     .background(Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
