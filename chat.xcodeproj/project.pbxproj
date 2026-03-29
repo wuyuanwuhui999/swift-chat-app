@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F1BCCA5C2F72D836004CFEB0 /* chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = chat.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "提示词.txt"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,7 @@
 		F1BCCA532F72D836004CFEB0 = {
 			isa = PBXGroup;
 			children = (
+				F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */,
 				F1BCCA5E2F72D836004CFEB0 /* chat */,
 				F1BCCA5D2F72D836004CFEB0 /* Products */,
 			);
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

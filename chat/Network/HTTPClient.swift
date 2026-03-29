@@ -262,6 +262,38 @@ extension HTTPClient {
             }
         }
     }
+    
+    /// 获取用户租户列表
+    func getUserTenantList(completion: @escaping (Result<[Tenant], NetworkError>) -> Void) {
+        request(endpoint: .getUserTenantList) { (result: Result<BaseResponse<[Tenant]>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let tenants = response.data {
+                    completion(.success(tenants))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "获取租户列表失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    /// 获取模型列表
+    func getModelList(completion: @escaping (Result<[ChatModel], NetworkError>) -> Void) {
+        request(endpoint: .getModelList) { (result: Result<BaseResponse<[ChatModel]>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let models = response.data {
+                    completion(.success(models))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "获取模型列表失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 
 }
 

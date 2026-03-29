@@ -30,4 +30,5 @@ extension Color {
     static let themeWhite = Colors.whiteColor
     static let themeBackground = Colors.pageBackgroundColor
     static let blackColor = Colors.blackColor
+    static let whiteColor = Colors.whiteColor
 }

@@ -1,3 +1,4 @@
+// config/Constants.swift
 import Foundation
 
 struct Constants {
@@ -22,5 +23,7 @@ struct Constants {
         static let logout = "/service/user/logout"
         static let sendEmailVertifyCode = "/service/user/sendEmailVertifyCode"
         static let loginByEmail = "/service/user/loginByEmail"
+        static let getUserTenantList = "/service/tenant/getUserTenantList"
+        static let getModelList = "/service/chat/getModelList"
     }
 }

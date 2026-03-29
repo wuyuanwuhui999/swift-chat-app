@@ -1,3 +1,4 @@
+// config/APIEndpoints.swift
 import Foundation
 
 enum APIEndpoint {
@@ -8,6 +9,8 @@ enum APIEndpoint {
     case getUserData
     case sendEmailVertifyCode
     case loginByEmail
+    case getUserTenantList
+    case getModelList
     
     var path: String {
         switch self {
@@ -23,6 +26,10 @@ enum APIEndpoint {
             return Constants.API.sendEmailVertifyCode
         case .loginByEmail:
             return Constants.API.loginByEmail
+        case .getUserTenantList:
+            return Constants.API.getUserTenantList
+        case .getModelList:
+            return Constants.API.getModelList
         }
     }
     
@@ -30,7 +37,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout:
             return "POST"
-        case .getUserData:
+        case .getUserData, .getUserTenantList, .getModelList:
             return "GET"
         }
     }

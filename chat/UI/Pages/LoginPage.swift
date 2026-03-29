@@ -90,7 +90,6 @@ struct LoginPage: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .padding(.bottom, Dimens.middleMargin)
                     
                     if selectedTab == 0 {
                         // 账号密码登录面板
