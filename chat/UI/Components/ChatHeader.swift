@@ -24,7 +24,7 @@ struct ChatHeader: View {
             }
             
             // 中间标题区域 - 租户名称和模型名称分开
-            HStack(spacing: Dimens.middleMargin) {
+            HStack() {
                 // 租户名称按钮
                 Button(action: {
                     showTenantList.toggle()

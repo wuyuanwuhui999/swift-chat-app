@@ -5,6 +5,12 @@ struct Constants {
     // API基础域名
     static let baseURL = "http://127.0.0.1:3000"
     
+    // WebSocket 地址
+    static let webSocketURL = "ws://127.0.0.1:3000/service/chat/ws/chat"
+    
+    // 系统提示词
+    static let systemPrompt = "你叫小吴同学，是一个无所不能的AI助手，上知天文下知地理，请用小吴同学的身份回答问题。"
+    
     // 其他常量配置
     struct Timeout {
         static let request: TimeInterval = 30

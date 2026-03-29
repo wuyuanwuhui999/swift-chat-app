@@ -3,12 +3,18 @@ import SwiftUI
 /// 主页面 - 聊天界面
 struct HomePage: View {
     @ObservedObject private var appState = AppState.shared
+    @ObservedObject private var webSocketManager = WebSocketManager.shared
     @State private var messages: [ChatMessage] = []
     @State private var inputMessage = ""
     @State private var showTenantList = false
     @State private var showModelList = false
     @State private var showMenu = false
     @State private var isLoading = false
+    @State private var showThink = false  // 深度思考开关
+    @State private var language = "zh"   // 语言：zh/en
+    @State private var currentChatId: String = ""  // 当前聊天ID
+    @State private var currentAIResponse = ""  // 当前AI响应（用于流式追加）
+    @State private var isReceivingMessage = false  // 是否正在接收消息
     
     var body: some View {
         ZStack {
@@ -22,18 +28,39 @@ struct HomePage: View {
                 // 聊天消息区域
                 chatMessagesView
                 
+                // 操作按钮组
+                ChatActionButtons(showThink: $showThink, language: $language)
+                
                 // 底部输入栏
                 inputBarView
             }
         }
         .onAppear {
             loadTenantAndModel()
+            // 初始化聊天ID
+            if currentChatId.isEmpty {
+                currentChatId = generateChatId()
+            }
         }
         .overlay(tenantListOverlay)
         .overlay(modelListOverlay)
         .overlay(loadingOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
+        }
+        .onReceive(webSocketManager.$currentResponse) { newResponse in
+            // 监听WebSocket响应，流式更新消息
+            if isReceivingMessage && !newResponse.isEmpty {
+                currentAIResponse = newResponse
+                updateLastAIMessage(content: currentAIResponse)
+            }
+        }
+        .onReceive(webSocketManager.$isReceiving) { isReceiving in
+            isReceivingMessage = isReceiving
+            if !isReceiving && !currentAIResponse.isEmpty {
+                // 消息接收完成，重置当前响应
+                currentAIResponse = ""
+            }
         }
     }
     
@@ -68,6 +95,9 @@ struct HomePage: View {
             .onChange(of: messages.count) { _ in
                 scrollToBottom(proxy: proxy)
             }
+            .onChange(of: messages.last?.content) { _ in
+                scrollToBottom(proxy: proxy)
+            }
         }
         .frame(maxHeight: .infinity)
     }
@@ -76,7 +106,9 @@ struct HomePage: View {
     private var inputBarView: some View {
         MessageInputBar(
             messageText: $inputMessage,
-            onSend: sendMessage
+            isSending: isReceivingMessage,
+            onSend: sendMessage,
+            onClear: clearAllMessages
         )
     }
     
@@ -146,6 +178,11 @@ struct HomePage: View {
     
     // MARK: - 辅助方法
     
+    /// 生成32位UUID（去掉连字符）
+    private func generateChatId() -> String {
+        return UUID().uuidString.replacingOccurrences(of: "-", with: "")
+    }
+    
     /// 滚动到底部
     private func scrollToBottom(proxy: ScrollViewProxy) {
         if let lastMessage = messages.last {
@@ -155,22 +192,71 @@ struct HomePage: View {
         }
     }
     
+    /// 清空所有消息
+    private func clearAllMessages() {
+        messages.removeAll()
+        currentChatId = generateChatId()
+        currentAIResponse = ""
+        webSocketManager.reset()
+        print("🗑️ 已清空聊天内容，新chatId: \(currentChatId)")
+    }
+    
+    /// 更新最后一条AI消息（流式追加）
+    private func updateLastAIMessage(content: String) {
+        if let lastIndex = messages.lastIndex(where: { !$0.isUser }) {
+            // 更新已存在的AI消息
+            messages[lastIndex] = ChatMessage(content: content, isUser: false)
+        } else {
+            // 创建新的AI消息
+            messages.append(ChatMessage(content: content, isUser: false))
+        }
+    }
+    
     /// 发送消息
     private func sendMessage() {
         guard !inputMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard !isReceivingMessage else { return }
+        guard let model = appState.currentModel else {
+            print("❌ 未选择模型")
+            return
+        }
+        guard let tenant = appState.currentTenant else {
+            print("❌ 未选择租户")
+            return
+        }
         
-        let userMessage = ChatMessage(content: inputMessage, isUser: true)
+        let userMessageContent = inputMessage
+        let userMessage = ChatMessage(content: userMessageContent, isUser: true)
         messages.append(userMessage)
         
-        let sentMessage = inputMessage
         inputMessage = ""
         
-        // TODO: 调用AI接口获取回复
-        // 这里先模拟AI回复
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            let aiMessage = ChatMessage(content: "收到消息：\(sentMessage)", isUser: false)
-            messages.append(aiMessage)
-        }
+        // 连接WebSocket发送消息
+        webSocketManager.connect(
+            modelId: model.id,
+            chatId: currentChatId,
+            tenantId: tenant.id,
+            prompt: userMessageContent,
+            showThink: showThink,
+            language: language,
+            onMessage: { text in
+                // 流式接收消息，更新最后一条AI消息
+                DispatchQueue.main.async {
+                    self.currentAIResponse += text
+                    self.updateLastAIMessage(content: self.currentAIResponse)
+                }
+            },
+            onComplete: {
+                DispatchQueue.main.async {
+                    self.isReceivingMessage = false
+                    self.currentAIResponse = ""
+                    print("✅ 消息接收完成")
+                }
+            }
+        )
+        
+        isReceivingMessage = true
+        currentAIResponse = ""
     }
     
     /// 加载租户列表和模型列表
@@ -218,10 +304,8 @@ struct HomePage: View {
         let cachedTenantId = appState.getCachedTenantId()
         if let tenantId = cachedTenantId,
            let matchedTenant = tenants.first(where: { $0.id == tenantId }) {
-            // 缓存中有且匹配成功
             appState.currentTenant = matchedTenant
         } else if let firstTenant = tenants.first {
-            // 缓存中没有或匹配失败，取第一条
             appState.saveCurrentTenant(firstTenant)
         }
     }
@@ -242,10 +326,8 @@ struct HomePage: View {
         let cachedModelId = appState.getCachedModelId()
         if let modelId = cachedModelId,
            let matchedModel = models.first(where: { $0.id == modelId }) {
-            // 缓存中有且匹配成功
             appState.currentModel = matchedModel
         } else if let firstModel = models.first {
-            // 缓存中没有或匹配失败，取第一条
             appState.saveCurrentModel(firstModel)
         }
     }

@@ -1,11 +1,39 @@
-
 这是swiftUI开发的app，按照要求帮我实现以下功能
-1、HomePage页面中，去掉ChatHeader左右两边的外边距
-2、ChatHeader中间标题（租户名称｜模型名称）按钮，要分为两个text文本，标题占满剩余空间，点击租户名称，弹出租户选择列表，点击模型名称，弹出模型选择列表，而不是把标题放到同一个Button中，这样点击租户名称和模型名称都是弹出模型选择列表了，所以不要把租户名称和模型名称放到同一个Button中
-3、修改之后输入完整的代码
+1、HomePage页面初始化加载时，从缓存中获取租户id(tenantId)，同时调用后端接口获取当前用户的租户列表，获取租户列表的接口为：/service/tenant/getUserTenantList，返回结果的data是租户列表
+2、如果缓存中有租户id(tenantId)，使用当前租户的id在租户列表中匹配有没有这个租户，如果有就取这个租户作为当前租户，如果租户信息没有在租户列表中或者缓存红没有租户信息，就取租户列表中的第一条租户信息作为当期的租户，并保存到全局中，讲租户id写入缓存
+3、租户对象模型如下：
+{
+  id: string;// 租户ID（主键）
+  name: string;// 租户名称
+  code: string;// 租户编码（唯一）
+  description?: string | null;// 租户描述（可选）
+  status: TenantStatus;// 租户状态
+  create_date?: Date;// 创建时间
+  update_date?: Date | null;// 更新时间（可选）
+  created_by: string;// 创建人ID
+  updated_by?: string | null;// 更新人ID（可选）
+}
+4、从缓存中获取模型id(modelId)，并调用后端接口获取模型列表，接口地址为：service/chat/getModelList，返回数据格式的data模型列表，如果缓存中有模型id(modelId)，用模型id取模型列表中匹配，如果匹配到，把这个模型对象作为当前的模型保存到全局中，如果获取不到，从模型列表中取第一条模型对象作为当前的模型
+5、模型对象格式如下
+{
+  id:string,
+  modelName:string,
+  updateTime:string,
+  createTime:string
+}
+6、在HomePage页面顶部标题栏左边显示圆形的用户头像，头像大小为middleAvater，头像要封装成一个独立的组件，后续在其他地方会用到头像组件，判断一下如果userData.avatar是不是为空，如果为空，则用户头像取userData.username的第一个字作为头像，乳沟userData.avatar不为空，头像地址使用Constants.baseURL + userData.avatar，这是一个网络图片地址
+7、标题栏中间显示文字：租户名称｜模型名称，点击标题栏中间文字，弹出模型名称列表，当前选中的模型名称颜色为primaryColor，点击模型名称后，隐藏模型列表，把选中的模型名称作为当前的模型，并写入标题栏模型名称的文本中，把选中的模型id写入缓存
+8、点击租户名称，弹出租户名称列表，选中的租户名称颜色为primaryColor，点击租户名称后，隐藏租户列表，把选中的租户作为当前的租户，把租户id（tenantId）写入缓存，模型id(modelId)和租户id(tenantId)要保存到全局中，后续在其他组件中会用到模型id和租户id
+9、标题栏右边是一个菜单图标，使用系统自带的菜单图标，点击菜单图标，显示菜单列表：上传文档、我的文档、会话记录、设置提示词、我的收藏提示词，先预留方法，后续我自己来实现功能
+10、中间是一个可滚动的对话区，类似于微信聊天内容区，占满剩余空间，背景颜色为pageBackgroundColor
+11、底部是一个输入框，输入框容器背景颜色为whiteColor，输入框左边是一个图标，图标名称为icon_chat.png，图标大小为middleIcon，透明度为0.5，输入框高度为：inputHeight，背景颜色为pageBackgroundColor，圆角大大为inputHeight/2
+12、输入框右边是一个发送图标，图标大小为middleIcon，如果输入框内容为空，发送图标颜色为grayColor，不可点击，如果输入框不为空，则发送图标颜色为primaryColor，点击发送按钮，把内容显示在内容聊天区域，类似于微信聊天一样，头像在右边，聊天信息在左边，聊天信息背景色为白色，有一个小三角形指向用户头像
+13、点击发送图标之后，清空输入框里面的文字，发送图标变成灰色
+14、修改之后输出完整的代码
+
 请遵守开发规范
 1、UI界面放到UI文件夹中，如果是开发页面，放到UI/Pages中，如果是页面中的一个组件，放到UI/Components中
-2、应用中，所有的间距都统一使用theme/Dimens里面的Dimens.middleMargin，包括图标与图标的间距，按钮和按钮的间距，图片和文字的间距，按钮和文字的间距，布局和布局之间的间距，文字到边边的距离，以及每条数据上下的间隔,所有的padding和margin,统一使用Dimens.middleMargin间距大小
+2、应用中，所有的间距都统一使用theme/Dimens里面的Dimens.margin，包括图标与图标的间距，按钮和按钮的间距，图片和文字的间距，按钮和文字的间距，布局和布局之间的间距，文字到边边的距离，以及每条数据上下的间隔,所有的padding和margin,统一使用Dimens.middleMargin间距大小
 3、页面背景色统一为：theme/Colors里面的Colors.pageBackgroundColor,应用的主色调是Colors.primaryColor，激活状态的按钮使用Colors.primaryColor颜色，禁用状态的按钮使用Colors.grayColor
 4、所有按钮高度统一使用Dimens.btnHeight，圆角大小为Dimens.btnHeight，确定按钮的背景颜色统一为Colors.primaryColor，文字颜色为白色Colors.whiteColor，取消按钮的背景颜色为透明色，边框颜色和文字为Colors.grayColor，禁用状态的确定按钮背景颜色为Colors.grayColor
 5、单行文字的搜索框和输入框高度统一设置Dimens.inputHeight，圆角大小为Dimens::inputHeight/2
