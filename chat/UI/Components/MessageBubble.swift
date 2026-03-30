@@ -57,10 +57,10 @@ struct MessageBubble: View {
                     GeometryReader { geometry in
                         Triangle(direction: .right)
                             .fill(Colors.whiteColor)
-                            .frame(width: 16, height: 16)
+                            .frame(width: 12, height: 12)
                             .position(
-                                x: geometry.size.width + 8,
-                                y: geometry.size.height / 2 - 8
+                                x: geometry.size.width + 6,
+                                y: Dimens.middleAvater / 2
                             )
                     }
                 )
@@ -103,10 +103,10 @@ struct MessageBubble: View {
                     GeometryReader { geometry in
                         Triangle(direction: .left)
                             .fill(Colors.whiteColor)
-                            .frame(width: 16, height: 16)
+                            .frame(width: 12, height: 12)
                             .position(
-                                x: -8,
-                                y: geometry.size.height / 2 - 8
+                                x: -6,
+                                y: Dimens.middleAvater / 2
                             )
                     }
                 )
