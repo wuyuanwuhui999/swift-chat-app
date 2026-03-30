@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */; };
-		F1BCCAEE2F79EDFA004CFEB0 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = F1BCCAED2F79EDEF004CFEB0 /* README.md */; };
 		F1BCCB0F2F79F209004CFEB0 /* 租户管理2.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0A2F79F209004CFEB0 /* 租户管理2.png */; };
 		F1BCCB102F79F209004CFEB0 /* 登录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF02F79F209004CFEB0 /* 登录.png */; };
 		F1BCCB112F79F209004CFEB0 /* ai聊天菜单功能.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0B2F79F209004CFEB0 /* ai聊天菜单功能.png */; };
@@ -46,7 +45,6 @@
 /* Begin PBXFileReference section */
 		F1BCCA5C2F72D836004CFEB0 /* chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = chat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "提示词.txt"; sourceTree = "<group>"; };
-		F1BCCAED2F79EDEF004CFEB0 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = README.md; sourceTree = "<group>"; };
 		F1BCCAEF2F79F209004CFEB0 /* 查询文档.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "查询文档.png"; sourceTree = "<group>"; };
 		F1BCCAF02F79F209004CFEB0 /* 登录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "登录.png"; sourceTree = "<group>"; };
 		F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息1.png"; sourceTree = "<group>"; };
@@ -103,7 +101,6 @@
 		F1BCCA532F72D836004CFEB0 = {
 			isa = PBXGroup;
 			children = (
-				F1BCCAED2F79EDEF004CFEB0 /* README.md */,
 				F1BCCAEF2F79F209004CFEB0 /* 查询文档.png */,
 				F1BCCAF02F79F209004CFEB0 /* 登录.png */,
 				F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */,
@@ -257,7 +254,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F1BCCAEE2F79EDFA004CFEB0 /* README.md in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

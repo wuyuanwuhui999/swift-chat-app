@@ -1,18 +1,35 @@
-// UI/Components/MessageBubble.swift
 import SwiftUI
 
 /// 自定义三角形形状，用于消息气泡箭头
 struct Triangle: Shape {
+    /// 三角形方向：left 表示向左，right 表示向右
+    var direction: TriangleDirection
+    
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
+        switch direction {
+        case .left:
+            // 箭头指向左边的三角形（从右向左）
+            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.closeSubpath()
+        case .right:
+            // 箭头指向右边的三角形（从左向右）
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.closeSubpath()
+        }
         
         return path
     }
+}
+
+enum TriangleDirection {
+    case left
+    case right
 }
 
 /// 聊天消息气泡组件
@@ -23,17 +40,30 @@ struct MessageBubble: View {
     var body: some View {
         HStack(alignment: .top, spacing: Dimens.middleMargin) {
             if message.isUser {
-                Spacer(minLength: 60)
+                // 用户消息：头像在右边，文字在左边
+                Spacer(minLength: 0)
                 
-                // 用户消息内容
+                // 用户消息内容容器（用于对齐三角形）
                 VStack(alignment: .trailing, spacing: Dimens.smallIcon) {
                     // 使用富文本解析
-                    MessageContentView(content: message.content, isUser: true)
+                    MessageContentView(content: message.content, isUser: true, alignToAvatar: true)
                     
                     Text(formatTime(message.timestamp))
                         .font(.system(size: Dimens.normalFont - 2))
                         .foregroundColor(Colors.grayColor)
                 }
+                .overlay(
+                    // 三角形箭头指向右边，与头像居中对齐
+                    GeometryReader { geometry in
+                        Triangle(direction: .right)
+                            .fill(Colors.whiteColor)
+                            .frame(width: 16, height: 16)
+                            .position(
+                                x: geometry.size.width + 8,
+                                y: geometry.size.height / 2 - 8
+                            )
+                    }
+                )
                 
                 // 用户头像
                 if let userData = appState.userData {
@@ -42,8 +72,14 @@ struct MessageBubble: View {
                         username: userData.username,
                         size: Dimens.middleAvater
                     )
+                } else {
+                    // 占位头像
+                    Circle()
+                        .fill(Colors.grayColor)
+                        .frame(width: Dimens.middleAvater, height: Dimens.middleAvater)
                 }
             } else {
+                // AI消息：头像在左边，文字在右边
                 // AI头像（使用logo）
                 Image("logo")
                     .resizable()
@@ -52,17 +88,30 @@ struct MessageBubble: View {
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Colors.grayColor, lineWidth: 1))
                 
-                // AI消息内容
+                // AI消息内容容器（用于对齐三角形）
                 VStack(alignment: .leading, spacing: Dimens.smallIcon) {
                     // 使用富文本解析
-                    MessageContentView(content: message.content, isUser: false)
+                    MessageContentView(content: message.content, isUser: false, alignToAvatar: true)
                     
                     Text(formatTime(message.timestamp))
                         .font(.system(size: Dimens.normalFont - 2))
                         .foregroundColor(Colors.grayColor)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(
+                    // 三角形箭头指向左边，与头像居中对齐
+                    GeometryReader { geometry in
+                        Triangle(direction: .left)
+                            .fill(Colors.whiteColor)
+                            .frame(width: 16, height: 16)
+                            .position(
+                                x: -8,
+                                y: geometry.size.height / 2 - 8
+                            )
+                    }
+                )
                 
-                Spacer(minLength: 60)
+                Spacer(minLength: 0)
             }
         }
         .padding(.horizontal, Dimens.middleMargin)
@@ -81,10 +130,11 @@ struct MessageBubble: View {
 struct MessageContentView: View {
     let content: String
     let isUser: Bool
+    let alignToAvatar: Bool  // 是否对齐到头像（用于三角形定位）
     
     var body: some View {
         if isUser {
-            // 用户消息不需要解析
+            // 用户消息：消息框在左边，三角形在右边指向头像
             Text(content)
                 .font(.system(size: Dimens.normalFont))
                 .foregroundColor(.black)
@@ -92,15 +142,8 @@ struct MessageContentView: View {
                 .padding(.vertical, Dimens.middleMargin)
                 .background(Colors.whiteColor)
                 .cornerRadius(Dimens.borderRadius)
-                .overlay(
-                    Triangle()
-                        .fill(Colors.whiteColor)
-                        .frame(width: 10, height: 10)
-                        .offset(x: 5, y: 15),
-                    alignment: .trailing
-                )
         } else {
-            // AI消息需要解析思考内容
+            // AI消息：需要解析思考内容，消息框在右边，三角形在左边指向头像
             VStack(alignment: .leading, spacing: Dimens.smallIcon) {
                 let parsed = parseContent(content)
                 
@@ -135,13 +178,6 @@ struct MessageContentView: View {
             .padding(.vertical, Dimens.middleMargin)
             .background(Colors.whiteColor)
             .cornerRadius(Dimens.borderRadius)
-            .overlay(
-                Triangle()
-                    .fill(Colors.whiteColor)
-                    .frame(width: 10, height: 10)
-                    .offset(x: -5, y: 15),
-                alignment: .leading
-            )
         }
     }
     
@@ -170,4 +206,19 @@ struct MessageContentView: View {
         
         return (thinkContent, bodyContent)
     }
+}
+
+#Preview {
+    VStack(spacing: 20) {
+        // 用户消息示例
+        MessageBubble(message: ChatMessage(content: "你好，这是一条用户消息，这条消息比较长，用来测试三角形的对齐效果", isUser: true))
+        
+        // AI消息示例
+        MessageBubble(message: ChatMessage(content: "你好！我是AI助手，很高兴为你服务。这是一条AI回复消息，用来测试三角形的对齐效果", isUser: false))
+        
+        // 带思考过程的AI消息示例
+        MessageBubble(message: ChatMessage(content: "<think>用户发送了问候消息，我需要友好回应，这是一段比较长的思考过程，用来测试三角形在长文本中的对齐效果</think>你好！有什么我可以帮助你的吗？", isUser: false))
+    }
+    .padding()
+    .background(Colors.pageBackgroundColor)
 }
