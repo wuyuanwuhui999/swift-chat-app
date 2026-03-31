@@ -1,6 +1,7 @@
 // config/APIEndpoints.swift
 import Foundation
 
+// 添加新的枚举值
 enum APIEndpoint {
     // 定义所有接口路径
     case login
@@ -11,6 +12,9 @@ enum APIEndpoint {
     case loginByEmail
     case getUserTenantList
     case getModelList
+    case getDirectoryList
+    case getDocListByDirId
+    case createDir
     
     var path: String {
         switch self {
@@ -30,14 +34,20 @@ enum APIEndpoint {
             return Constants.API.getUserTenantList
         case .getModelList:
             return Constants.API.getModelList
+        case .getDirectoryList:
+            return Constants.API.getDirectoryList
+        case .getDocListByDirId:
+            return Constants.API.getDocListByDirId
+        case .createDir:
+            return Constants.API.createDir
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir:
             return "POST"
-        case .getUserData, .getUserTenantList, .getModelList:
+        case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId:
             return "GET"
         }
     }

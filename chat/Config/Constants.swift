@@ -1,6 +1,5 @@
-// config/Constants.swift
 import Foundation
-
+// 在 Constants 结构体中添加新的 API 路径
 struct Constants {
     // API基础域名
     static let baseURL = "http://127.0.0.1:3000"
@@ -31,5 +30,9 @@ struct Constants {
         static let loginByEmail = "/service/user/loginByEmail"
         static let getUserTenantList = "/service/tenant/getUserTenantList"
         static let getModelList = "/service/chat/getModelList"
+        // 新增接口
+        static let getDirectoryList = "/service/chat/getDirectoryList"
+        static let getDocListByDirId = "/service/chat/getDocListByDirId"
+        static let createDir = "/service/chat/createDir"
     }
 }

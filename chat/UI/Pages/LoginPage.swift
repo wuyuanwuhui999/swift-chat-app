@@ -38,18 +38,7 @@ struct LoginPage: View {
                 Spacer()
                 
                 // 顶部logo
-                if let logoImage = UIImage(named: "logo") {
-                    Image(uiImage: logoImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: Dimens.bigAvater, height: Dimens.bigAvater)
-                } else {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: Dimens.bigAvater, height: Dimens.bigAvater)
-                        .foregroundColor(.themePrimary)
-                }
+                AIAvatar.large()
                 
                 Spacer()
                     .frame(height: Dimens.middleMargin)

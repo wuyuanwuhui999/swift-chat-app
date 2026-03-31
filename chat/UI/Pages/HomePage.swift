@@ -16,6 +16,11 @@ struct HomePage: View {
     @State private var currentAIResponse = ""  // 当前AI响应（用于流式追加）
     @State private var isReceivingMessage = false  // 是否正在接收消息
     
+    // 文档选择相关状态
+    @State private var showDocumentQuery = false  // 查询文档按钮激活状态
+    @State private var showDocumentPicker = false  // 是否显示文档选择器
+    @State private var selectedDocIds: Set<String> = []  // 选中的文档ID
+    
     var body: some View {
         ZStack {
             // 背景
@@ -29,7 +34,12 @@ struct HomePage: View {
                 chatMessagesView
                 
                 // 操作按钮组
-                ChatActionButtons(showThink: $showThink, language: $language)
+                ChatActionButtons(
+                    showThink: $showThink,
+                    language: $language,
+                    showDocumentQuery: $showDocumentQuery,
+                    showDocumentPicker: $showDocumentPicker
+                )
                 
                 // 底部输入栏
                 inputBarView
@@ -45,6 +55,7 @@ struct HomePage: View {
         .overlay(tenantListOverlay)
         .overlay(modelListOverlay)
         .overlay(loadingOverlay)
+        .overlay(documentPickerOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -108,7 +119,9 @@ struct HomePage: View {
             messageText: $inputMessage,
             isSending: isReceivingMessage,
             onSend: sendMessage,
-            onClear: clearAllMessages
+            onClear: clearAllMessages,
+            selectedDocCount: selectedDocIds.count,
+            onDocumentPicker: { showDocumentPicker = true }
         )
     }
     
@@ -161,6 +174,23 @@ struct HomePage: View {
         }
     }
     
+    /// 文档选择器覆盖层
+    @ViewBuilder
+    private var documentPickerOverlay: some View {
+        if showDocumentPicker {
+            DocumentPickerDialog(
+                isPresented: $showDocumentPicker,
+                onConfirm: { selectedIds in
+                    selectedDocIds = selectedIds
+                    // 如果选择了文档，自动激活查询文档按钮
+                    if !selectedIds.isEmpty {
+                        showDocumentQuery = true
+                    }
+                }
+            )
+        }
+    }
+    
     /// 菜单选项
     private var menuActionSheet: ActionSheet {
         ActionSheet(
@@ -197,6 +227,8 @@ struct HomePage: View {
         messages.removeAll()
         currentChatId = generateChatId()
         currentAIResponse = ""
+        selectedDocIds.removeAll()  // 清空选中的文档
+        showDocumentQuery = false   // 重置查询文档按钮状态
         webSocketManager.reset()
         print("🗑️ 已清空聊天内容，新chatId: \(currentChatId)")
     }
@@ -231,6 +263,11 @@ struct HomePage: View {
         
         inputMessage = ""
         
+        // 确定消息类型：如果选择了文档且查询文档按钮激活，则类型为document
+        let messageType = (showDocumentQuery && !selectedDocIds.isEmpty) ? "document" : ""
+        // 传递选中的文档ID（只有在查询文档激活时才传递）
+        let docIds = (showDocumentQuery && !selectedDocIds.isEmpty) ? Array(selectedDocIds) : []
+        
         // 连接WebSocket发送消息
         webSocketManager.connect(
             modelId: model.id,
@@ -239,6 +276,8 @@ struct HomePage: View {
             prompt: userMessageContent,
             showThink: showThink,
             language: language,
+            docIds: docIds,
+            type: messageType,
             onMessage: { text in
                 // 流式接收消息，更新最后一条AI消息
                 DispatchQueue.main.async {

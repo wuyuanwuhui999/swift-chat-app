@@ -294,6 +294,181 @@ extension HTTPClient {
             }
         }
     }
+    
+    /// 获取目录列表
+    func getDirectoryList(tenantId: String, completion: @escaping (Result<[Directory], NetworkError>) -> Void) {
+        let parameters: [String: Any] = ["tenantId": tenantId]
+        
+        // 构建带参数的URL
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getDirectoryList) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[Directory]>.self, from: data)
+                if response.isSuccess, let directories = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success(directories))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取目录列表失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    /// 获取目录下的文档列表
+    func getDocListByDirId(tenantId: String, directoryId: String, completion: @escaping (Result<[Document], NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "tenantId": tenantId,
+            "directoryId": directoryId
+        ]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getDocListByDirId) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[Document]>.self, from: data)
+                if response.isSuccess, let documents = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success(documents))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取文档列表失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    /// 创建目录
+    func createDirectory(directory: String, tenantId: String, completion: @escaping (Result<Directory, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "directory": directory,
+            "tenantId": tenantId
+        ]
+        
+        request(endpoint: .createDir, parameters: parameters) { (result: Result<BaseResponse<Directory>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let directory = response.data {
+                    completion(.success(directory))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "创建目录失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 
 }
 

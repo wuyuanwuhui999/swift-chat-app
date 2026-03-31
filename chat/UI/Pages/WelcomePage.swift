@@ -14,20 +14,7 @@ struct WelcomePage: View {
                 Spacer()
                 
                 // 中间显示logo
-                if let logoImage = UIImage(named: "logo") {
-                    Image(uiImage: logoImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: Dimens.bigAvater, height: Dimens.bigAvater)
-                } else {
-                    // 占位符，如果没有logo图片
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: Dimens.bigAvater, height: Dimens.bigAvater)
-                        .foregroundColor(.themePrimary)
-                }
-                
+                AIAvatar.large()
                 Spacer()
             }
         }

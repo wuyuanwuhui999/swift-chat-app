@@ -49,7 +49,7 @@ struct MessageBubble: View {
                     MessageContentView(content: message.content, isUser: true, alignToAvatar: true)
                     
                     Text(formatTime(message.timestamp))
-                        .font(.system(size: Dimens.normalFont - 2))
+                        .font(.system(size: Dimens.normalFont))
                         .foregroundColor(Colors.grayColor)
                 }
                 .overlay(
@@ -80,13 +80,7 @@ struct MessageBubble: View {
                 }
             } else {
                 // AI消息：头像在左边，文字在右边
-                // AI头像（使用logo）
-                Image("logo")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: Dimens.middleAvater, height: Dimens.middleAvater)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Colors.grayColor, lineWidth: 1))
+                AIAvatar.middle()
                 
                 // AI消息内容容器（用于对齐三角形）
                 VStack(alignment: .leading, spacing: Dimens.smallIcon) {
@@ -94,7 +88,7 @@ struct MessageBubble: View {
                     MessageContentView(content: message.content, isUser: false, alignToAvatar: true)
                     
                     Text(formatTime(message.timestamp))
-                        .font(.system(size: Dimens.normalFont - 2))
+                        .font(.system(size: Dimens.normalFont))
                         .foregroundColor(Colors.grayColor)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

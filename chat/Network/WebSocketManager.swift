@@ -30,6 +30,8 @@ class WebSocketManager: NSObject, ObservableObject {
         prompt: String,
         showThink: Bool,
         language: String,
+        docIds: [String] = [],  // 新增：文档ID列表
+        type: String = "",      // 新增：类型（document 等）
         onMessage: @escaping (String) -> Void,
         onComplete: @escaping () -> Void
     ) {
@@ -46,7 +48,6 @@ class WebSocketManager: NSObject, ObservableObject {
         }
         
         // 2. 构建 URL
-        // 注意：URL 编码处理，防止 token 中包含空格或特殊字符导致连接失败
         let urlString = "\(Constants.webSocketURL)?token=Bearer \(token.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         guard let url = URL(string: urlString) else {
             print("❌ 无效的 WebSocket URL: \(urlString)")
@@ -56,7 +57,6 @@ class WebSocketManager: NSObject, ObservableObject {
         
         // 3. 建立连接
         var request = URLRequest(url: url)
-        // 如果服务器需要，可以在这里设置 header，通常 WebSocket 协议升级由 URLSession 自动处理
         webSocketTask = URLSession.shared.webSocketTask(with: request)
         webSocketTask?.resume()
         
@@ -67,28 +67,32 @@ class WebSocketManager: NSObject, ObservableObject {
             tenantId: tenantId,
             prompt: prompt,
             showThink: showThink,
-            language: language
+            language: language,
+            docIds: docIds,
+            type: type
         )
         
         // 5. 开始接收消息
         receiveMessage()
     }
-    
-    /// 发送消息
+
+    // 修改 sendMessage 方法，添加 docIds 和 type 参数
     private func sendMessage(
         modelId: String,
         chatId: String,
         tenantId: String,
         prompt: String,
         showThink: Bool,
-        language: String
+        language: String,
+        docIds: [String] = [],
+        type: String = ""
     ) {
         let message: [String: Any] = [
             "modelId": modelId,
             "chatId": chatId,
             "tenantId": tenantId,
-            "type": "",
-            "docIds": [],
+            "type": type,
+            "docIds": docIds,
             "prompt": prompt,
             "systemPrompt": Constants.systemPrompt,
             "showThink": showThink,
@@ -98,6 +102,7 @@ class WebSocketManager: NSObject, ObservableObject {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: message)
             let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
+            print("📤 WebSocket发送消息: \(jsonString)")
             webSocketTask?.send(.string(jsonString)) { error in
                 if let error = error {
                     print("❌ 发送消息失败: \(error)")
