@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 聊天操作按钮组（深度思考、中英切换、查询文档）
+/// 聊天操作按钮组（深度思考、中英切换、查询文档、选择文档）
 struct ChatActionButtons: View {
     @Binding var showThink: Bool
     @Binding var language: String  // "zh" 或 "en"
@@ -57,6 +57,24 @@ struct ChatActionButtons: View {
                     )
             }
             
+            // 选择文档按钮（只在查询文档激活时显示）
+            if showDocumentQuery {
+                Button(action: {
+                    showDocumentPicker = true
+                }) {
+                    Text("选择文档")
+                        .font(.system(size: Dimens.normalFont))
+                        .foregroundColor(Colors.primaryColor)
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .frame(height: .smallBtnHeight)
+                        .background(Color.clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                .stroke(Colors.primaryColor, lineWidth: 1)
+                        )
+                }
+            }
+            
             Spacer()
         }
         .padding(.horizontal, Dimens.middleMargin)
@@ -66,10 +84,23 @@ struct ChatActionButtons: View {
 }
 
 #Preview {
-    ChatActionButtons(
-        showThink: .constant(false),
-        language: .constant("zh"),
-        showDocumentQuery: .constant(false),
-        showDocumentPicker: .constant(false)
-    )
+    VStack(spacing: 20) {
+        // 查询文档未激活状态
+        ChatActionButtons(
+            showThink: .constant(false),
+            language: .constant("zh"),
+            showDocumentQuery: .constant(false),
+            showDocumentPicker: .constant(false)
+        )
+        
+        // 查询文档激活状态（显示选择文档按钮）
+        ChatActionButtons(
+            showThink: .constant(true),
+            language: .constant("en"),
+            showDocumentQuery: .constant(true),
+            showDocumentPicker: .constant(false)
+        )
+    }
+    .padding()
+    .background(Colors.pageBackgroundColor)
 }

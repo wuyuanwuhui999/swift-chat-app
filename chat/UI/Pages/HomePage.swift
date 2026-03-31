@@ -182,14 +182,19 @@ struct HomePage: View {
                 isPresented: $showDocumentPicker,
                 onConfirm: { selectedIds in
                     selectedDocIds = selectedIds
-                    // 如果选择了文档，自动激活查询文档按钮
+                    // 如果选择了文档，保持查询文档按钮激活状态
                     if !selectedIds.isEmpty {
                         showDocumentQuery = true
+                    } else {
+                        // 如果没有选中文档，可以选择是否关闭查询文档按钮
+                        // 这里保持查询文档按钮状态不变，让用户手动关闭
                     }
+                    print("✅ 已选择 \(selectedIds.count) 个文档")
                 }
             )
         }
     }
+
     
     /// 菜单选项
     private var menuActionSheet: ActionSheet {

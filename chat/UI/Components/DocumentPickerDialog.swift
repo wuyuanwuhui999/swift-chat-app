@@ -26,10 +26,11 @@ struct DocumentPickerDialog: View {
             
             // 对话框内容
             VStack(spacing: 0) {
-                // 标题栏
+                // 标题栏（固定高度）
                 headerView
+                    .frame(height: 60)
                 
-                // 目录和文档列表
+                // 可滚动的内容区域
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(directories) { directory in
@@ -41,19 +42,22 @@ struct DocumentPickerDialog: View {
                                 onToggleDocument: { toggleDocument($0) }
                             )
                         }
+                        
+                        // 添加底部占位空间，避免内容被底部按钮遮挡
+                        Color.clear
+                            .frame(height: Dimens.btnHeight + Dimens.middleMargin * 2)
                     }
                     .padding(.vertical, Dimens.middleMargin)
                 }
-                .frame(maxHeight: .infinity)
                 
-                // 底部操作区域
+                // 底部操作区域（固定高度）
                 bottomActionView
+                    .frame(height: showCreateInput ? Dimens.inputHeight + Dimens.btnHeight + Dimens.middleMargin * 3 : Dimens.btnHeight + Dimens.middleMargin * 3)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: UIScreen.main.bounds.height * 0.8)
             .background(Colors.whiteColor)
             .clipShape(RoundedCorner(radius: Dimens.borderRadius, corners: [.topLeft, .topRight]))
             .offset(y: UIScreen.main.bounds.height * 0.2)
-            .frame(height: UIScreen.main.bounds.height * 0.8)
         }
         .onAppear {
             loadDirectories()
@@ -67,8 +71,7 @@ struct DocumentPickerDialog: View {
         Text("选择文档")
             .font(.system(size: Dimens.middleFont))
             .foregroundColor(.primary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Dimens.middleMargin)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Colors.whiteColor)
             .overlay(
                 Rectangle()
@@ -176,7 +179,6 @@ struct DocumentPickerDialog: View {
                 .disabled(selectedDocIds.isEmpty)
             }
             .padding(.horizontal, Dimens.middleMargin)
-            .padding(.bottom, Dimens.middleMargin)
         }
         .padding(.vertical, Dimens.middleMargin)
         .background(Colors.whiteColor)
@@ -292,6 +294,8 @@ struct DocumentPickerDialog: View {
                     Text(document.name)
                         .font(.system(size: Dimens.normalFont))
                         .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     
                     Spacer()
                     
