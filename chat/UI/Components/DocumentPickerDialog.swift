@@ -16,52 +16,62 @@ struct DocumentPickerDialog: View {
     let onConfirm: (Set<String>) -> Void
     
     var body: some View {
-        ZStack(alignment: .top) {
-            // 半透明遮罩层
-            Color.black.opacity(0.5)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    isPresented = false
-                }
-            
-            // 对话框内容
-            VStack(spacing: 0) {
-                // 标题栏（固定高度）
-                headerView
-                    .frame(height: 60)
-                
-                // 可滚动的内容区域
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(directories) { directory in
-                            DirectorySection(
-                                directory: directory,
-                                isExpanded: expandedDirectories.contains(directory.id),
-                                selectedDocIds: selectedDocIds,
-                                onToggleExpand: { toggleDirectory(directory.id) },
-                                onToggleDocument: { toggleDocument($0) }
-                            )
-                        }
-                        
-                        // 添加底部占位空间，避免内容被底部按钮遮挡
-                        Color.clear
-                            .frame(height: Dimens.btnHeight + Dimens.middleMargin * 2)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {  // 改为底部对齐
+                // 半透明遮罩层
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        isPresented = false
                     }
-                    .padding(.vertical, Dimens.middleMargin)
-                }
                 
-                // 底部操作区域（固定高度）
-                bottomActionView
-                    .frame(height: showCreateInput ? Dimens.inputHeight + Dimens.btnHeight + Dimens.middleMargin * 3 : Dimens.btnHeight + Dimens.middleMargin * 3)
+                // 对话框内容 - 从底部弹出
+                VStack(spacing: 0) {
+                    // 可滚动的内容区域 - 使用 Spacer 让它占据剩余空间
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            if isLoading {
+                                // 加载中状态
+                                ProgressView()
+                                    .padding(.vertical, Dimens.largeMargin)
+                            } else if directories.isEmpty {
+                                // 空状态
+                                Text("暂无目录")
+                                    .font(.system(size: Dimens.normalFont))
+                                    .foregroundColor(Colors.grayColor)
+                                    .padding(.vertical, Dimens.largeMargin)
+                            } else {
+                                ForEach(directories) { directory in
+                                    DirectorySection(
+                                        directory: directory,
+                                        isExpanded: expandedDirectories.contains(directory.id),
+                                        selectedDocIds: selectedDocIds,
+                                        onToggleExpand: { toggleDirectory(directory.id) },
+                                        onToggleDocument: { toggleDocument($0) }
+                                    )
+                                }
+                            }
+                        }
+                        .padding(.vertical, Dimens.middleMargin)
+                    }
+                    
+                    // 底部操作区域
+                    bottomActionView
+                }
+                .frame(
+                    width: geometry.size.width,
+                    height: min(geometry.size.height * 0.8, geometry.size.height - 100)
+                )
+                .background(Colors.whiteColor)
+                .clipShape(RoundedCorner(radius: Dimens.borderRadius, corners: [.topLeft, .topRight]))
+                .offset(y: 0)  // 从底部弹出，不需要偏移
+                .position(x: geometry.size.width / 2, y: geometry.size.height - (min(geometry.size.height * 0.8, geometry.size.height - 100) / 2))  // 底部对齐
             }
-            .frame(maxWidth: .infinity, maxHeight: UIScreen.main.bounds.height * 0.8)
-            .background(Colors.whiteColor)
-            .clipShape(RoundedCorner(radius: Dimens.borderRadius, corners: [.topLeft, .topRight]))
-            .offset(y: UIScreen.main.bounds.height * 0.2)
         }
         .onAppear {
             loadDirectories()
         }
+        .ignoresSafeArea(.keyboard) // 忽略键盘安全区域，避免布局偏移
     }
     
     // MARK: - 视图组件
@@ -71,7 +81,8 @@ struct DocumentPickerDialog: View {
         Text("选择文档")
             .font(.system(size: Dimens.middleFont))
             .foregroundColor(.primary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Dimens.middleMargin)
             .background(Colors.whiteColor)
             .overlay(
                 Rectangle()
@@ -134,7 +145,7 @@ struct DocumentPickerDialog: View {
                     showCreateInput = true
                     isInputFocused = true
                 }) {
-                    Text("创建")
+                    Text("创建目录")
                         .font(.system(size: Dimens.normalFont))
                         .foregroundColor(.white)
                         .frame(height: Dimens.btnHeight)
@@ -153,7 +164,7 @@ struct DocumentPickerDialog: View {
                 }) {
                     Text("取消")
                         .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(Colors.blackColor)
+                        .foregroundColor(Colors.grayColor)
                         .frame(height: Dimens.btnHeight)
                         .frame(maxWidth: .infinity)
                         .background(Color.clear)
@@ -236,6 +247,15 @@ struct DocumentPickerDialog: View {
                                     .padding()
                                 Spacer()
                             }
+                        } else if documents.isEmpty {
+                            HStack {
+                                Spacer()
+                                Text("暂无文档")
+                                    .font(.system(size: Dimens.normalFont))
+                                    .foregroundColor(Colors.grayColor)
+                                    .padding()
+                                Spacer()
+                            }
                         } else {
                             ForEach(documents) { document in
                                 DocumentRow(
@@ -258,6 +278,7 @@ struct DocumentPickerDialog: View {
             )
         }
         
+        /// 加载文档列表
         private func loadDocuments() {
             isLoadingDocs = true
             guard let tenantId = AppState.shared.currentTenant?.id else {

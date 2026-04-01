@@ -14,6 +14,8 @@ struct Colors {
     // 灰色，用于小标题、禁用按钮、提示文字、禁用文字
     static let grayColor = Color(red: 221/255, green: 221/255, blue: 221/255)
     
+    static let subColor = Color(red:128/255,green:128/255,blue:128/255)
+    
     // 白色
     static let whiteColor = Color.white
     
@@ -26,6 +28,7 @@ struct Colors {
 // 扩展Color以便更方便使用
 extension Color {
     static let themePrimary = Colors.primaryColor
+    static let themeSub = Colors.subColor
     static let themeGray = Colors.grayColor
     static let themeWhite = Colors.whiteColor
     static let themeBackground = Colors.pageBackgroundColor

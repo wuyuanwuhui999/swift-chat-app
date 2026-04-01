@@ -6,7 +6,7 @@ struct LoginPage: View {
     
     // 账号密码登录相关
     @State private var account = "吴时吴刻"
-    @State private var password = ""
+    @State private var password = "123456"
     @State private var isLoggingIn = false
     
     // 邮箱验证码登录相关

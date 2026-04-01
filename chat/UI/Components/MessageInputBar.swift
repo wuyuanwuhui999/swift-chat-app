@@ -7,6 +7,7 @@ struct MessageInputBar: View {
     let onSend: () -> Void
     let onClear: () -> Void  // 清空聊天
     let selectedDocCount: Int  // 选中的文档数量
+    let showDocumentSelectionButton: Bool  // 是否显示文档选择按钮
     let onDocumentPicker: () -> Void  // 打开文档选择器
     
     var body: some View {
@@ -30,11 +31,13 @@ struct MessageInputBar: View {
                 .lineLimit(1...5)
                 .disabled(isSending)  // 发送中禁用输入框
             
-            // 文档选择按钮
-            DocumentSelectionButton(
-                selectedCount: selectedDocCount,
-                onTap: onDocumentPicker
-            )
+            // 文档选择按钮（仅在查询文档激活时显示）
+            if showDocumentSelectionButton {
+                DocumentSelectionButton(
+                    selectedCount: selectedDocCount,
+                    onTap: onDocumentPicker
+                )
+            }
             
             // 发送按钮
             Button(action: onSend) {
@@ -65,6 +68,7 @@ struct MessageInputBar: View {
         onSend: {},
         onClear: {},
         selectedDocCount: 0,
+        showDocumentSelectionButton: true,
         onDocumentPicker: {}
     )
     .padding()

@@ -37,8 +37,7 @@ struct HomePage: View {
                 ChatActionButtons(
                     showThink: $showThink,
                     language: $language,
-                    showDocumentQuery: $showDocumentQuery,
-                    showDocumentPicker: $showDocumentPicker
+                    showDocumentQuery: $showDocumentQuery
                 )
                 
                 // 底部输入栏
@@ -121,6 +120,7 @@ struct HomePage: View {
             onSend: sendMessage,
             onClear: clearAllMessages,
             selectedDocCount: selectedDocIds.count,
+            showDocumentSelectionButton: showDocumentQuery,  // 根据查询文档按钮状态控制显示
             onDocumentPicker: { showDocumentPicker = true }
         )
     }
@@ -194,7 +194,6 @@ struct HomePage: View {
             )
         }
     }
-
     
     /// 菜单选项
     private var menuActionSheet: ActionSheet {
