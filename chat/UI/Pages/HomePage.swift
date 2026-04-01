@@ -20,6 +20,8 @@ struct HomePage: View {
     @State private var showDocumentQuery = false  // 查询文档按钮激活状态
     @State private var showDocumentPicker = false  // 是否显示文档选择器
     @State private var selectedDocIds: Set<String> = []  // 选中的文档ID
+    @State private var showChatHistory = false  // 是否显示会话记录对话框
+
     
     var body: some View {
         ZStack {
@@ -55,6 +57,7 @@ struct HomePage: View {
         .overlay(modelListOverlay)
         .overlay(loadingOverlay)
         .overlay(documentPickerOverlay)
+        .overlay(chatHistoryOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -195,6 +198,13 @@ struct HomePage: View {
         }
     }
     
+    @ViewBuilder
+    private var chatHistoryOverlay: some View {
+        if showChatHistory {
+            ChatHistoryDialog(isPresented: $showChatHistory)
+        }
+    }
+    
     /// 菜单选项
     private var menuActionSheet: ActionSheet {
         ActionSheet(
@@ -202,7 +212,9 @@ struct HomePage: View {
             buttons: [
                 .default(Text("上传文档")) { /* 后续实现 */ },
                 .default(Text("我的文档")) { /* 后续实现 */ },
-                .default(Text("会话记录")) { /* 后续实现 */ },
+                .default(Text("会话记录")) {
+                    showChatHistory = true  // 显示会话记录对话框
+                },
                 .default(Text("设置提示词")) { /* 后续实现 */ },
                 .default(Text("我的收藏提示词")) { /* 后续实现 */ },
                 .cancel(Text("取消"))

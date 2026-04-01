@@ -470,6 +470,99 @@ extension HTTPClient {
         }
     }
 
+    func getChatHistory(
+        tenantId: String,
+        pageNum: Int,
+        pageSize: Int,
+        completion: @escaping (Result<ChatHistoryResponse, NetworkError>) -> Void
+    ) {
+        let parameters: [String: Any] = [
+            "tenantId": tenantId,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getChatHistory) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                // 先解析外层 BaseResponse
+                let baseResponse = try JSONDecoder().decode(BaseResponse<[ChatHistory]>.self, from: data)
+                
+                if baseResponse.isSuccess, let list = baseResponse.data {
+                    var chatHistoryList = list
+                    // 计算每条记录的时间差
+                    for i in 0..<chatHistoryList.count {
+                        chatHistoryList[i].calculateTimeAgo()
+                    }
+                    
+                    let response = ChatHistoryResponse(
+                        total: baseResponse.total ?? 0,
+                        list: chatHistoryList
+                    )
+                    DispatchQueue.main.async {
+                        completion(.success(response))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: baseResponse.msg ?? "获取会话记录失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
 }
 
 // 登录响应模型
