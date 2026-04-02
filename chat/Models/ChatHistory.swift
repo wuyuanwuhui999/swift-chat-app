@@ -7,7 +7,7 @@ struct ChatHistory: Codable, Identifiable {
     let files: String?
     let chatId: String
     let prompt: String
-    let systemPrompt: String
+    let systemPrompt: String?  // 改为可选类型，因为接口可能不返回此字段
     let content: String
     let createTime: String
     let thinkContent: String?
