@@ -30,11 +30,10 @@ struct Constants {
         static let loginByEmail = "/service/user/loginByEmail"
         static let getUserTenantList = "/service/tenant/getUserTenantList"
         static let getModelList = "/service/chat/getModelList"
-        // 新增接口
         static let getDirectoryList = "/service/chat/getDirectoryList"
         static let getDocListByDirId = "/service/chat/getDocListByDirId"
         static let createDir = "/service/chat/createDir"
-        
-        static let getChatHistory = "/service/chat/getChatHistory"  // 新增
+        static let getChatHistory = "/service/chat/getChatHistory"
+        static let getChatHistoryByChatId = "/service/chat/getChatHistoryByChatId"
     }
 }

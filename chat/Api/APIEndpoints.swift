@@ -15,6 +15,7 @@ enum APIEndpoint {
     case getDirectoryList
     case getDocListByDirId
     case createDir
+    case getChatHistoryByChatId
     
     var path: String {
         switch self {
@@ -40,14 +41,17 @@ enum APIEndpoint {
             return Constants.API.getDocListByDirId
         case .createDir:
             return Constants.API.createDir
+        case .getChatHistoryByChatId:
+            return Constants.API.getChatHistoryByChatId
         }
+        
     }
     
     var method: String {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir:
             return "POST"
-        case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId:
+        case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId,.getChatHistoryByChatId:
             return "GET"
         }
     }

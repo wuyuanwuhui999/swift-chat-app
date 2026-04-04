@@ -21,7 +21,6 @@ struct HomePage: View {
     @State private var showDocumentPicker = false  // 是否显示文档选择器
     @State private var selectedDocIds: Set<String> = []  // 选中的文档ID
     @State private var showChatHistory = false  // 是否显示会话记录对话框
-
     
     var body: some View {
         ZStack {
@@ -201,7 +200,12 @@ struct HomePage: View {
     @ViewBuilder
     private var chatHistoryOverlay: some View {
         if showChatHistory {
-            ChatHistoryDialog(isPresented: $showChatHistory)
+            ChatHistoryDialog(
+                isPresented: $showChatHistory,
+                onSessionSelected: { chatId in
+                    loadChatHistory(chatId: chatId)
+                }
+            )
         }
     }
     
@@ -210,11 +214,9 @@ struct HomePage: View {
         ActionSheet(
             title: Text("菜单"),
             buttons: [
+                .default(Text("会话记录")) { showChatHistory = true },  // 使用 showChatHistory
                 .default(Text("上传文档")) { /* 后续实现 */ },
                 .default(Text("我的文档")) { /* 后续实现 */ },
-                .default(Text("会话记录")) {
-                    showChatHistory = true  // 显示会话记录对话框
-                },
                 .default(Text("设置提示词")) { /* 后续实现 */ },
                 .default(Text("我的收藏提示词")) { /* 后续实现 */ },
                 .cancel(Text("取消"))
@@ -386,6 +388,105 @@ struct HomePage: View {
             appState.saveCurrentModel(firstModel)
         }
     }
+    
+
+
+    private func loadChatHistory(chatId: String) {
+        isLoading = true
+        print("🔄 开始加载会话记录，chatId: \(chatId)")
+        
+        HTTPClient.shared.getChatHistoryByChatId(chatId: chatId) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let histories):
+                    print("✅ 获取到会话记录，共 \(histories.count) 条")
+                    
+                    // 打印每条记录的详细信息
+                    for (index, history) in histories.enumerated() {
+                        print("📝 历史记录[\(index)]:")
+                        print("   - prompt: \(history.prompt)")
+                        print("   - thinkContent: \(history.thinkContent ?? "无思考内容")")
+                        print("   - responseContent: \(history.responseContent ?? "无响应内容")")
+                        print("   - 完整AI内容: \(history.getFullAIResponse())")
+                    }
+                    
+                    // 清空现有消息
+                    messages.removeAll()
+                    // 设置当前chatId
+                    currentChatId = chatId
+                    // 转换历史记录为消息列表
+                    convertHistoryToMessages(histories)
+                    print("✅ 加载会话记录成功，已显示 \(messages.count) 条消息")
+                    
+                case .failure(let error):
+                    print("❌ 加载会话记录失败: \(error.localizedDescription)")
+                }
+                isLoading = false
+            }
+        }
+    }
+
+    /// 将历史记录转换为消息列表
+    private func convertHistoryToMessages(_ histories: [ChatHistory]) {
+        print("🔄 开始转换历史记录为消息列表...")
+        
+        // 按时间排序（假设createTime是创建时间）
+        let sortedHistories = histories.sorted { history1, history2 in
+            guard let time1 = history1.createTime,
+                  let time2 = history2.createTime else {
+                return false
+            }
+            return time1 < time2
+        }
+        
+        for (index, history) in sortedHistories.enumerated() {
+            print("📝 处理第\(index + 1)条记录:")
+            
+            // 添加用户消息
+            let userMessage = ChatMessage(content: history.prompt, isUser: true)
+            messages.append(userMessage)
+            print("   ✅ 添加用户消息: \(history.prompt)")
+            
+            // 构建AI消息内容
+            var aiContent = ""
+            
+            // 添加思考内容
+            if let thinkContent = history.thinkContent, !thinkContent.isEmpty {
+                aiContent += "<think>\(thinkContent)</think>"
+                print("   ✅ 添加思考内容: \(thinkContent.prefix(50))...")
+            }
+            
+            // 添加响应正文
+            if let responseContent = history.responseContent, !responseContent.isEmpty {
+                aiContent += responseContent
+                print("   ✅ 添加响应内容: \(responseContent.prefix(50))...")
+            }
+            
+            // 如果AI内容为空，使用默认提示
+            if aiContent.isEmpty {
+                aiContent = "暂无回复内容"
+                print("   ⚠️ AI内容为空，使用默认提示")
+            }
+            
+            // 添加AI消息
+            let aiMessage = ChatMessage(content: aiContent, isUser: false)
+            messages.append(aiMessage)
+            print("   ✅ 添加AI消息完成")
+        }
+        
+        print("✅ 转换完成，共 \(messages.count) 条消息（\(messages.filter { $0.isUser }.count) 条用户消息，\(messages.filter { !$0.isUser }.count) 条AI消息）")
+    }
+
+    /// 滚动到底部的辅助方法
+    private func scrollToBottomOnNextUpdate() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let lastMessage = messages.last {
+                // 需要使用 ScrollViewReader 来滚动，这里需要在视图中实现
+                // 暂时留空，后续完善
+            }
+        }
+    }
+
 }
 
 #Preview {

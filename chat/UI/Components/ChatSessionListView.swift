@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// 会话记录对话框组件
-struct ChatHistoryDialog: View {
+/// 会话记录列表视图组件
+struct ChatSessionListView: View {
     @Binding var isPresented: Bool
     @ObservedObject private var appState = AppState.shared
     @State private var sessions: [ChatSessionGroup] = []
@@ -37,7 +37,7 @@ struct ChatHistoryDialog: View {
                                 emptyStateView
                             } else {
                                 ForEach(sessions) { session in
-                                    SessionHistoryRow(
+                                    SessionRow(
                                         session: session,
                                         onTap: {
                                             onSessionSelected(session.chatId)
@@ -182,21 +182,20 @@ struct ChatHistoryDialog: View {
                     
                     for (chatId, historyList) in grouped {
                         if let firstHistory = historyList.first {
-                            // 检查是否已存在相同的chatId
-                            if !sessions.contains(where: { $0.chatId == chatId }) {
-                                let group = ChatSessionGroup(
-                                    chatId: chatId,
-                                    firstMessage: firstHistory.prompt,
-                                    updateTime: firstHistory.createTime,
-                                    timeAgo: firstHistory.timeAgo
-                                )
-                                newSessions.append(group)
-                            }
+                            let group = ChatSessionGroup(
+                                chatId: chatId,
+                                firstMessage: firstHistory.prompt,
+                                updateTime: firstHistory.createTime,
+                                timeAgo: firstHistory.timeAgo
+                            )
+                            newSessions.append(group)
                         }
                     }
                     
-                    // 添加新会话
-                    sessions.append(contentsOf: newSessions)
+                    // 合并并去重
+                    let existingChatIds = Set(sessions.map { $0.chatId })
+                    let filteredNewSessions = newSessions.filter { !existingChatIds.contains($0.chatId) }
+                    sessions.append(contentsOf: filteredNewSessions)
                     
                     // 重新排序
                     sessions.sort { group1, group2 in
@@ -220,7 +219,7 @@ struct ChatHistoryDialog: View {
 }
 
 /// 会话记录行视图
-struct SessionHistoryRow: View {
+struct SessionRow: View {
     let session: ChatSessionGroup
     let onTap: () -> Void
     
@@ -254,7 +253,7 @@ struct SessionHistoryRow: View {
 }
 
 #Preview {
-    ChatHistoryDialog(
+    ChatSessionListView(
         isPresented: .constant(true),
         onSessionSelected: { chatId in
             print("选中会话: \(chatId)")

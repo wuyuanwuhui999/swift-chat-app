@@ -474,7 +474,7 @@ extension HTTPClient {
         tenantId: String,
         pageNum: Int,
         pageSize: Int,
-        completion: @escaping (Result<ChatHistoryResponse, NetworkError>) -> Void
+        completion: @escaping (Result<([ChatHistory], Int), NetworkError>) -> Void
     ) {
         let parameters: [String: Any] = [
             "tenantId": tenantId,
@@ -531,7 +531,7 @@ extension HTTPClient {
             }
             
             do {
-                // 先解析外层 BaseResponse
+                // 解析外层 BaseResponse
                 let baseResponse = try JSONDecoder().decode(BaseResponse<[ChatHistory]>.self, from: data)
                 
                 if baseResponse.isSuccess, let list = baseResponse.data {
@@ -541,12 +541,8 @@ extension HTTPClient {
                         chatHistoryList[i].calculateTimeAgo()
                     }
                     
-                    let response = ChatHistoryResponse(
-                        total: baseResponse.total ?? 0,
-                        list: chatHistoryList
-                    )
                     DispatchQueue.main.async {
-                        completion(.success(response))
+                        completion(.success((chatHistoryList, baseResponse.total ?? 0)))
                     }
                 } else {
                     DispatchQueue.main.async {
@@ -563,6 +559,120 @@ extension HTTPClient {
         
         task.resume()
     }
+    
+    func getChatHistoryByChatId(chatId: String, completion: @escaping (Result<[ChatHistory], NetworkError>) -> Void) {
+        let parameters: [String: Any] = ["chatId": chatId]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getChatHistoryByChatId) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        print("🌐 请求URL: \(url)")
+        print("📡 请求方法: GET")
+        print("🔐 Authorization: \(TokenManager.shared.getAuthorizationHeader() ?? "无")")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ 网络错误: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ 无效的响应")
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            print("📊 HTTP状态码: \(httpResponse.statusCode)")
+            
+            guard httpResponse.statusCode == 200 else {
+                print("⚠️ 服务器错误: \(httpResponse.statusCode)")
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                print("❌ 无返回数据")
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            // 打印原始响应数据
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📥 原始响应数据:")
+                print(jsonString)
+            } else {
+                print("📥 响应数据长度: \(data.count) bytes")
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[ChatHistory]>.self, from: data)
+                print("✅ 数据解析成功，status: \(response.status), isSuccess: \(response.isSuccess)")
+                if let msg = response.msg {
+                    print("💬 服务器消息: \(msg)")
+                }
+                
+                if response.isSuccess, let histories = response.data {
+                    // 打印详细的会话记录数据
+                    print("📋 会话记录详情（共 \(histories.count) 条）:")
+                    for (index, history) in histories.enumerated() {
+                        print("  第\(index + 1)条记录:")
+                        print("    - id: \(history.id)")
+                        print("    - chatId: \(history.chatId)")
+                        print("    - prompt: \(history.prompt)")
+                        print("    - thinkContent: \(history.thinkContent ?? "nil")")
+                        print("    - responseContent: \(history.responseContent ?? "nil")")
+                        print("    - createTime: \(history.createTime ?? "nil")")
+                        print("    - updateTime: \(history.updateTime ?? "nil")")
+                    }
+                    
+                    DispatchQueue.main.async {
+                        completion(.success(histories))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取会话记录失败")))
+                    }
+                }
+            } catch {
+                print("❌ 数据解析失败: \(error)")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("❌ 原始数据: \(jsonString)")
+                }
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
 }
 
 // 登录响应模型

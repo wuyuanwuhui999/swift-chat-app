@@ -1,66 +1,76 @@
 import Foundation
 
-/// 会话记录模型
+/// 聊天历史记录模型
 struct ChatHistory: Codable, Identifiable {
     let id: Int
-    let userId: String
-    let files: String?
     let chatId: String
-    let prompt: String
-    let systemPrompt: String?  // 改为可选类型，因为接口可能不返回此字段
-    let content: String
-    let createTime: String
-    let thinkContent: String?
-    let responseContent: String?
-    var timeAgo: String?  // 前端计算的时间差
+    let prompt: String          // 用户消息
+    let thinkContent: String?   // AI思考内容
+    let responseContent: String? // AI响应正文
+    let createTime: String?
+    let updateTime: String?
+    var timeAgo: String = ""    // 时间差显示（非数据库字段）
     
     enum CodingKeys: String, CodingKey {
         case id
-        case userId
-        case files
         case chatId
         case prompt
-        case systemPrompt = "SystemPrompt"
-        case content
-        case createTime
         case thinkContent
         case responseContent
-        case timeAgo
+        case createTime
+        case updateTime
     }
     
-    /// 计算时间差
+    /// 获取完整的AI回复内容（思考内容+正文）
+    func getFullAIResponse() -> String {
+        var fullResponse = ""
+        if let think = thinkContent, !think.isEmpty {
+            fullResponse += "<think>\(think)</think>"
+        }
+        if let response = responseContent, !response.isEmpty {
+            fullResponse += response
+        }
+        return fullResponse
+    }
+    
+    /// 计算时间差（用于显示）
     mutating func calculateTimeAgo() {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
-        guard let createDate = formatter.date(from: createTime) else {
-            timeAgo = "未知时间"
+        guard let createTime = createTime else {
+            timeAgo = "刚刚"
             return
         }
         
-        let now = Date()
-        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: createDate, to: now)
+        // 解析时间格式 "yyyy-MM-dd HH:mm:ss"
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
         
-        if let minute = components.minute, minute < 1 {
-            timeAgo = "刚刚"
-        } else if let minute = components.minute, minute < 60 {
-            timeAgo = "\(minute)分钟前"
-        } else if let hour = components.hour, hour < 24 {
-            timeAgo = "\(hour)小时前"
-        } else if let day = components.day, day < 30 {
-            timeAgo = "\(day)天前"
-        } else if let month = components.month, month < 12 {
-            timeAgo = "\(month)个月内"
-        } else if let year = components.year {
-            timeAgo = "\(year)年前"
+        if let date = formatter.date(from: createTime) {
+            let now = Date()
+            let components = Calendar.current.dateComponents([.minute, .hour, .day], from: date, to: now)
+            
+            if let day = components.day, day > 0 {
+                timeAgo = "\(day)天前"
+            } else if let hour = components.hour, hour > 0 {
+                timeAgo = "\(hour)小时前"
+            } else if let minute = components.minute, minute > 0 {
+                timeAgo = "\(minute)分钟前"
+            } else {
+                timeAgo = "刚刚"
+            }
         } else {
+            print("⚠️ 时间解析失败: \(createTime)")
             timeAgo = "未知时间"
         }
     }
 }
 
-/// 会话记录分页响应
-struct ChatHistoryResponse: Codable {
-    let total: Int
-    let list: [ChatHistory]
+/// 会话记录分组模型（用于展示会话列表）
+struct ChatSessionGroup: Identifiable {
+    let id = UUID()
+    let chatId: String
+    let firstMessage: String  // 第一条消息内容
+    let updateTime: String?   // 最后更新时间
+    let timeAgo: String       // 时间差显示
 }
