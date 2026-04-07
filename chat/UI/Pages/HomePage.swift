@@ -21,7 +21,8 @@ struct HomePage: View {
     @State private var showDocumentPicker = false  // 是否显示文档选择器
     @State private var selectedDocIds: Set<String> = []  // 选中的文档ID
     @State private var showChatHistory = false  // 是否显示会话记录对话框
-    
+    @State private var showUploadDocument = false  // 是否显示上传文档对话框
+
     var body: some View {
         ZStack {
             // 背景
@@ -57,6 +58,7 @@ struct HomePage: View {
         .overlay(loadingOverlay)
         .overlay(documentPickerOverlay)
         .overlay(chatHistoryOverlay)
+        .overlay(uploadDocumentOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -215,7 +217,7 @@ struct HomePage: View {
             title: Text("菜单"),
             buttons: [
                 .default(Text("会话记录")) { showChatHistory = true },  // 使用 showChatHistory
-                .default(Text("上传文档")) { /* 后续实现 */ },
+                .default(Text("上传文档")) { showUploadDocument = true },
                 .default(Text("我的文档")) { /* 后续实现 */ },
                 .default(Text("设置提示词")) { /* 后续实现 */ },
                 .default(Text("我的收藏提示词")) { /* 后续实现 */ },
@@ -484,6 +486,19 @@ struct HomePage: View {
                 // 需要使用 ScrollViewReader 来滚动，这里需要在视图中实现
                 // 暂时留空，后续完善
             }
+        }
+    }
+
+    @ViewBuilder
+    private var uploadDocumentOverlay: some View {
+        if showUploadDocument {
+            UploadDocumentDialog(
+                isPresented: $showUploadDocument,
+                onUploadComplete: {
+                    print("✅ 文档上传完成")
+                    // 可以在这里刷新文档列表等操作
+                }
+            )
         }
     }
 

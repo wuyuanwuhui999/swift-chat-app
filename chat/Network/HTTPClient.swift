@@ -673,6 +673,144 @@ extension HTTPClient {
         task.resume()
     }
 
+    func uploadDoc(
+        fileURL: URL,
+        tenantId: String,
+        directoryId: String,
+        completion: @escaping (Result<String, NetworkError>) -> Void
+    ) {
+        // 构建 URL（替换路径参数）
+        let urlPath = Constants.API.uploadDoc
+            .replacingOccurrences(of: "{tenantId}", with: tenantId)
+            .replacingOccurrences(of: "{directoryId}", with: directoryId)
+        
+        guard let url = URL(string: baseURL + urlPath) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        // 创建 multipart/form-data 请求
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        // 添加 Authorization header
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        // 生成边界字符串
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        // 构建 multipart body
+        var body = Data()
+        
+        // 添加文件数据
+        do {
+            let fileData = try Data(contentsOf: fileURL)
+            let filename = fileURL.lastPathComponent
+            let mimeType = getMimeType(for: filename)
+            
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+            body.append(fileData)
+            body.append("\r\n".data(using: .utf8)!)
+        } catch {
+            print("❌ 读取文件失败: \(error)")
+            completion(.failure(.custom(message: "读取文件失败")))
+            return
+        }
+        
+        // 添加结束边界
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        print("🌐 上传文档URL: \(url)")
+        print("📁 文件名: \(fileURL.lastPathComponent)")
+        print("🏢 租户ID: \(tenantId)")
+        print("📂 目录ID: \(directoryId)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ 上传网络错误: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            print("📊 上传响应状态码: \(httpResponse.statusCode)")
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            // 打印响应数据
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📥 上传响应数据: \(jsonString)")
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<EmptyData>.self, from: data)
+                
+                if response.isSuccess {
+                    DispatchQueue.main.async {
+                        completion(.success(response.msg ?? "上传成功"))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "上传失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析上传响应失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    /// 根据文件名获取 MIME 类型
+    private func getMimeType(for filename: String) -> String {
+        let ext = (filename as NSString).pathExtension.lowercased()
+        
+        switch ext {
+        case "txt":
+            return "text/plain"
+        case "doc":
+            return "application/msword"
+        case "docx":
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "md":
+            return "text/markdown"
+        default:
+            return "application/octet-stream"
+        }
+    }
+
 }
 
 // 登录响应模型
