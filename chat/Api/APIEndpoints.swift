@@ -1,7 +1,7 @@
 // config/APIEndpoints.swift
+
 import Foundation
 
-// 添加新的枚举值
 enum APIEndpoint {
     // 定义所有接口路径
     case login
@@ -15,7 +15,10 @@ enum APIEndpoint {
     case getDirectoryList
     case getDocListByDirId
     case createDir
+    case getChatHistory
     case getChatHistoryByChatId
+    case uploadDoc
+    case deleteDoc(String)  // 添加 deleteDoc，关联值传递 docId
     
     var path: String {
         switch self {
@@ -41,18 +44,26 @@ enum APIEndpoint {
             return Constants.API.getDocListByDirId
         case .createDir:
             return Constants.API.createDir
+        case .getChatHistory:
+            return Constants.API.getChatHistory
         case .getChatHistoryByChatId:
             return Constants.API.getChatHistoryByChatId
+        case .uploadDoc:
+            return Constants.API.uploadDoc
+        case .deleteDoc(let docId):
+            // 替换路径中的 {docId} 参数
+            return Constants.API.deleteDoc.replacingOccurrences(of: "{docId}", with: docId)
         }
-        
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc:
             return "POST"
-        case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId,.getChatHistoryByChatId:
+        case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
             return "GET"
+        case .deleteDoc:
+            return "DELETE"  // 删除文档使用 DELETE 方法
         }
     }
     

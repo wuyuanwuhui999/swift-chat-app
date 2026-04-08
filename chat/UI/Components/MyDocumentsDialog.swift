@@ -36,7 +36,11 @@ struct MyDocumentsDialog: View {
                                     DirectoryExpandableSection(
                                         directory: directory,
                                         isExpanded: expandedDirectories.contains(directory.id),
-                                        onToggleExpand: { toggleDirectory(directory.id) }
+                                        onToggleExpand: { toggleDirectory(directory.id) },
+                                        onDocumentDeleted: { deletedDocId in
+                                            // 文档删除后的回调，刷新当前目录的文档列表
+                                            refreshDirectoryDocuments(directoryId: directory.id)
+                                        }
                                     )
                                 }
                             }
@@ -153,6 +157,22 @@ struct MyDocumentsDialog: View {
             expandedDirectories.insert(directoryId)
         }
     }
+    
+    /// 刷新指定目录的文档列表
+    private func refreshDirectoryDocuments(directoryId: String) {
+        // 重新加载该目录的文档列表
+        if let index = directories.firstIndex(where: { $0.id == directoryId }) {
+            // 触发该目录的文档重新加载
+            // 这里通过重新展开目录来刷新
+            if expandedDirectories.contains(directoryId) {
+                // 先收起再展开，触发重新加载
+                expandedDirectories.remove(directoryId)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    expandedDirectories.insert(directoryId)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - 可展开目录区域组件
@@ -162,9 +182,12 @@ struct DirectoryExpandableSection: View {
     let directory: Directory
     let isExpanded: Bool
     let onToggleExpand: () -> Void
+    let onDocumentDeleted: (String) -> Void  // 文档删除回调
     
     @State private var documents: [Document] = []
     @State private var isLoadingDocs = false
+    @State private var showDeleteAlert = false
+    @State private var documentToDelete: Document?  // 待删除的文档
     
     var body: some View {
         VStack(spacing: 0) {
@@ -219,13 +242,29 @@ struct DirectoryExpandableSection: View {
                         }
                     } else {
                         ForEach(documents) { document in
-                            DocumentInfoRow(document: document)
+                            DocumentInfoRow(
+                                document: document,
+                                onDelete: {
+                                    documentToDelete = document
+                                    showDeleteAlert = true
+                                }
+                            )
                         }
                     }
                 }
                 .padding(.leading, Dimens.middleMargin)
                 .background(Colors.pageBackgroundColor)
             }
+        }
+        .alert("确认删除", isPresented: $showDeleteAlert) {
+            Button("取消", role: .cancel) { }
+            Button("确定", role: .destructive) {
+                if let doc = documentToDelete {
+                    deleteDocument(doc)
+                }
+            }
+        } message: {
+            Text("确定要删除文档 \"\(documentToDelete?.name ?? "")\" 吗？")
         }
     }
     
@@ -252,13 +291,63 @@ struct DirectoryExpandableSection: View {
             }
         }
     }
+    
+    /// 删除文档
+    private func deleteDocument(_ document: Document) {
+        HTTPClient.shared.deleteDoc(docId: document.id) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let deletedCount):
+                    if deletedCount == 1 {
+                        // 删除成功，从列表中移除
+                        if let index = documents.firstIndex(where: { $0.id == document.id }) {
+                            documents.remove(at: index)
+                        }
+                        // 显示成功提示
+                        showSuccessAlert(message: "文档删除成功")
+                        // 通知父组件文档已删除
+                        onDocumentDeleted(document.id)
+                    } else {
+                        showSuccessAlert(message: "未找到要删除的文档")
+                    }
+                case .failure(let error):
+                    print("❌ 删除文档失败: \(error.localizedDescription)")
+                    showErrorAlert(message: error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    /// 显示成功提示
+    private func showSuccessAlert(message: String) {
+        // 使用 UIAlertController 显示提示
+        let alert = UIAlertController(title: "提示", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            rootVC.present(alert, animated: true)
+        }
+    }
+    
+    /// 显示错误提示
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "错误", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            rootVC.present(alert, animated: true)
+        }
+    }
 }
 
-// MARK: - 文档信息行组件
+// MARK: - 文档信息行组件（支持滑动删除）
 
 /// 文档信息行视图
 struct DocumentInfoRow: View {
     let document: Document
+    let onDelete: () -> Void
     
     /// 根据文件扩展名获取图标名称
     private var fileIconName: String {
@@ -278,6 +367,7 @@ struct DocumentInfoRow: View {
     }
     
     var body: some View {
+        // 使用 List 的滑动删除功能
         HStack(spacing: Dimens.middleMargin) {
             // 文件图标
             Image(systemName: fileIconName)
@@ -311,6 +401,15 @@ struct DocumentInfoRow: View {
                 .frame(height: 0.5),
             alignment: .bottom
         )
+        // 添加滑动删除手势
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
+            .tint(Colors.warnColor)
+        }
     }
 }
 

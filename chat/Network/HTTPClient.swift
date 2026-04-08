@@ -52,12 +52,13 @@ class HTTPClient {
         completion: @escaping (Result<BaseResponse<T>, NetworkError>) -> Void
     ) {
         guard let url = endpoint.url(baseURL: baseURL) else {
-            print("❌ 无效的URL: \(endpoint.path)")
+            print("❌ 无效的URL")
             completion(.failure(.invalidURL))
             return
         }
         
         var request = URLRequest(url: url)
+        // 使用 endpoint.method 或传入的 method 参数
         request.httpMethod = method ?? endpoint.method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -67,11 +68,10 @@ class HTTPClient {
             print("🔐 Authorization: \(authHeader)")
         }
         
-        // 添加请求参数
-        if let parameters = parameters {
+        // 添加请求参数（仅对 POST/PUT 等方法）
+        if let parameters = parameters, !parameters.isEmpty {
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-                // 打印请求参数
                 print("📤 请求参数: \(parameters)")
             } catch {
                 print("❌ 参数序列化失败: \(error)")
@@ -80,7 +80,6 @@ class HTTPClient {
             }
         }
         
-        // 打印请求信息
         print("🌐 请求URL: \(url)")
         print("📡 请求方法: \(request.httpMethod ?? "GET")")
         print("📋 请求头: \(request.allHTTPHeaderFields ?? [:])")
@@ -134,8 +133,6 @@ class HTTPClient {
             // 打印响应数据
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("📥 响应数据: \(jsonString)")
-            } else {
-                print("📥 响应数据长度: \(data.count) bytes")
             }
             
             do {
@@ -157,7 +154,9 @@ class HTTPClient {
                 }
             } catch {
                 print("❌ 数据解析失败: \(error)")
-                print("❌ 原始数据: \(String(data: data, encoding: .utf8) ?? "无法解析")")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("❌ 原始数据: \(jsonString)")
+                }
                 DispatchQueue.main.async {
                     completion(.failure(.decodingError))
                 }
@@ -166,6 +165,7 @@ class HTTPClient {
         
         task.resume()
     }
+
 }
 
 extension String {
@@ -811,6 +811,31 @@ extension HTTPClient {
         }
     }
 
+    /// 删除文档
+    func deleteDoc(docId: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
+        // 使用 APIEndpoint 枚举，传入 docId
+        request(endpoint: .deleteDoc(docId)) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess {
+                    if let deletedCount = response.data {
+                        print("✅ 删除文档成功，删除数量: \(deletedCount)")
+                        completion(.success(deletedCount))
+                    } else {
+                        print("⚠️ 删除文档响应中 data 字段为空")
+                        completion(.failure(.custom(message: "响应数据格式错误")))
+                    }
+                } else {
+                    let errorMsg = response.msg ?? "删除失败"
+                    print("❌ 删除文档失败: \(errorMsg)")
+                    completion(.failure(.custom(message: errorMsg)))
+                }
+            case .failure(let error):
+                print("❌ 删除文档请求失败: \(error.localizedDescription)")
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // 登录响应模型

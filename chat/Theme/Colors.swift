@@ -1,16 +1,11 @@
-//
-//  Colors.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/24.
-//
-
 import SwiftUI
 
 struct Colors {
     // 主色调
     static let primaryColor = Color(red: 255/255, green: 174/255, blue: 0/255)
     
+    static let warnColor = Color(red: 255/255, green: 59/255, blue: 48/255)
+
     // 灰色，用于小标题、禁用按钮、提示文字、禁用文字
     static let grayColor = Color(red: 221/255, green: 221/255, blue: 221/255)
     
@@ -34,4 +29,5 @@ extension Color {
     static let themeBackground = Colors.pageBackgroundColor
     static let blackColor = Colors.blackColor
     static let whiteColor = Colors.whiteColor
+    static let warnColor = Colors.warnColor
 }
