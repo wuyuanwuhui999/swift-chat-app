@@ -22,6 +22,7 @@ struct HomePage: View {
     @State private var selectedDocIds: Set<String> = []  // 选中的文档ID
     @State private var showChatHistory = false  // 是否显示会话记录对话框
     @State private var showUploadDocument = false  // 是否显示上传文档对话框
+    @State private var showMyDocuments = false  // 是否显示我的文档对话框
 
     var body: some View {
         ZStack {
@@ -59,6 +60,7 @@ struct HomePage: View {
         .overlay(documentPickerOverlay)
         .overlay(chatHistoryOverlay)
         .overlay(uploadDocumentOverlay)
+        .overlay(myDocumentsOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -218,7 +220,7 @@ struct HomePage: View {
             buttons: [
                 .default(Text("会话记录")) { showChatHistory = true },  // 使用 showChatHistory
                 .default(Text("上传文档")) { showUploadDocument = true },
-                .default(Text("我的文档")) { /* 后续实现 */ },
+                .default(Text("我的文档")) { showMyDocuments = true },  // 修改这里
                 .default(Text("设置提示词")) { /* 后续实现 */ },
                 .default(Text("我的收藏提示词")) { /* 后续实现 */ },
                 .cancel(Text("取消"))
@@ -498,6 +500,15 @@ struct HomePage: View {
                     print("✅ 文档上传完成")
                     // 可以在这里刷新文档列表等操作
                 }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var myDocumentsOverlay: some View {
+        if showMyDocuments {
+            MyDocumentsDialog(
+                isPresented: $showMyDocuments
             )
         }
     }
