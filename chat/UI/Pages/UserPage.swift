@@ -162,7 +162,7 @@ struct UserPage: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.subColor)
+                    .foregroundColor(Colors.grayColor)
             }
             
             Spacer()
