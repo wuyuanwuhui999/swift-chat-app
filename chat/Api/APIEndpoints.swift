@@ -19,6 +19,8 @@ enum APIEndpoint {
     case getChatHistoryByChatId
     case uploadDoc
     case deleteDoc(String)  // 添加 deleteDoc，关联值传递 docId
+    case updateUser
+    case updateAvater
     
     var path: String {
         switch self {
@@ -53,17 +55,23 @@ enum APIEndpoint {
         case .deleteDoc(let docId):
             // 替换路径中的 {docId} 参数
             return Constants.API.deleteDoc.replacingOccurrences(of: "{docId}", with: docId)
+        case .updateUser:
+            return Constants.API.updateUser
+        case .updateAvater:
+            return Constants.API.updateAvater
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc:
-            return "POST"
-        case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
-            return "GET"
-        case .deleteDoc:
-            return "DELETE"  // 删除文档使用 DELETE 方法
+            case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater:
+                return "POST"
+            case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
+                return "GET"
+            case .deleteDoc:
+                return "DELETE"  // 删除文档使用 DELETE 方法
+            case .updateUser:
+               return "PUT"
         }
     }
     

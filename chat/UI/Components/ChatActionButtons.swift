@@ -24,22 +24,6 @@ struct ChatActionButtons: View {
                     )
             }
             
-            // 中英文切换按钮
-            Button(action: {
-                language = language == "zh" ? "en" : "zh"
-            }) {
-                Text(language == "zh" ? "中文" : "英文")
-                    .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(Colors.blackColor)
-                    .padding(.horizontal, Dimens.middleMargin)
-                    .frame(height: .smallBtnHeight)
-                    .background(Color.clear)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                            .stroke(Colors.blackColor, lineWidth: 1)
-                    )
-            }
-            
             // 查询文档按钮
             Button(action: {
                 showDocumentQuery.toggle()
@@ -53,6 +37,22 @@ struct ChatActionButtons: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
                             .stroke(showDocumentQuery ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
+                    )
+            }
+            
+            // 中英文切换按钮
+            Button(action: {
+                language = language == "zh" ? "en" : "zh"
+            }) {
+                Text(language == "zh" ? "中文" : "英文")
+                    .font(.system(size: Dimens.normalFont))
+                    .foregroundColor(Colors.blackColor)
+                    .padding(.horizontal, Dimens.middleMargin)
+                    .frame(height: .smallBtnHeight)
+                    .background(Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                            .stroke(Colors.blackColor, lineWidth: 1)
                     )
             }
             

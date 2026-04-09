@@ -23,6 +23,7 @@ struct HomePage: View {
     @State private var showChatHistory = false  // 是否显示会话记录对话框
     @State private var showUploadDocument = false  // 是否显示上传文档对话框
     @State private var showMyDocuments = false  // 是否显示我的文档对话框
+    @State private var showUserPage = false  // 是否显示用户页面
 
     var body: some View {
         ZStack {
@@ -61,6 +62,7 @@ struct HomePage: View {
         .overlay(chatHistoryOverlay)
         .overlay(uploadDocumentOverlay)
         .overlay(myDocumentsOverlay)
+        .overlay(userPageOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -93,6 +95,7 @@ struct HomePage: View {
         ChatHeader(
             showTenantList: $showTenantList,
             showModelList: $showModelList,
+            onAvatarTap: { showUserPage = true },  // 新增：头像点击回调
             onMenuClick: { showMenu.toggle() }
         )
     }
@@ -510,6 +513,16 @@ struct HomePage: View {
             MyDocumentsDialog(
                 isPresented: $showMyDocuments
             )
+        }
+    }
+
+    @ViewBuilder
+    private var userPageOverlay: some View {
+        if showUserPage {
+            NavigationView {
+                UserPage()
+                    .navigationBarHidden(true)
+            }
         }
     }
 

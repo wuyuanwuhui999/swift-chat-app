@@ -836,6 +836,137 @@ extension HTTPClient {
             }
         }
     }
+    
+    // MARK: - 用户信息相关方法
+
+    /// 更新用户信息
+    func updateUser(userData: UserData, completion: @escaping (Result<UserData, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "username": userData.username,
+            "telephone": userData.telephone,
+            "email": userData.email,
+            "sex": userData.sex,
+            "birthday": userData.birthday,
+            "region": userData.region ?? "",
+            "sign": userData.sign
+        ]
+        
+        request(endpoint: .updateUser, method: "PUT", parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let updatedUser = response.data {
+                    completion(.success(updatedUser))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "更新用户信息失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 更新用户头像
+    func updateAvatar(imageData: Data, completion: @escaping (Result<String, NetworkError>) -> Void) {
+        // 构建 URL
+        guard let url = URL(string: baseURL + Constants.API.updateAvater) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        // 创建 multipart/form-data 请求
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        // 添加 Authorization header
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        // 生成边界字符串
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        // 构建 multipart body
+        var body = Data()
+        
+        // 添加文件数据
+        let filename = "avatar_\(Date().timeIntervalSince1970).jpg"
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // 添加结束边界
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        print("🌐 上传头像URL: \(url)")
+        print("📁 文件名: \(filename)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ 上传头像网络错误: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            print("📊 上传头像响应状态码: \(httpResponse.statusCode)")
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            // 打印响应数据
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📥 上传头像响应数据: \(jsonString)")
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<StringData>.self, from: data)
+                
+                if response.isSuccess {
+                    // 返回头像URL
+                    let avatarUrl = response.data?.value ?? ""
+                    DispatchQueue.main.async {
+                        completion(.success(avatarUrl))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "上传头像失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析上传头像响应失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
 }
 
 // 登录响应模型

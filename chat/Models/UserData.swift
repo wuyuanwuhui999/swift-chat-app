@@ -1,22 +1,22 @@
 import Foundation
 
 struct UserData: Codable {
-    let id: String?
-    let userAccount: String
-    let createDate: String?
-    let updateDate: String?
-    let username: String
-    let telephone: String
-    let email: String
-    let avater: String?
-    let birthday: String
-    let sex: Int
-    let role: String?
-    let password: String?  // 改为可选类型，因为服务器可能返回 null
-    let sign: String
-    let region: String?     // 改为可选类型
-    let disabled: Int?
-    let permission: Int?
+    var id: String?
+    var userAccount: String
+    var createDate: String?
+    var updateDate: String?
+    var username: String
+    var telephone: String
+    var email: String
+    var avater: String?
+    var birthday: String?  // 改为可选类型
+    var sex: Int
+    var role: String?
+    var password: String?
+    var sign: String
+    var region: String?
+    var disabled: Int?
+    var permission: Int?
     
     enum CodingKeys: String, CodingKey {
         case id

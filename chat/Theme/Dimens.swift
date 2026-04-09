@@ -46,4 +46,6 @@ extension CGFloat {
     static let btnHeight: CGFloat = Dimens.btnHeight
     static let smallBtnHeight:CGFloat = Dimens.smallBtnHeight
     static let inputHeight: CGFloat = Dimens.inputHeight
+    
+    static let borderRadius: CGFloat = Dimens.borderRadius
 }
