@@ -967,6 +967,55 @@ extension HTTPClient {
         
         task.resume()
     }
+    
+    // MARK: - 注册相关方法
+
+    /// 校验账号是否已存在
+    func vertifyUser(userAccount: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
+        let parameters: [String: Any] = ["userAccount": userAccount]
+        
+        request(endpoint: .vertifyUser, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "校验账号失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 注册新用户
+    func register(userData: UserData, completion: @escaping (Result<LoginResponse, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "userAccount": userData.userAccount,
+            "password": userData.password?.md5 ?? "",
+            "username": userData.username,
+            "telephone": userData.telephone,
+            "email": userData.email,
+            "sex": userData.sex,
+            "birthday": userData.birthday ?? "",
+            "region": userData.region ?? "",
+            "sign": userData.sign
+        ]
+        
+        request(endpoint: .register, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let userData = response.data, let token = response.token {
+                    let loginResponse = LoginResponse(userData: userData, token: token)
+                    completion(.success(loginResponse))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "注册失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // 登录响应模型

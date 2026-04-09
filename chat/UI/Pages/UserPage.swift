@@ -1,10 +1,3 @@
-//
-//  UserPage.swift
-//  chat
-//
-//  Created by 吴文强 on 2026/3/24.
-//
-
 import SwiftUI
 import PhotosUI
 
@@ -49,97 +42,90 @@ struct UserPage: View {
     @State private var alertMessage = ""
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: Dimens.middleMargin) {
-                // 白色背景圆角矩形卡片
-                VStack(spacing: 0) {
-                    // 头像行
-                    avatarRow
-                    
-                    DividerLine()
-                    
-                    // 昵称行
-                    infoRow(
-                        label: "昵称",
-                        value: userData?.username ?? "",
-                        onTap: { showEditNickname() }
-                    )
-                    
-                    DividerLine()
-                    
-                    // 电话行
-                    infoRow(
-                        label: "电话",
-                        value: userData?.telephone ?? "",
-                        onTap: { showEditPhone() }
-                    )
-                    
-                    DividerLine()
-                    
-                    // 邮箱行
-                    infoRow(
-                        label: "邮箱",
-                        value: userData?.email ?? "",
-                        onTap: { showEditEmail() }
-                    )
-                    
-                    DividerLine()
-                    
-                    // 性别行
-                    infoRow(
-                        label: "性别",
-                        value: getGenderText(userData?.sex ?? 0),
-                        onTap: { showGenderDialog = true }
-                    )
-                    
-                    DividerLine()
-                    
-                    // 出生日期行
-                    infoRow(
-                        label: "出生日期",
-                        value: userData?.birthday ?? "",
-                        onTap: { showEditBirthday() }
-                    )
-                    
-                    DividerLine()
-                    
-                    // 地区行
-                    infoRow(
-                        label: "地区",
-                        value: userData?.region ?? "",
-                        onTap: { showEditRegion() }
-                    )
-                    
-                    DividerLine()
-                    
-                    // 个性签名行
-                    infoRow(
-                        label: "个性签名",
-                        value: userData?.sign ?? "",
-                        onTap: { showEditSign() }
-                    )
+        VStack(spacing: 0) {
+            // 自定义白色背景标题栏
+            customNavigationBar
+            
+            // 可滚动内容区域
+            ScrollView {
+                VStack(spacing: Dimens.middleMargin) {
+                    // 白色背景圆角矩形卡片
+                    VStack(spacing: 0) {
+                        // 头像行
+                        avatarRow
+                        
+                        DividerLine()
+                        
+                        // 昵称行
+                        infoRow(
+                            label: "昵称",
+                            value: userData?.username ?? "",
+                            onTap: { showEditNickname() }
+                        )
+                        
+                        DividerLine()
+                        
+                        // 电话行
+                        infoRow(
+                            label: "电话",
+                            value: userData?.telephone ?? "",
+                            onTap: { showEditPhone() }
+                        )
+                        
+                        DividerLine()
+                        
+                        // 邮箱行
+                        infoRow(
+                            label: "邮箱",
+                            value: userData?.email ?? "",
+                            onTap: { showEditEmail() }
+                        )
+                        
+                        DividerLine()
+                        
+                        // 性别行
+                        infoRow(
+                            label: "性别",
+                            value: getGenderText(userData?.sex ?? 0),
+                            onTap: { showGenderDialog = true }
+                        )
+                        
+                        DividerLine()
+                        
+                        // 出生日期行
+                        infoRow(
+                            label: "出生日期",
+                            value: userData?.birthday ?? "",
+                            onTap: { showEditBirthday() }
+                        )
+                        
+                        DividerLine()
+                        
+                        // 地区行
+                        infoRow(
+                            label: "地区",
+                            value: userData?.region ?? "",
+                            onTap: { showEditRegion() }
+                        )
+                        
+                        DividerLine()
+                        
+                        // 个性签名行
+                        infoRow(
+                            label: "个性签名",
+                            value: userData?.sign ?? "",
+                            onTap: { showEditSign() }
+                        )
+                    }
+                    .background(Colors.whiteColor)
+                    .cornerRadius(Dimens.borderRadius)
                 }
-                .background(Colors.whiteColor)
-                .cornerRadius(Dimens.borderRadius)
+                .padding(.horizontal, Dimens.middleMargin)
+                .padding(.top, Dimens.middleMargin)
             }
-            .padding(.horizontal, Dimens.middleMargin)
-            .padding(.top, Dimens.middleMargin)
+            .background(Colors.pageBackgroundColor)
         }
         .background(Colors.pageBackgroundColor)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(Colors.primaryColor)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("个人资料")
-                    .font(.system(size: Dimens.middleFont))
-                    .foregroundColor(.primary)
-            }
-        }
         .onAppear {
             loadUserData()
         }
@@ -166,6 +152,46 @@ struct UserPage: View {
     }
     
     // MARK: - 视图组件
+    
+    /// 自定义导航栏
+    private var customNavigationBar: some View {
+        HStack {
+            // 返回按钮
+            Button(action: {
+                dismiss()
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: Dimens.middleIcon))
+                    .foregroundColor(Colors.subColor)
+            }
+            
+            Spacer()
+            
+            // 标题
+            Text("个人信息")
+                .font(.system(size: Dimens.middleFont))
+                .foregroundColor(.primary)
+            
+            Spacer()
+            
+            // 占位按钮，保持标题居中
+            Button(action: {}) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: Dimens.middleIcon))
+                    .foregroundColor(.clear)
+            }
+            .disabled(true)
+        }
+        .padding(.horizontal, Dimens.middleMargin)
+        .padding(.vertical, Dimens.middleMargin)
+        .background(Colors.whiteColor)
+        .overlay(
+            Rectangle()
+                .fill(Colors.grayColor.opacity(0.3))
+                .frame(height: 1),
+            alignment: .bottom
+        )
+    }
     
     /// 分割线
     private func DividerLine() -> some View {
@@ -300,7 +326,7 @@ struct UserPage: View {
             selectedGender = userData.sex
             editRegionText = userData.region ?? ""
             editSignText = userData.sign
-            // 修复：birthday 是可选类型，使用可选绑定解包
+            // birthday 是可选类型，使用可选绑定解包
             if let birthday = userData.birthday, !birthday.isEmpty {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd"
@@ -644,7 +670,5 @@ extension UserPage {
 }
 
 #Preview {
-    NavigationView {
-        UserPage()
-    }
+    UserPage()
 }

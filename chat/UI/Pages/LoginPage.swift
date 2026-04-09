@@ -20,6 +20,7 @@ struct LoginPage: View {
     // 通用
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var showRegisterPage = false
     
     var isLoginButtonEnabled: Bool {
         if selectedTab == 0 {
@@ -209,6 +210,9 @@ struct LoginPage: View {
         } message: {
             Text(alertMessage)
         }
+        .fullScreenCover(isPresented: $showRegisterPage) {
+            RegisterPage()
+        }
         .onDisappear {
             timer?.invalidate()
             timer = nil
@@ -322,7 +326,7 @@ struct LoginPage: View {
     
     // MARK: - 注册处理
     private func handleRegister() {
-        print("注册按钮点击 - 待实现")
+        showRegisterPage = true
     }
     
     // MARK: - 忘记密码处理

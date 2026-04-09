@@ -21,6 +21,7 @@ enum APIEndpoint {
     case deleteDoc(String)  // 添加 deleteDoc，关联值传递 docId
     case updateUser
     case updateAvater
+    case vertifyUser
     
     var path: String {
         switch self {
@@ -59,12 +60,15 @@ enum APIEndpoint {
             return Constants.API.updateUser
         case .updateAvater:
             return Constants.API.updateAvater
+        case .vertifyUser:
+            return Constants.API.vertifyUser
+                
         }
     }
     
     var method: String {
         switch self {
-            case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser:
                 return "POST"
             case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
                 return "GET"
