@@ -1016,6 +1016,31 @@ extension HTTPClient {
             }
         }
     }
+    
+    // MARK: - 重置密码相关方法
+
+    /// 重置密码
+    func resetPassword(email: String, password: String, code: String, completion: @escaping (Result<LoginResponse, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "email": email,
+            "password": password.md5,
+            "code": code
+        ]
+        
+        request(endpoint: .resetPassword, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let userData = response.data, let token = response.token {
+                    let loginResponse = LoginResponse(userData: userData, token: token)
+                    completion(.success(loginResponse))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "重置密码失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // 登录响应模型

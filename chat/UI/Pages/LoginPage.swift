@@ -21,6 +21,7 @@ struct LoginPage: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var showRegisterPage = false
+    @State private var showForgetPasswordPage = false
     
     var isLoginButtonEnabled: Bool {
         if selectedTab == 0 {
@@ -213,6 +214,9 @@ struct LoginPage: View {
         .fullScreenCover(isPresented: $showRegisterPage) {
             RegisterPage()
         }
+        .fullScreenCover(isPresented: $showForgetPasswordPage) {
+            ForgetPasswordPage()
+        }
         .onDisappear {
             timer?.invalidate()
             timer = nil
@@ -331,8 +335,9 @@ struct LoginPage: View {
     
     // MARK: - 忘记密码处理
     private func handleForgotPassword() {
-        print("忘记密码按钮点击 - 待实现")
+        showForgetPasswordPage = true
     }
+
 }
 
 #Preview {

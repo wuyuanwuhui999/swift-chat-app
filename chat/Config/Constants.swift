@@ -40,5 +40,7 @@ struct Constants {
         static let updateUser = "/service/user/updateUser"
         static let updateAvater = "/service/user/updateAvater"
         static let vertifyUser = "/service/user/vertifyUser"
+        static let resetPassword = "/service/user/resetPassword"
+
     }
 }
