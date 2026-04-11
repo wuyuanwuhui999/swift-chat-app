@@ -41,6 +41,10 @@ struct UserPage: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     
+    // 跳转状态
+    @State private var showChangePasswordPage = false
+    @State private var showLogoutAlert = false
+    
     var body: some View {
         VStack(spacing: 0) {
             // 自定义白色背景标题栏
@@ -119,6 +123,43 @@ struct UserPage: View {
                     }
                     .background(Colors.whiteColor)
                     .cornerRadius(Dimens.borderRadius)
+                    
+                    // 修改密码按钮
+                    Button(action: {
+                        showChangePasswordPage = true
+                    }) {
+                        Text("修改密码")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.primaryColor)
+                            .frame(height: Dimens.btnHeight)
+                            .frame(maxWidth: .infinity)
+                            .background(Colors.whiteColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                    .stroke(Colors.primaryColor, lineWidth: 1)
+                            )
+                    }
+                    .background(Colors.whiteColor)
+                    .cornerRadius(Dimens.btnHeight / 2)
+                    
+                    // 退出登录按钮
+                    Button(action: {
+                        showLogoutAlert = true
+                    }) {
+                        Text("退出登录")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.warnColor)
+                            .frame(height: Dimens.btnHeight)
+                            .frame(maxWidth: .infinity)
+                            .background(Colors.whiteColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                    .stroke(Colors.warnColor, lineWidth: 1)
+                            )
+                    }
+                    .background(Colors.whiteColor)
+                    .cornerRadius(Dimens.btnHeight / 2)
+                    .padding(.bottom, Dimens.middleMargin)
                 }
                 .padding(.horizontal, Dimens.middleMargin)
                 .padding(.top, Dimens.middleMargin)
@@ -149,6 +190,17 @@ struct UserPage: View {
         } message: {
             Text(alertMessage)
         }
+        .alert("确认退出", isPresented: $showLogoutAlert) {
+            Button("取消", role: .cancel) { }
+            Button("确定", role: .destructive) {
+                handleLogout()
+            }
+        } message: {
+            Text("确定要退出登录吗？")
+        }
+        .fullScreenCover(isPresented: $showChangePasswordPage) {
+            ChangePasswordPage()
+        }
     }
     
     // MARK: - 视图组件
@@ -162,15 +214,21 @@ struct UserPage: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.grayColor)
+                    .foregroundColor(Colors.primaryColor)
             }
             
             Spacer()
             
-            // 标题
-            Text("个人信息")
-                .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+            // 标题 - 显示当前租户名称
+            if let tenant = appState.currentTenant {
+                Text(tenant.name)
+                    .font(.system(size: Dimens.middleFont))
+                    .foregroundColor(.primary)
+            } else {
+                Text("个人信息")
+                    .font(.system(size: Dimens.middleFont))
+                    .foregroundColor(.primary)
+            }
             
             Spacer()
             
@@ -423,6 +481,14 @@ struct UserPage: View {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         return emailPredicate.evaluate(with: email)
+    }
+    
+    /// 处理退出登录
+    private func handleLogout() {
+        // 清除用户数据
+        appState.clearUserData()
+        // 关闭当前页面
+        dismiss()
     }
     
     // MARK: - 头像选择相关

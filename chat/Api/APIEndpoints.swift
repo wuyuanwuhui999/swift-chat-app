@@ -23,6 +23,7 @@ enum APIEndpoint {
     case updateAvater
     case vertifyUser
     case resetPassword
+    case updatePassword
 
     var path: String {
         switch self {
@@ -65,13 +66,15 @@ enum APIEndpoint {
             return Constants.API.vertifyUser
         case .resetPassword:
             return Constants.API.resetPassword
+        case .updatePassword:
+            return Constants.API.updatePassword
                 
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword,.updatePassword:
                 return "POST"
             case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
                 return "GET"

@@ -1,5 +1,3 @@
-// UI/Components/UploadDocumentDialog.swift
-
 import SwiftUI
 import UniformTypeIdentifiers
 

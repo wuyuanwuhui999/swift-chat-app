@@ -1041,6 +1041,29 @@ extension HTTPClient {
             }
         }
     }
+    
+    // MARK: - 修改密码相关方法
+
+    /// 修改密码
+    func updatePassword(oldPassword: String, newPassword: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "oldPassword": oldPassword.md5,
+            "newPassword": newPassword.md5
+        ]
+        
+        request(endpoint: .updatePassword, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "修改密码失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // 登录响应模型
