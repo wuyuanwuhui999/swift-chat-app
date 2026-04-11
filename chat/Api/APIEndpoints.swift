@@ -74,13 +74,13 @@ enum APIEndpoint {
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword,.updatePassword:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword:
                 return "POST"
             case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
                 return "GET"
             case .deleteDoc:
                 return "DELETE"  // 删除文档使用 DELETE 方法
-            case .updateUser:
+        case .updateUser,.updatePassword:
                return "PUT"
         }
     }
