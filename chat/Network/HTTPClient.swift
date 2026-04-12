@@ -1064,6 +1064,87 @@ extension HTTPClient {
             }
         }
     }
+    
+    // MARK: - 提示词相关方法
+
+    /// 获取用户提示词
+    func getPrompt(tenantId: String, completion: @escaping (Result<Prompt, NetworkError>) -> Void) {
+        let parameters: [String: Any] = ["tenantId": tenantId]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getPrompt) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        print("🌐 获取提示词URL: \(url)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ 获取提示词网络错误: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<Prompt>.self, from: data)
+                
+                if response.isSuccess, let prompt = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success(prompt))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取提示词失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析提示词响应失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
 }
 
 // 登录响应模型

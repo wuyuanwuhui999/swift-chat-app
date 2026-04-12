@@ -46,13 +46,13 @@ struct ChatActionButtons: View {
             }) {
                 Text(language == "zh" ? "中文" : "英文")
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(Colors.blackColor)
+                    .foregroundColor(Colors.primaryColor)
                     .padding(.horizontal, Dimens.middleMargin)
                     .frame(height: .smallBtnHeight)
                     .background(Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                            .stroke(Colors.blackColor, lineWidth: 1)
+                            .stroke(Colors.primaryColor, lineWidth: 1)
                     )
             }
             

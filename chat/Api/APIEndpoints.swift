@@ -24,6 +24,7 @@ enum APIEndpoint {
     case vertifyUser
     case resetPassword
     case updatePassword
+    case getPrompt
 
     var path: String {
         switch self {
@@ -68,7 +69,9 @@ enum APIEndpoint {
             return Constants.API.resetPassword
         case .updatePassword:
             return Constants.API.updatePassword
-                
+        case .getPrompt:
+            return Constants.API.getPrompt
+
         }
     }
     
@@ -76,7 +79,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword:
                 return "POST"
-            case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId:
+            case .getUserData, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId,.getPrompt:
                 return "GET"
             case .deleteDoc:
                 return "DELETE"  // 删除文档使用 DELETE 方法

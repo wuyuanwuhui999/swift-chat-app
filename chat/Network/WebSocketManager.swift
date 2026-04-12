@@ -76,7 +76,6 @@ class WebSocketManager: NSObject, ObservableObject {
         receiveMessage()
     }
 
-    // 修改 sendMessage 方法，添加 docIds 和 type 参数
     private func sendMessage(
         modelId: String,
         chatId: String,
@@ -87,6 +86,9 @@ class WebSocketManager: NSObject, ObservableObject {
         docIds: [String] = [],
         type: String = ""
     ) {
+        // 从 AppState 获取当前提示词内容
+        let systemPrompt = AppState.shared.currentPrompt?.id ?? ""
+        
         let message: [String: Any] = [
             "modelId": modelId,
             "chatId": chatId,
@@ -94,7 +96,7 @@ class WebSocketManager: NSObject, ObservableObject {
             "type": type,
             "docIds": docIds,
             "prompt": prompt,
-            "systemPrompt": Constants.systemPrompt,
+            "systemPrompt": systemPrompt,
             "showThink": showThink,
             "language": language
         ]

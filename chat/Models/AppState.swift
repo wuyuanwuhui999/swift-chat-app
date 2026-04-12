@@ -11,7 +11,8 @@ class AppState: ObservableObject {
     @Published var currentModel: ChatModel?  // 当前选中的模型
     @Published var tenantList: [Tenant] = []  // 租户列表
     @Published var modelList: [ChatModel] = []  // 模型列表
-    
+    @Published var currentPrompt: Prompt?  // 当前用户的提示词
+
     private let tenantIdKey = "current_tenant_id"
     private let modelIdKey = "current_model_id"
     
@@ -85,4 +86,10 @@ class AppState: ObservableObject {
         UserDefaults.standard.removeObject(forKey: modelIdKey)
         self.isLoggedIn = false
     }
+    
+    /// 更新提示词
+    func updatePrompt(_ prompt: Prompt) {
+        self.currentPrompt = prompt
+    }
+
 }

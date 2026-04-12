@@ -333,7 +333,7 @@ struct HomePage: View {
         group.enter()
         HTTPClient.shared.getUserTenantList { result in
             DispatchQueue.main.async {
-                handleTenantListResult(result)
+                self.handleTenantListResult(result)
                 group.leave()
             }
         }
@@ -342,13 +342,36 @@ struct HomePage: View {
         group.enter()
         HTTPClient.shared.getModelList { result in
             DispatchQueue.main.async {
-                handleModelListResult(result)
+                self.handleModelListResult(result)
                 group.leave()
             }
         }
         
         group.notify(queue: .main) {
-            isLoading = false
+            self.isLoading = false
+            // 加载完租户和模型后，获取提示词
+            self.loadPrompt()
+        }
+    }
+
+    /// 加载提示词
+    private func loadPrompt() {
+        guard let tenantId = appState.currentTenant?.id else {
+            print("⚠️ 无法获取提示词：未选择租户")
+            return
+        }
+        
+        HTTPClient.shared.getPrompt(tenantId: tenantId) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let prompt):
+                    print("✅ 获取提示词成功: \(prompt.id)")
+                    self.appState.updatePrompt(prompt)
+                case .failure(let error):
+                    print("❌ 获取提示词失败: \(error.localizedDescription)")
+                    // 获取失败不影响正常使用，使用默认空字符串
+                }
+            }
         }
     }
     
