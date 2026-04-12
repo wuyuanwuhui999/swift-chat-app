@@ -40,6 +40,8 @@
 		F1BCCB2C2F79F209004CFEB0 /* 提示词列表.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF82F79F209004CFEB0 /* 提示词列表.png */; };
 		F1BCCB2D2F79F209004CFEB0 /* 选择文档目录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB012F79F209004CFEB0 /* 选择文档目录.png */; };
 		F1BCCB2E2F79F209004CFEB0 /* 更改用户信息1.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */; };
+		F1BCCB662F8B6EE2004CFEB0 /* gitee-push.sh in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB652F8B6ED6004CFEB0 /* gitee-push.sh */; };
+		F1BCCB682F8B6EF2004CFEB0 /* github-push.sh in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB672F8B6EF2004CFEB0 /* github-push.sh */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -77,6 +79,8 @@
 		F1BCCB0C2F79F209004CFEB0 /* ai聊天会话记录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ai聊天会话记录.png"; sourceTree = "<group>"; };
 		F1BCCB0D2F79F209004CFEB0 /* ai聊天切换模型.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ai聊天切换模型.png"; sourceTree = "<group>"; };
 		F1BCCB0E2F79F209004CFEB0 /* rag文档查询.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "rag文档查询.png"; sourceTree = "<group>"; };
+		F1BCCB652F8B6ED6004CFEB0 /* gitee-push.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "gitee-push.sh"; sourceTree = "<group>"; };
+		F1BCCB672F8B6EF2004CFEB0 /* github-push.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "github-push.sh"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -124,6 +128,8 @@
 				F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */,
 				F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */,
 				F1BCCB052F79F209004CFEB0 /* 找回密码页面.png */,
+				F1BCCB652F8B6ED6004CFEB0 /* gitee-push.sh */,
+				F1BCCB672F8B6EF2004CFEB0 /* github-push.sh */,
 				F1BCCB062F79F209004CFEB0 /* 重置密码.png */,
 				F1BCCB072F79F209004CFEB0 /* 重置密码页面.png */,
 				F1BCCB082F79F209004CFEB0 /* 注册页面.png */,
@@ -214,8 +220,10 @@
 				F1BCCB0F2F79F209004CFEB0 /* 租户管理2.png in Resources */,
 				F1BCCB102F79F209004CFEB0 /* 登录.png in Resources */,
 				F1BCCB112F79F209004CFEB0 /* ai聊天菜单功能.png in Resources */,
+				F1BCCB682F8B6EF2004CFEB0 /* github-push.sh in Resources */,
 				F1BCCB122F79F209004CFEB0 /* ai聊天会话记录.png in Resources */,
 				F1BCCB132F79F209004CFEB0 /* 更改用户信息4.png in Resources */,
+				F1BCCB662F8B6EE2004CFEB0 /* gitee-push.sh in Resources */,
 				F1BCCB142F79F209004CFEB0 /* ai聊天切换模型.png in Resources */,
 				F1BCCB152F79F209004CFEB0 /* 忘记密码.png in Resources */,
 				F1BCCB162F79F209004CFEB0 /* 添加用户.png in Resources */,
