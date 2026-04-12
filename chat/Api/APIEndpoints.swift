@@ -25,7 +25,8 @@ enum APIEndpoint {
     case resetPassword
     case updatePassword
     case getPrompt
-
+    case updatePrompt
+    
     var path: String {
         switch self {
         case .login:
@@ -71,7 +72,8 @@ enum APIEndpoint {
             return Constants.API.updatePassword
         case .getPrompt:
             return Constants.API.getPrompt
-
+        case .updatePrompt:
+            return Constants.API.updatePrompt
         }
     }
     
@@ -83,7 +85,7 @@ enum APIEndpoint {
                 return "GET"
             case .deleteDoc:
                 return "DELETE"  // 删除文档使用 DELETE 方法
-        case .updateUser,.updatePassword:
+        case .updateUser,.updatePassword,.updatePrompt:
                return "PUT"
         }
     }

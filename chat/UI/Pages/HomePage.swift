@@ -24,6 +24,7 @@ struct HomePage: View {
     @State private var showUploadDocument = false  // 是否显示上传文档对话框
     @State private var showMyDocuments = false  // 是否显示我的文档对话框
     @State private var showUserPage = false  // 是否显示用户页面
+    @State private var showPromptDialog = false  // 是否显示提示词对话框
 
     var body: some View {
         ZStack {
@@ -63,6 +64,7 @@ struct HomePage: View {
         .overlay(uploadDocumentOverlay)
         .overlay(myDocumentsOverlay)
         .overlay(userPageOverlay)
+        .overlay(promptDialogOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -145,9 +147,9 @@ struct HomePage: View {
                 }
             
             TenantListPopup(isPresented: $showTenantList) { tenant in
-                appState.saveCurrentTenant(tenant)
-                showTenantList = false
+                handleTenantSelected(tenant)
             }
+            
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .transition(.opacity)
         }
@@ -216,15 +218,14 @@ struct HomePage: View {
         }
     }
     
-    /// 菜单选项
     private var menuActionSheet: ActionSheet {
         ActionSheet(
             title: Text("菜单"),
             buttons: [
-                .default(Text("会话记录")) { showChatHistory = true },  // 使用 showChatHistory
+                .default(Text("会话记录")) { showChatHistory = true },
                 .default(Text("上传文档")) { showUploadDocument = true },
-                .default(Text("我的文档")) { showMyDocuments = true },  // 修改这里
-                .default(Text("设置提示词")) { /* 后续实现 */ },
+                .default(Text("我的文档")) { showMyDocuments = true },
+                .default(Text("设置提示词")) { showPromptDialog = true },  // 修改这里
                 .default(Text("我的收藏提示词")) { /* 后续实现 */ },
                 .cancel(Text("取消"))
             ]
@@ -548,6 +549,30 @@ struct HomePage: View {
             }
         }
     }
+
+    // 添加提示词对话框覆盖层
+    @ViewBuilder
+    private var promptDialogOverlay: some View {
+        if showPromptDialog {
+            PromptDialog(
+                isPresented: $showPromptDialog,
+                onPromptUpdated: {
+                    // 提示词更新后的回调，重新获取提示词
+                    loadPrompt()
+                }
+            )
+        }
+    }
+    
+    // 修改 handleTenantSelected 方法，切换租户时重新获取提示词
+    private func handleTenantSelected(_ tenant: Tenant) {
+        appState.saveCurrentTenant(tenant)
+        showTenantList = false
+        // 切换租户后重新获取提示词
+        loadPrompt()
+    }
+
+
 
 }
 

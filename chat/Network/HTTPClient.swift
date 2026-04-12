@@ -1145,6 +1145,30 @@ extension HTTPClient {
         
         task.resume()
     }
+    
+    // MARK: - 提示词相关方法
+
+    /// 更新提示词
+    func updatePrompt(prompt: Prompt, completion: @escaping (Result<Prompt, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "id": prompt.id,
+            "tenantId": prompt.tenantId,
+            "userId": prompt.userId
+        ]
+        
+        request(endpoint: .updatePrompt, parameters: parameters) { (result: Result<BaseResponse<Prompt>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let updatedPrompt = response.data {
+                    completion(.success(updatedPrompt))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "更新提示词失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // 登录响应模型

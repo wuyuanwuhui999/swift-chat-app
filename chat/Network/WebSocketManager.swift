@@ -87,7 +87,7 @@ class WebSocketManager: NSObject, ObservableObject {
         type: String = ""
     ) {
         // 从 AppState 获取当前提示词内容
-        let systemPrompt = AppState.shared.currentPrompt?.id ?? ""
+        let systemPrompt = AppState.shared.currentPrompt?.prompt ?? ""
         
         let message: [String: Any] = [
             "modelId": modelId,

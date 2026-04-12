@@ -40,6 +40,7 @@ struct Constants {
         static let resetPassword = "/service/user/resetPassword"
         static let updatePassword = "/service/user/updatePassword"
         static let getPrompt = "/service/prompt/getPrompt"
+        static let updatePrompt = "/service/prompt/updatePrompt"
 
     }
 }
