@@ -225,8 +225,7 @@ struct HomePage: View {
                 .default(Text("会话记录")) { showChatHistory = true },
                 .default(Text("上传文档")) { showUploadDocument = true },
                 .default(Text("我的文档")) { showMyDocuments = true },
-                .default(Text("设置提示词")) { showPromptDialog = true },  // 修改这里
-                .default(Text("我的收藏提示词")) { /* 后续实现 */ },
+                .default(Text("设置提示词")) { showPromptDialog = true },
                 .cancel(Text("取消"))
             ]
         )
