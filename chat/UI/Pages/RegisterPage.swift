@@ -1,3 +1,10 @@
+//
+//  RegisterPage.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 
 /// 注册页面
@@ -7,6 +14,7 @@ struct RegisterPage: View {
     @State private var isRegistering = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var navigateToCompanyPage = false
     
     // 表单字段
     @State private var userAccount = ""
@@ -15,7 +23,7 @@ struct RegisterPage: View {
     @State private var username = ""
     @State private var telephone = ""
     @State private var email = ""
-    @State private var selectedGender = 0
+    @State private var selectedGender = "0"  // "0": 男, "1": 女
     @State private var birthday = Date()
     @State private var region = ""
     @State private var sign = ""
@@ -178,14 +186,14 @@ struct RegisterPage: View {
                             isRequired: false,
                             content: AnyView(
                                 HStack {
-                                    ForEach(0..<genderOptions.count, id: \.self) { index in
+                                    ForEach(Array(genderOptions.enumerated()), id: \.offset) { index, option in
                                         Button(action: {
-                                            selectedGender = index
+                                            selectedGender = String(index)
                                         }) {
                                             HStack(spacing: Dimens.smallIcon) {
-                                                Image(systemName: selectedGender == index ? "largecircle.fill.circle" : "circle")
-                                                    .foregroundColor(selectedGender == index ? Colors.primaryColor : Colors.grayColor)
-                                                Text(genderOptions[index])
+                                                Image(systemName: selectedGender == String(index) ? "largecircle.fill.circle" : "circle")
+                                                    .foregroundColor(selectedGender == String(index) ? Colors.primaryColor : Colors.grayColor)
+                                                Text(option)
                                                     .font(.system(size: Dimens.normalFont))
                                                     .foregroundColor(.primary)
                                             }
@@ -269,6 +277,9 @@ struct RegisterPage: View {
             Button("确定", role: .cancel) { }
         } message: {
             Text(alertMessage)
+        }
+        .fullScreenCover(isPresented: $navigateToCompanyPage) {
+            CompanyPage()
         }
     }
     
@@ -363,7 +374,6 @@ struct RegisterPage: View {
     }
     
     /// 处理账号变化（延时1秒校验）
-    /// 处理账号变化（延时1秒校验）
     private func handleAccountChange(_ newValue: String) {
         // 取消之前的任务
         verifyWorkItem?.cancel()
@@ -374,7 +384,7 @@ struct RegisterPage: View {
             return
         }
         
-        // 创建新的延时任务 - 不使用 weak self，因为 struct 是值类型
+        // 创建新的延时任务
         let workItem = DispatchWorkItem {
             self.verifyAccount()
         }
@@ -503,7 +513,8 @@ struct RegisterPage: View {
                     // 保存用户信息和token
                     self.appState.updateUserData(loginResponse.userData)
                     self.appState.updateToken(loginResponse.token)
-                    self.appState.isLoggedIn = true
+                    // 跳转到 CompanyPage 而不是直接进入 HomePage
+                    self.navigateToCompanyPage = true
                     
                 case .failure(let error):
                     self.alertMessage = error.localizedDescription

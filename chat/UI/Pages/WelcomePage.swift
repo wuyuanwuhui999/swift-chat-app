@@ -1,9 +1,17 @@
+//
+//  WelcomePage.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 
 struct WelcomePage: View {
     @ObservedObject private var appState = AppState.shared
     @State private var isCheckingLogin = true
     @State private var showLoginPage = false
+    @State private var navigateToCompanyPage = false
     
     var body: some View {
         ZStack {
@@ -22,13 +30,18 @@ struct WelcomePage: View {
             checkLoginStatus()
         }
         .fullScreenCover(isPresented: $appState.isLoggedIn) {
-            HomePage()
+            // 不再直接跳转到HomePage，而是跳转到CompanyPage
+            EmptyView()
         }
         .fullScreenCover(isPresented: $showLoginPage) {
             LoginPage()
         }
+        .fullScreenCover(isPresented: $navigateToCompanyPage) {
+            CompanyPage()
+        }
     }
     
+    /// 检查登录状态
     private func checkLoginStatus() {
         // 检查token是否存在
         if let token = TokenManager.shared.getToken() {
@@ -40,6 +53,8 @@ struct WelcomePage: View {
                         // 保存用户信息到全局
                         AppState.shared.updateUserData(userData)
                         AppState.shared.isLoggedIn = true
+                        // 跳转到 CompanyPage 而不是直接进入 HomePage
+                        self.navigateToCompanyPage = true
                     case .failure(let error):
                         print("获取用户信息失败: \(error.localizedDescription)")
                         AppState.shared.clearUserData()
@@ -61,7 +76,6 @@ struct WelcomePage: View {
             }
         }
     }
-
 }
 
 #Preview {

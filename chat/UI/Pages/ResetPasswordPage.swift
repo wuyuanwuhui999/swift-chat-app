@@ -1,3 +1,10 @@
+//
+//  ResetPasswordPage.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 
 /// 重置密码页面
@@ -12,6 +19,7 @@ struct ResetPasswordPage: View {
     @State private var isResetting = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var navigateToCompanyPage = false
     
     // 表单校验
     private var isPasswordMatch: Bool {
@@ -106,15 +114,14 @@ struct ResetPasswordPage: View {
             .background(Colors.pageBackgroundColor)
         }
         .background(Colors.pageBackgroundColor)
-        .navigationBarHidden(true)  // 隐藏系统导航栏
+        .navigationBarHidden(true)
         .alert("提示", isPresented: $showAlert) {
             Button("确定", role: .cancel) { }
         } message: {
             Text(alertMessage)
         }
-        // 使用全屏覆盖跳转到首页，确保不能返回
-        .fullScreenCover(isPresented: $appState.isLoggedIn) {
-            HomePage()
+        .fullScreenCover(isPresented: $navigateToCompanyPage) {
+            CompanyPage()
         }
     }
     
@@ -220,7 +227,8 @@ struct ResetPasswordPage: View {
                     // 保存用户信息和token
                     self.appState.updateUserData(loginResponse.userData)
                     self.appState.updateToken(loginResponse.token)
-                    self.appState.isLoggedIn = true
+                    // 跳转到 CompanyPage 而不是直接进入 HomePage
+                    self.navigateToCompanyPage = true
                     
                 case .failure(let error):
                     self.alertMessage = error.localizedDescription

@@ -2,10 +2,10 @@ import Foundation
 // 在 Constants 结构体中添加新的 API 路径
 struct Constants {
     // API基础域名
-    static let baseURL = "http://127.0.0.1:3000"
+    static let baseURL = "http://127.0.0.1:4000"
     
     // WebSocket 地址
-    static let webSocketURL = "ws://127.0.0.1:3000/service/chat/ws/chat"
+    static let webSocketURL = "ws://127.0.0.1:4000/service/chat/ws/chat"
         
     // 其他常量配置
     struct Timeout {
@@ -41,6 +41,7 @@ struct Constants {
         static let updatePassword = "/service/user/updatePassword"
         static let getPrompt = "/service/prompt/getPrompt"
         static let updatePrompt = "/service/prompt/updatePrompt"
+        static let getCompanyList = "/service/company/getCompanyList"
 
     }
 }

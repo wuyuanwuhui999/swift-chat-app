@@ -1,8 +1,16 @@
+//
+//  LoginPage.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 
 struct LoginPage: View {
     @ObservedObject private var appState = AppState.shared
     @State private var selectedTab = 0 // 0: 账号密码登录, 1: 邮箱验证码登录
+    @State private var navigateToCompanyPage = false
     
     // 账号密码登录相关
     @State private var account = "吴时吴刻"
@@ -217,6 +225,9 @@ struct LoginPage: View {
         .fullScreenCover(isPresented: $showForgetPasswordPage) {
             ForgetPasswordPage()
         }
+        .fullScreenCover(isPresented: $navigateToCompanyPage) {
+            CompanyPage()
+        }
         .onDisappear {
             timer?.invalidate()
             timer = nil
@@ -295,7 +306,8 @@ struct LoginPage: View {
                     // 保存用户信息和token
                     appState.updateUserData(loginResponse.userData)
                     appState.updateToken(loginResponse.token)
-                    appState.isLoggedIn = true
+                    // 跳转到 CompanyPage 而不是直接进入 HomePage
+                    navigateToCompanyPage = true
                     
                 case .failure(let error):
                     alertMessage = error.localizedDescription
@@ -318,7 +330,8 @@ struct LoginPage: View {
                     // 保存用户信息和token
                     appState.updateUserData(loginResponse.userData)
                     appState.updateToken(loginResponse.token)
-                    appState.isLoggedIn = true
+                    // 跳转到 CompanyPage 而不是直接进入 HomePage
+                    navigateToCompanyPage = true
                     
                 case .failure(let error):
                     alertMessage = error.localizedDescription
@@ -337,7 +350,6 @@ struct LoginPage: View {
     private func handleForgotPassword() {
         showForgetPasswordPage = true
     }
-
 }
 
 #Preview {

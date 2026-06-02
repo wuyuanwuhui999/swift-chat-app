@@ -1,3 +1,10 @@
+//
+//  UserPage.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 import PhotosUI
 
@@ -7,6 +14,7 @@ struct UserPage: View {
     @Environment(\.dismiss) private var dismiss
     @State private var userData: UserData?
     @State private var isLoading = false
+    @State private var navigateToCompanyPage = false
     
     // 头像相关状态
     @State private var selectedItem: PhotosPickerItem?
@@ -26,7 +34,8 @@ struct UserPage: View {
     @State private var editEmailText = ""
     
     @State private var showGenderDialog = false
-    @State private var selectedGender = 0
+    @State private var selectedGender = "0"
+    @State private var genderSelectedIndex = 0
     
     @State private var showEditBirthdayDialog = false
     @State private var selectedBirthday = Date()
@@ -90,8 +99,11 @@ struct UserPage: View {
                         // 性别行
                         infoRow(
                             label: "性别",
-                            value: getGenderText(userData?.sex ?? 0),
-                            onTap: { showGenderDialog = true }
+                            value: getGenderText(userData?.sex ?? "0"),
+                            onTap: { 
+                                genderSelectedIndex = (userData?.sex == "0") ? 0 : 1
+                                showGenderDialog = true 
+                            }
                         )
                         
                         DividerLine()
@@ -129,6 +141,24 @@ struct UserPage: View {
                         showChangePasswordPage = true
                     }) {
                         Text("修改密码")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.primaryColor)
+                            .frame(height: Dimens.btnHeight)
+                            .frame(maxWidth: .infinity)
+                            .background(Colors.whiteColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                    .stroke(Colors.primaryColor, lineWidth: 1)
+                            )
+                    }
+                    .background(Colors.whiteColor)
+                    .cornerRadius(Dimens.btnHeight / 2)
+                    
+                    // 切换公司/个人空间按钮
+                    Button(action: {
+                        navigateToCompanyPage = true
+                    }) {
+                        Text("切换公司/个人空间")
                             .font(.system(size: Dimens.normalFont))
                             .foregroundColor(Colors.primaryColor)
                             .frame(height: Dimens.btnHeight)
@@ -200,6 +230,9 @@ struct UserPage: View {
         }
         .fullScreenCover(isPresented: $showChangePasswordPage) {
             ChangePasswordPage()
+        }
+        .fullScreenCover(isPresented: $navigateToCompanyPage) {
+            CompanyPage()
         }
     }
     
@@ -363,11 +396,11 @@ struct UserPage: View {
     }
     
     /// 获取性别文本
-    private func getGenderText(_ sex: Int) -> String {
+    private func getGenderText(_ sex: String) -> String {
         switch sex {
-        case 0:
+        case "0":
             return "男"
-        case 1:
+        case "1":
             return "女"
         default:
             return "未设置"
@@ -649,9 +682,9 @@ extension UserPage {
                 isPresented: $showGenderDialog,
                 title: "选择性别",
                 options: ["男", "女"],
-                selectedIndex: selectedGender,
+                selectedIndex: $genderSelectedIndex,
                 onConfirm: { index in
-                    selectedGender = index
+                    selectedGender = String(index)
                     saveUserInfo { success in
                         if success {
                             showGenderDialog = false

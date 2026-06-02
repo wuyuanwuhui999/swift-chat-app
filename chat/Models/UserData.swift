@@ -1,3 +1,4 @@
+// chat/chat/Models/UserData.swift
 import Foundation
 
 struct UserData: Codable {
@@ -10,7 +11,7 @@ struct UserData: Codable {
     var email: String
     var avater: String?
     var birthday: String?  // 改为可选类型
-    var sex: Int
+    var sex: String  // 改为 String 类型
     var role: String?
     var password: String?
     var sign: String

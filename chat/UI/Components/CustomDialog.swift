@@ -1,3 +1,5 @@
+// chat/chat/UI/Components/CustomDialog.swift
+
 import SwiftUI
 
 /// 通用自定义对话框组件
@@ -82,12 +84,12 @@ struct CustomDialog<Content: View>: View {
     }
 }
 
-/// 选择列表对话框组件
+/// 选择列表对话框组件（修改为使用 Binding<Int>）
 struct CustomSelectionDialog: View {
     @Binding var isPresented: Bool
     let title: String
     let options: [String]
-    @State var selectedIndex: Int
+    @Binding var selectedIndex: Int  // 改为 Binding
     let onConfirm: (Int) -> Void
     
     var body: some View {
