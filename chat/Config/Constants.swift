@@ -21,7 +21,7 @@ struct Constants {
     struct API {
         static let login = "/service/user/login"
         static let register = "/service/user/register"
-        static let getUserData = "/service/data/getUserData"
+        static let getUserData = "/service/user/getUserData"
         static let logout = "/service/user/logout"
         static let sendEmailVertifyCode = "/service/user/sendEmailVertifyCode"
         static let loginByEmail = "/service/user/loginByEmail"

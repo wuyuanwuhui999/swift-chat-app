@@ -65,7 +65,6 @@ class HTTPClient {
         // 添加Authorization header
         if let authHeader = TokenManager.shared.getAuthorizationHeader() {
             request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-            print("🔐 Authorization: \(authHeader)")
         }
         
         // 添加请求参数（仅对 POST/PUT 等方法）
@@ -81,8 +80,6 @@ class HTTPClient {
         }
         
         print("🌐 请求URL: \(url)")
-        print("📡 请求方法: \(request.httpMethod ?? "GET")")
-        print("📋 请求头: \(request.allHTTPHeaderFields ?? [:])")
         
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
@@ -291,10 +288,7 @@ extension HTTPClient {
         if let authHeader = TokenManager.shared.getAuthorizationHeader() {
             request.setValue(authHeader, forHTTPHeaderField: "Authorization")
         }
-        
-        print("🌐 获取租户列表URL: \(url)")
-        print("🔐 Authorization: \(TokenManager.shared.getAuthorizationHeader() ?? "无")")
-        
+                
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("❌ 获取租户列表网络错误: \(error.localizedDescription)")
@@ -668,8 +662,6 @@ extension HTTPClient {
         }
         
         print("🌐 请求URL: \(url)")
-        print("📡 请求方法: GET")
-        print("🔐 Authorization: \(TokenManager.shared.getAuthorizationHeader() ?? "无")")
         
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {

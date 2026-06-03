@@ -29,10 +29,6 @@ struct WelcomePage: View {
         .onAppear {
             checkLoginStatus()
         }
-        .fullScreenCover(isPresented: $appState.isLoggedIn) {
-            // 不再直接跳转到HomePage，而是跳转到CompanyPage
-            EmptyView()
-        }
         .fullScreenCover(isPresented: $showLoginPage) {
             LoginPage()
         }
@@ -53,22 +49,20 @@ struct WelcomePage: View {
                         // 保存用户信息到全局
                         AppState.shared.updateUserData(userData)
                         AppState.shared.isLoggedIn = true
-                        // 跳转到 CompanyPage 而不是直接进入 HomePage
+                        // 跳转到 CompanyPage
                         self.navigateToCompanyPage = true
                     case .failure(let error):
                         print("获取用户信息失败: \(error.localizedDescription)")
                         AppState.shared.clearUserData()
                         AppState.shared.isLoggedIn = false
-                        // 延时1秒后显示登录页
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            showLoginPage = true
-                        }
+                        // 显示登录页
+                        self.showLoginPage = true
                     }
                     isCheckingLogin = false
                 }
             }
         } else {
-            // 没有token，延时1秒后跳转到登录页
+            // 没有token，显示登录页
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 isCheckingLogin = false
                 AppState.shared.isLoggedIn = false

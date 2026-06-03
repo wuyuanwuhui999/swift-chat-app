@@ -18,63 +18,54 @@ struct CompanyPage: View {
     @State private var alertMessage = ""
     @State private var navigateToChat = false
     
-    // 是否为手动添加的公司选择（登录后无公司数据时）
-    @State private var isManualSelection = false
-    
     // 是否来自用户页面（切换公司）
     @State private var isFromUserPage = false
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // 自定义导航栏
-                customNavigationBar
-                
-                // 内容区域
-                if isLoading {
-                    Spacer()
-                    ProgressView()
-                        .scaleEffect(1.5)
-                    Spacer()
-                } else {
-                    ScrollView {
-                        VStack(spacing: Dimens.middleMargin) {
-                            // 公司列表卡片
-                            if companies.isEmpty && !isManualSelection {
-                                emptyStateView
-                            } else {
-                                ForEach(companies) { company in
-                                    CompanyCard(
-                                        company: company,
-                                        isSelected: selectedCompanyId == company.id,
-                                        onSelect: {
-                                            selectedCompanyId = company.id
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        .padding(.horizontal, Dimens.middleMargin)
-                        .padding(.top, Dimens.middleMargin)
-                    }
-                }
-                
+        VStack(spacing: 0) {
+            // 自定义导航栏
+            customNavigationBar
+            
+            // 内容区域
+            if isLoading {
                 Spacer()
-                
-                // 底部确定按钮
-                bottomButtonView
+                ProgressView()
+                    .scaleEffect(1.5)
+                Spacer()
+            } else if companies.isEmpty {
+                emptyStateView
+            } else {
+                ScrollView {
+                    VStack(spacing: Dimens.middleMargin) {
+                        ForEach(companies) { company in
+                            CompanyCard(
+                                company: company,
+                                isSelected: selectedCompanyId == company.id,
+                                onSelect: {
+                                    selectedCompanyId = company.id
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, Dimens.middleMargin)
+                    .padding(.top, Dimens.middleMargin)
+                }
             }
-            .background(Colors.pageBackgroundColor)
-            .navigationBarHidden(true)
-            .alert("提示", isPresented: $showAlert) {
-                Button("确定", role: .cancel) { }
-            } message: {
-                Text(alertMessage)
-            }
-            .navigationDestination(isPresented: $navigateToChat) {
-                HomePage()
-                    .navigationBarHidden(true)
-            }
+            
+            Spacer(minLength: 0)
+            
+            // 底部确定按钮
+            bottomButtonView
+        }
+        .background(Colors.pageBackgroundColor)
+        .alert("提示", isPresented: $showAlert) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
+        .navigationDestination(isPresented: $navigateToChat) {
+            HomePage()
+                .navigationBarHidden(true)
         }
         .onAppear {
             loadCompanies()
@@ -103,7 +94,7 @@ struct CompanyPage: View {
             Spacer()
             
             // 标题
-            Text(isManualSelection ? "选择空间" : "选择公司")
+            Text("选择公司/个人空间")
                 .font(.system(size: Dimens.middleFont))
                 .foregroundColor(.primary)
             
@@ -112,8 +103,8 @@ struct CompanyPage: View {
             Color.clear
                 .frame(width: Dimens.middleIcon)
         }
+        .frame(height: 50) // 固定导航栏高度
         .padding(.horizontal, Dimens.middleMargin)
-        .padding(.vertical, Dimens.middleMargin)
         .background(Colors.whiteColor)
         .overlay(
             Rectangle()
@@ -138,12 +129,13 @@ struct CompanyPage: View {
                 .font(.system(size: Dimens.normalFont - 2))
                 .foregroundColor(Colors.grayColor)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, Dimens.largeMargin * 2)
     }
     
     /// 底部按钮视图
     private var bottomButtonView: some View {
-        VStack {
+        VStack(spacing: 0) {
             Button(action: handleConfirm) {
                 Text("确定")
                     .font(.system(size: Dimens.normalFont))
@@ -157,7 +149,6 @@ struct CompanyPage: View {
             .padding(.horizontal, Dimens.middleMargin)
             .padding(.vertical, Dimens.middleMargin)
         }
-        .background(Colors.whiteColor)
         .overlay(
             Rectangle()
                 .fill(Colors.grayColor.opacity(0.3))
@@ -183,10 +174,12 @@ struct CompanyPage: View {
             print("📦 从缓存获取 companyId: key=\(key), value=\(cachedCompanyId ?? "nil")")
         }
         
-        // 判断是否从 UserPage 进入
-        // 通过检查 navigation path 来判断，这里简单用标志位
-        // 实际可以通过 Environment 或传递参数
-        isFromUserPage = checkIfFromUserPage()
+        // 判断是否从 UserPage 进入（通过检查当前视图的呈现方式判断）
+        // 如果已经有 currentCompany，说明是从 UserPage 切换公司进入
+        if appState.currentCompany != nil {
+            isFromUserPage = true
+            print("🔍 检测到从 UserPage 进入，当前公司ID: \(appState.currentCompany?.id ?? "nil")")
+        }
         
         // 调用获取公司列表接口
         HTTPClient.shared.getCompanyList { result in
@@ -196,51 +189,56 @@ struct CompanyPage: View {
                 switch result {
                 case .success(let companyList):
                     self.companies = companyList
+                    print("✅ 获取到公司列表，共 \(companyList.count) 家公司")
                     
-                    // 如果有缓存的 companyId，尝试匹配
-                    if let cachedId = cachedCompanyId,
-                       let matchedCompany = companyList.first(where: { $0.id == cachedId }) {
-                        // 找到匹配的公司，自动选中并跳转
+                    // 打印公司列表详情
+                    for company in companyList {
+                        print("   - 公司: \(company.name) (ID: \(company.id))")
+                    }
+                    
+                    // 确定选中的公司ID
+                    var targetCompanyId: String? = nil
+                    
+                    // 1. 如果是从 UserPage 进入且有缓存的 currentCompany，优先使用 currentCompany.id
+                    if self.isFromUserPage, let currentCompanyId = appState.currentCompany?.id {
+                        targetCompanyId = currentCompanyId
+                        print("🎯 从 UserPage 进入，使用当前公司ID: \(currentCompanyId)")
+                    }
+                    // 2. 否则使用缓存的 companyId
+                    else if let cachedId = cachedCompanyId {
+                        targetCompanyId = cachedId
+                        print("🎯 使用缓存的 companyId: \(cachedId)")
+                    }
+                    
+                    // 如果有目标公司ID，尝试匹配
+                    if let targetId = targetCompanyId,
+                       let matchedCompany = companyList.first(where: { $0.id == targetId }) {
+                        // 找到匹配的公司，自动选中
                         self.selectedCompanyId = matchedCompany.id
-                        self.saveSelectedCompany(matchedCompany)
-                        self.navigateToChat = true
-                    } else if companyList.isEmpty {
-                        // 公司列表为空，进入手动选择模式（添加示例数据）
-                        self.isManualSelection = true
-                        self.loadManualCompanies()
-                    } else if companyList.count == 1 && cachedCompanyId == nil {
-                        // 只有一个公司且没有缓存，自动选中
+                        print("✅ 自动选中公司: \(matchedCompany.name) (ID: \(matchedCompany.id))")
+                    }
+                    // 如果没有匹配的目标公司，且有缓存的 companyId 但未匹配到
+                    else if targetCompanyId != nil {
+                        print("⚠️ 未找到匹配的公司，需要用户手动选择")
+                    }
+                    // 公司列表只有一个且没有选中的公司，自动选中
+                    else if companyList.count == 1 && self.selectedCompanyId == nil {
                         self.selectedCompanyId = companyList.first?.id
-                    } else if let userId = userId, cachedCompanyId == nil {
-                        // 有用户ID但没有缓存的公司ID，需要用户手动选择
-                        print("⚠️ 未找到缓存的 companyId，需要用户手动选择公司")
+                        print("✅ 只有一家公司，自动选中: \(companyList.first?.name ?? "")")
+                    }
+                    
+                    // 检查是否需要手动选择
+                    if self.selectedCompanyId == nil {
+                        print("⚠️ 未找到选中的 companyId，需要用户手动选择公司")
                     }
                     
                 case .failure(let error):
                     print("❌ 获取公司列表失败: \(error.localizedDescription)")
-                    // 获取失败时，进入手动选择模式（添加示例数据）
-                    self.isManualSelection = true
-                    self.loadManualCompanies()
+                    self.alertMessage = error.localizedDescription
+                    self.showAlert = true
                 }
             }
         }
-    }
-    
-    /// 加载手动添加的公司数据（登录后无公司数据时使用）
-    private func loadManualCompanies() {
-        // 手动添加一条示例公司数据作为"个人空间"
-        let manualCompany = Company(
-            id: "manual_company_001",
-            name: "我的工作空间",
-            code: "WORKSPACE_001",
-            description: "个人工作空间",
-            status: 1,
-            createDate: nil,
-            updateDate: nil,
-            createdBy: "",
-            updatedBy: ""
-        )
-        companies = [manualCompany]
     }
     
     /// 保存选中的公司
@@ -266,21 +264,22 @@ struct CompanyPage: View {
         
         saveSelectedCompany(selectedCompany)
         
-        // 跳转到 HomePage，且不能返回
-        navigateToChat = true
-    }
-    
-    /// 判断是否从 UserPage 进入
-    private func checkIfFromUserPage() -> Bool {
-        // 通过导航栈判断
-        // 这里简单返回 false，实际使用时可以通过环境变量或初始化参数传入
-        return false
+        // 判断是否需要跳转到首页
+        // 如果是从 UserPage 进入的切换公司，则关闭当前页面返回 UserPage
+        if isFromUserPage {
+            print("🔄 切换公司完成，返回 UserPage")
+            dismiss()
+        } else {
+            // 首次登录选择公司，跳转到 HomePage
+            print("🚀 首次选择公司，跳转到 HomePage")
+            navigateToChat = true
+        }
     }
 }
 
 // MARK: - 公司卡片组件
 
-/// 公司卡片视图
+/// 公司卡片视图（简化版：只显示公司名称和单选按钮）
 struct CompanyCard: View {
     let company: Company
     let isSelected: Bool
@@ -289,28 +288,16 @@ struct CompanyCard: View {
     var body: some View {
         Button(action: onSelect) {
             HStack {
-                // 公司信息
-                VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                    Text(company.name)
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
-                    
-                    if let description = company.description, !description.isEmpty {
-                        Text(description)
-                            .font(.system(size: Dimens.normalFont - 2))
-                            .foregroundColor(Colors.grayColor)
-                            .lineLimit(1)
-                    }
-                    
-                    // 公司编码
-                    Text("编码: \(company.code)")
-                        .font(.system(size: Dimens.normalFont - 3))
-                        .foregroundColor(Colors.grayColor)
-                }
+                // 公司名称
+                Text(company.name)
+                    .font(.system(size: Dimens.normalFont))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 
                 Spacer()
                 
-                // 单选按钮
+                // 单选按钮 - 选中时显示 primaryColor，未选中时显示 grayColor
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
                     .foregroundColor(isSelected ? Colors.primaryColor : Colors.grayColor)
                     .font(.system(size: Dimens.middleIcon))
