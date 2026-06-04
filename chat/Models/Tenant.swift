@@ -30,8 +30,8 @@ struct Tenant: Codable, Identifiable {
     let status: TenantStatus
     let createDate: String?
     let updateDate: String?
-    let createdBy: String
-    let updatedBy: String?
+    let createdBy: String?      // 改为可选类型
+    let updatedBy: String?      // 改为可选类型
     
     enum CodingKeys: String, CodingKey {
         case id

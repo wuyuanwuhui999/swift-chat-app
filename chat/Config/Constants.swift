@@ -25,7 +25,7 @@ struct Constants {
         static let logout = "/service/user/logout"
         static let sendEmailVertifyCode = "/service/user/sendEmailVertifyCode"
         static let loginByEmail = "/service/user/loginByEmail"
-        static let getUserTenantList = "/service/tenant/getUserTenantList"
+        static let getTenantList = "/service/tenant/getTenantList"
         static let getModelList = "/service/chat/getModelList"
         static let getDirectoryList = "/service/chat/getDirectoryList"
         static let getDocListByDirId = "/service/chat/getDocListByDirId"

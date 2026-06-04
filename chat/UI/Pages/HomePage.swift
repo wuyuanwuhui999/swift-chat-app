@@ -318,7 +318,7 @@ struct HomePage: View {
         // 获取租户列表（带上 companyId）
         group.enter()
         let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId()
-        HTTPClient.shared.getUserTenantList(companyId: companyId) { result in
+        HTTPClient.shared.getTenantList(companyId: companyId) { result in
             DispatchQueue.main.async {
                 self.handleTenantListResult(result)
                 group.leave()

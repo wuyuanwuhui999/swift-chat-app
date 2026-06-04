@@ -261,14 +261,14 @@ extension HTTPClient {
     }
     
     /// 获取用户租户列表
-    func getUserTenantList(companyId: String? = nil, completion: @escaping (Result<[Tenant], NetworkError>) -> Void) {
+    func getTenantList(companyId: String? = nil, completion: @escaping (Result<[Tenant], NetworkError>) -> Void) {
         var parameters: [String: Any] = [:]
         if let companyId = companyId, !companyId.isEmpty {
             parameters["companyId"] = companyId
         }
         
         // 构建带参数的URL
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getUserTenantList) else {
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getTenantList) else {
             completion(.failure(.invalidURL))
             return
         }

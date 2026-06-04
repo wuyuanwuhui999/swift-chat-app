@@ -10,7 +10,7 @@ enum APIEndpoint {
     case getUserData
     case sendEmailVertifyCode
     case loginByEmail
-    case getUserTenantList
+    case getTenantList
     case getModelList
     case getDirectoryList
     case getDocListByDirId
@@ -43,8 +43,8 @@ enum APIEndpoint {
             return Constants.API.sendEmailVertifyCode
         case .loginByEmail:
             return Constants.API.loginByEmail
-        case .getUserTenantList:
-            return Constants.API.getUserTenantList
+        case .getTenantList:
+            return Constants.API.getTenantList
         case .getModelList:
             return Constants.API.getModelList
         case .getDirectoryList:
@@ -85,7 +85,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword:
                 return "POST"
-            case .getUserData, .getCompanyList, .getUserTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId,.getPrompt:
+            case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId,.getPrompt:
                 return "GET"
             case .deleteDoc:
                 return "DELETE"  // 删除文档使用 DELETE 方法

@@ -22,53 +22,55 @@ struct CompanyPage: View {
     @State private var isFromUserPage = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // 自定义导航栏
-            customNavigationBar
-            
-            // 内容区域
-            if isLoading {
-                Spacer()
-                ProgressView()
-                    .scaleEffect(1.5)
-                Spacer()
-            } else if companies.isEmpty {
-                emptyStateView
-            } else {
-                ScrollView {
-                    VStack(spacing: Dimens.middleMargin) {
-                        ForEach(companies) { company in
-                            CompanyCard(
-                                company: company,
-                                isSelected: selectedCompanyId == company.id,
-                                onSelect: {
-                                    selectedCompanyId = company.id
-                                }
-                            )
+        NavigationStack {
+            VStack(spacing: 0) {
+                // 自定义导航栏
+                customNavigationBar
+                
+                // 内容区域
+                if isLoading {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    Spacer()
+                } else if companies.isEmpty {
+                    emptyStateView
+                } else {
+                    ScrollView {
+                        VStack(spacing: Dimens.middleMargin) {
+                            ForEach(companies) { company in
+                                CompanyCard(
+                                    company: company,
+                                    isSelected: selectedCompanyId == company.id,
+                                    onSelect: {
+                                        selectedCompanyId = company.id
+                                    }
+                                )
+                            }
                         }
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .padding(.top, Dimens.middleMargin)
                     }
-                    .padding(.horizontal, Dimens.middleMargin)
-                    .padding(.top, Dimens.middleMargin)
                 }
+                
+                Spacer(minLength: 0)
+                
+                // 底部确定按钮
+                bottomButtonView
             }
-            
-            Spacer(minLength: 0)
-            
-            // 底部确定按钮
-            bottomButtonView
-        }
-        .background(Colors.pageBackgroundColor)
-        .alert("提示", isPresented: $showAlert) {
-            Button("确定", role: .cancel) { }
-        } message: {
-            Text(alertMessage)
-        }
-        .navigationDestination(isPresented: $navigateToChat) {
-            HomePage()
-                .navigationBarHidden(true)
-        }
-        .onAppear {
-            loadCompanies()
+            .background(Colors.pageBackgroundColor)
+            .alert("提示", isPresented: $showAlert) {
+                Button("确定", role: .cancel) { }
+            } message: {
+                Text(alertMessage)
+            }
+            .navigationDestination(isPresented: $navigateToChat) {
+                HomePage()
+                    .navigationBarHidden(true)
+            }
+            .onAppear {
+                loadCompanies()
+            }
         }
     }
     
@@ -103,7 +105,7 @@ struct CompanyPage: View {
             Color.clear
                 .frame(width: Dimens.middleIcon)
         }
-        .frame(height: 50) // 固定导航栏高度
+        .frame(height: 50)
         .padding(.horizontal, Dimens.middleMargin)
         .background(Colors.whiteColor)
         .overlay(
@@ -174,8 +176,7 @@ struct CompanyPage: View {
             print("📦 从缓存获取 companyId: key=\(key), value=\(cachedCompanyId ?? "nil")")
         }
         
-        // 判断是否从 UserPage 进入（通过检查当前视图的呈现方式判断）
-        // 如果已经有 currentCompany，说明是从 UserPage 切换公司进入
+        // 判断是否从 UserPage 进入
         if appState.currentCompany != nil {
             isFromUserPage = true
             print("🔍 检测到从 UserPage 进入，当前公司ID: \(appState.currentCompany?.id ?? "nil")")
@@ -265,13 +266,14 @@ struct CompanyPage: View {
         saveSelectedCompany(selectedCompany)
         
         // 判断是否需要跳转到首页
-        // 如果是从 UserPage 进入的切换公司，则关闭当前页面返回 UserPage
         if isFromUserPage {
+            // 从 UserPage 进入的切换公司，关闭当前页面返回
             print("🔄 切换公司完成，返回 UserPage")
             dismiss()
         } else {
             // 首次登录选择公司，跳转到 HomePage
             print("🚀 首次选择公司，跳转到 HomePage")
+            // 修复：直接使用 fullScreenCover 方式跳转，而不是 navigationDestination
             navigateToChat = true
         }
     }
@@ -297,7 +299,7 @@ struct CompanyCard: View {
                 
                 Spacer()
                 
-                // 单选按钮 - 选中时显示 primaryColor，未选中时显示 grayColor
+                // 单选按钮
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
                     .foregroundColor(isSelected ? Colors.primaryColor : Colors.grayColor)
                     .font(.system(size: Dimens.middleIcon))
