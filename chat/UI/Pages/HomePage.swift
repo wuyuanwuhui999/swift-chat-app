@@ -23,6 +23,7 @@ struct HomePage: View {
     @State private var currentChatId: String = "" // 当前聊天ID
     @State private var currentAIResponse = "" // 当前AI响应（用于流式追加）
     @State private var isReceivingMessage = false // 是否正在接收消息
+    @State private var showLoadingPrompt = false // 是否显示加载提示
     
     // 文档选择相关状态
     @State private var showDocumentQuery = false // 查询文档按钮激活状态
@@ -74,6 +75,8 @@ struct HomePage: View {
         }
         .onReceive(webSocketManager.$currentResponse) { newResponse in
             // 监听WebSocket响应，流式更新消息
+            // 注意：加载提示的隐藏已经在 onMessage 回调中处理
+            // 这里只负责流式更新消息内容
             if isReceivingMessage && !newResponse.isEmpty {
                 currentAIResponse = newResponse
                 updateLastAIMessage(content: currentAIResponse)
@@ -84,6 +87,8 @@ struct HomePage: View {
             if !isReceiving && !currentAIResponse.isEmpty {
                 // 消息接收完成，重置当前响应
                 currentAIResponse = ""
+                // 确保加载提示已隐藏
+                showLoadingPrompt = false
             }
         }
     }
@@ -113,6 +118,45 @@ struct HomePage: View {
                     ForEach(messages) { message in
                         MessageBubble(message: message)
                     }
+                    
+                    // 加载提示视图 - 仅在等待AI响应时显示
+                    if showLoadingPrompt {
+                        HStack {
+                            AIAvatar.middle()
+                            
+                            // 加载提示气泡
+                            HStack(spacing: Dimens.smallIcon) {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                                
+                                Text("提示正在加载中...")
+                                    .font(.system(size: Dimens.normalFont))
+                                    .foregroundColor(Colors.grayColor)
+                            }
+                            .padding(.horizontal, Dimens.middleMargin)
+                            .padding(.vertical, Dimens.middleMargin)
+                            .background(Colors.whiteColor)
+                            .cornerRadius(Dimens.borderRadius)
+                            .overlay(
+                                // 三角形箭头指向左边，与头像居中对齐
+                                GeometryReader { geometry in
+                                    Triangle(direction: .left)
+                                        .fill(Colors.whiteColor)
+                                        .frame(width: 12, height: 12)
+                                        .position(
+                                            x: -6,
+                                            y: Dimens.middleAvater / 2
+                                        )
+                                }
+                            )
+                            
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .padding(.vertical, Dimens.smallIcon)
+                        .id("loadingView")
+                    }
                 }
                 .padding(.vertical, Dimens.middleMargin)
             }
@@ -121,6 +165,11 @@ struct HomePage: View {
             }
             .onChange(of: messages.last?.content) { _ in
                 scrollToBottom(proxy: proxy)
+            }
+            .onChange(of: showLoadingPrompt) { newValue in
+                if newValue {
+                    scrollToBottom(proxy: proxy)
+                }
             }
         }
         .frame(maxHeight: .infinity)
@@ -235,6 +284,10 @@ struct HomePage: View {
             withAnimation {
                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
             }
+        } else if showLoadingPrompt {
+            withAnimation {
+                proxy.scrollTo("loadingView", anchor: .bottom)
+            }
         }
     }
 
@@ -245,6 +298,7 @@ struct HomePage: View {
         currentAIResponse = ""
         selectedDocIds.removeAll()
         showDocumentQuery = false
+        showLoadingPrompt = false
         webSocketManager.reset()
         print("🗑️ 已清空聊天内容，新chatId: \(currentChatId)")
     }
@@ -283,6 +337,13 @@ struct HomePage: View {
         let messageType = (showDocumentQuery && !selectedDocIds.isEmpty) ? "document" : ""
         let docIds = (showDocumentQuery && !selectedDocIds.isEmpty) ? Array(selectedDocIds) : []
 
+        // 显示加载提示
+        showLoadingPrompt = true
+        print("🔄 显示加载提示，等待AI响应...")
+        
+        // 重置当前响应
+        currentAIResponse = ""
+        
         webSocketManager.connect(
             modelId: model.id,
             chatId: currentChatId,
@@ -294,6 +355,11 @@ struct HomePage: View {
             type: messageType,
             onMessage: { text in
                 DispatchQueue.main.async {
+                    // 收到第一条消息时，立即隐藏加载提示
+                    if self.showLoadingPrompt {
+                        self.showLoadingPrompt = false
+                        print("✅ 收到第一条消息，隐藏加载提示")
+                    }
                     self.currentAIResponse += text
                     self.updateLastAIMessage(content: self.currentAIResponse)
                 }
@@ -302,12 +368,13 @@ struct HomePage: View {
                 DispatchQueue.main.async {
                     self.isReceivingMessage = false
                     self.currentAIResponse = ""
+                    // 确保加载提示已隐藏
+                    self.showLoadingPrompt = false
                     print("✅ 消息接收完成")
                 }
             }
         )
         isReceivingMessage = true
-        currentAIResponse = ""
     }
 
     /// 加载租户列表和模型列表
