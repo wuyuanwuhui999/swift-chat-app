@@ -17,7 +17,7 @@ struct DocumentPickerDialog: View {
     
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .bottom) {  // 改为底部对齐
+            ZStack(alignment: .bottom) {
                 // 半透明遮罩层
                 Color.black.opacity(0.5)
                     .ignoresSafeArea()
@@ -27,22 +27,21 @@ struct DocumentPickerDialog: View {
                 
                 // 对话框内容 - 从底部弹出
                 VStack(spacing: 0) {
-                    // 可滚动的内容区域 - 使用 Spacer 让它占据剩余空间
+                    // 标题栏
+                    headerView
+                    
+                    // 可滚动的内容区域 - 灰色背景
                     ScrollView {
-                        LazyVStack(spacing: 0) {
+                        LazyVStack(spacing: Dimens.middleMargin) {
                             if isLoading {
-                                // 加载中状态
                                 ProgressView()
                                     .padding(.vertical, Dimens.largeMargin)
                             } else if directories.isEmpty {
-                                // 空状态
-                                Text("暂无目录")
-                                    .font(.system(size: Dimens.normalFont))
-                                    .foregroundColor(Colors.grayColor)
-                                    .padding(.vertical, Dimens.largeMargin)
+                                emptyStateView
                             } else {
                                 ForEach(directories) { directory in
-                                    DirectorySection(
+                                    // 每个目录作为一张卡片
+                                    DirectoryCard(
                                         directory: directory,
                                         isExpanded: expandedDirectories.contains(directory.id),
                                         selectedDocIds: selectedDocIds,
@@ -52,8 +51,9 @@ struct DocumentPickerDialog: View {
                                 }
                             }
                         }
-                        .padding(.vertical, Dimens.middleMargin)
+                        .padding(Dimens.middleMargin)
                     }
+                    .background(Colors.pageBackgroundColor)
                     
                     // 底部操作区域
                     bottomActionView
@@ -64,32 +64,49 @@ struct DocumentPickerDialog: View {
                 )
                 .background(Colors.whiteColor)
                 .clipShape(RoundedCorner(radius: Dimens.borderRadius, corners: [.topLeft, .topRight]))
-                .offset(y: 0)  // 从底部弹出，不需要偏移
-                .position(x: geometry.size.width / 2, y: geometry.size.height - (min(geometry.size.height * 0.8, geometry.size.height - 100) / 2))  // 底部对齐
+                .position(x: geometry.size.width / 2, y: geometry.size.height - (min(geometry.size.height * 0.8, geometry.size.height - 100) / 2))
             }
         }
         .onAppear {
             loadDirectories()
         }
-        .ignoresSafeArea(.keyboard) // 忽略键盘安全区域，避免布局偏移
+        .ignoresSafeArea(.keyboard)
     }
     
     // MARK: - 视图组件
     
     /// 标题栏视图
     private var headerView: some View {
-        Text("选择文档")
-            .font(.system(size: Dimens.middleFont))
-            .foregroundColor(.primary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Dimens.middleMargin)
-            .background(Colors.whiteColor)
-            .overlay(
-                Rectangle()
-                    .fill(Colors.grayColor.opacity(0.3))
-                    .frame(height: 1),
-                alignment: .bottom
-            )
+        VStack(spacing: 0) {
+            Text("查询文档")
+                .font(.system(size: Dimens.middleFont))
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Dimens.middleMargin)
+            
+            // 灰色分隔线
+            Rectangle()
+                .fill(Colors.grayColor.opacity(0.3))
+                .frame(height: 1)
+        }
+        .background(Colors.whiteColor)
+    }
+    
+    /// 空状态视图
+    private var emptyStateView: some View {
+        VStack(spacing: Dimens.middleMargin) {
+            Image(systemName: "folder")
+                .font(.system(size: Dimens.bigIcon))
+                .foregroundColor(Colors.grayColor)
+            Text("暂无目录")
+                .font(.system(size: Dimens.normalFont))
+                .foregroundColor(Colors.grayColor)
+            Text("请点击下方「创建目录」按钮")
+                .font(.system(size: Dimens.normalFont - 2))
+                .foregroundColor(Colors.grayColor)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Dimens.largeMargin)
     }
     
     /// 底部操作区域视图
@@ -103,7 +120,7 @@ struct DocumentPickerDialog: View {
                         .font(.system(size: Dimens.normalFont))
                         .padding(.horizontal, Dimens.middleMargin)
                         .frame(height: Dimens.inputHeight)
-                        .background(Color.white)
+                        .background(Colors.pageBackgroundColor)
                         .overlay(
                             RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
                                 .stroke(isInputFocused ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
@@ -201,10 +218,10 @@ struct DocumentPickerDialog: View {
         )
     }
     
-    // MARK: - 目录区域组件
+    // MARK: - 目录卡片组件
     
-    /// 目录区域视图
-    struct DirectorySection: View {
+    /// 目录卡片视图（卡片式展示）
+    struct DirectoryCard: View {
         let directory: Directory
         let isExpanded: Bool
         let selectedDocIds: Set<String>
@@ -216,7 +233,7 @@ struct DocumentPickerDialog: View {
         
         var body: some View {
             VStack(spacing: 0) {
-                // 目录行
+                // 目录行（卡片头部）
                 Button(action: {
                     onToggleExpand()
                     if !isExpanded && documents.isEmpty {
@@ -224,27 +241,42 @@ struct DocumentPickerDialog: View {
                     }
                 }) {
                     HStack {
+                        // 文件夹图标
+                        Image(systemName: "folder")
+                            .font(.system(size: Dimens.smallIcon))
+                            .foregroundColor(Colors.primaryColor)
+                        
                         Text(directory.directory)
                             .font(.system(size: Dimens.normalFont))
                             .foregroundColor(.primary)
                         
                         Spacer()
                         
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        // 文档数量提示（如果有文档）
+                        if !documents.isEmpty && !isExpanded {
+                            Text("\(documents.count)个文档")
+                                .font(.system(size: Dimens.normalFont - 2))
+                                .foregroundColor(Colors.grayColor)
+                        }
+                        
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                             .foregroundColor(Colors.grayColor)
+                            .font(.system(size: Dimens.smallIcon))
                     }
-                    .padding(.horizontal, Dimens.middleMargin)
-                    .padding(.vertical, Dimens.middleMargin)
+                    .padding(Dimens.middleMargin)
                 }
                 
-                // 文档列表
+                // 文档列表（展开时显示）
                 if isExpanded {
+                    Divider()
+                        .padding(.horizontal, Dimens.middleMargin)
+                    
                     VStack(spacing: 0) {
                         if isLoadingDocs {
                             HStack {
                                 Spacer()
                                 ProgressView()
-                                    .padding()
+                                    .padding(.vertical, Dimens.middleMargin)
                                 Spacer()
                             }
                         } else if documents.isEmpty {
@@ -253,7 +285,7 @@ struct DocumentPickerDialog: View {
                                 Text("暂无文档")
                                     .font(.system(size: Dimens.normalFont))
                                     .foregroundColor(Colors.grayColor)
-                                    .padding()
+                                    .padding(.vertical, Dimens.middleMargin)
                                 Spacer()
                             }
                         } else {
@@ -263,18 +295,22 @@ struct DocumentPickerDialog: View {
                                     isSelected: selectedDocIds.contains(document.id),
                                     onToggle: { onToggleDocument(document) }
                                 )
+                                
+                                if document.id != documents.last?.id {
+                                    Divider()
+                                        .padding(.leading, Dimens.middleMargin)
+                                }
                             }
                         }
                     }
-                    .padding(.leading, Dimens.middleMargin)
+                    .padding(.vertical, Dimens.smallIcon)
                 }
             }
             .background(Colors.whiteColor)
+            .cornerRadius(Dimens.borderRadius)
             .overlay(
-                Rectangle()
-                    .fill(Colors.grayColor.opacity(0.3))
-                    .frame(height: 1),
-                alignment: .bottom
+                RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                    .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
             )
         }
         
@@ -309,9 +345,31 @@ struct DocumentPickerDialog: View {
         let isSelected: Bool
         let onToggle: () -> Void
         
+        /// 根据文件扩展名获取图标名称
+        private var fileIconName: String {
+            let ext = document.ext.lowercased()
+            switch ext {
+            case "txt":
+                return "doc.plaintext"
+            case "doc", "docx":
+                return "doc"
+            case "md":
+                return "note.text"
+            case "pdf":
+                return "pdf"
+            default:
+                return "doc"
+            }
+        }
+        
         var body: some View {
             Button(action: onToggle) {
-                HStack {
+                HStack(spacing: Dimens.middleMargin) {
+                    // 文件图标
+                    Image(systemName: fileIconName)
+                        .font(.system(size: Dimens.smallIcon))
+                        .foregroundColor(Colors.grayColor)
+                    
                     Text(document.name)
                         .font(.system(size: Dimens.normalFont))
                         .foregroundColor(.primary)
@@ -320,11 +378,22 @@ struct DocumentPickerDialog: View {
                     
                     Spacer()
                     
-                    Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                    // 文件类型标签
+                    Text(document.ext.uppercased())
+                        .font(.system(size: Dimens.normalFont - 2))
+                        .foregroundColor(Colors.grayColor)
+                        .padding(.horizontal, Dimens.smallIcon)
+                        .padding(.vertical, 4)
+                        .background(Colors.grayColor.opacity(0.2))
+                        .cornerRadius(Dimens.smallIcon)
+                    
+                    // 选中图标
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: Dimens.smallIcon))
                         .foregroundColor(isSelected ? Colors.primaryColor : Colors.grayColor)
                 }
                 .padding(.horizontal, Dimens.middleMargin)
-                .padding(.vertical, Dimens.middleMargin)
+                .padding(.vertical, Dimens.smallIcon)
             }
         }
     }
