@@ -1,3 +1,10 @@
+//
+//  UploadDocumentDialog.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -30,9 +37,9 @@ struct UploadDocumentDialog: View {
                     // 标题栏
                     headerView
                     
-                    // 可滚动的内容区域
+                    // 可滚动的内容区域 - 设置灰色背景
                     ScrollView {
-                        LazyVStack(spacing: 0) {
+                        LazyVStack(spacing: Dimens.middleMargin) {
                             if isLoading {
                                 ProgressView()
                                     .padding(.vertical, Dimens.largeMargin)
@@ -40,7 +47,8 @@ struct UploadDocumentDialog: View {
                                 emptyStateView
                             } else {
                                 ForEach(directories) { directory in
-                                    DirectoryRadioRow(
+                                    // 目录卡片
+                                    DirectoryCard(
                                         directory: directory,
                                         isSelected: selectedDirectoryId == directory.id,
                                         onSelect: {
@@ -50,7 +58,10 @@ struct UploadDocumentDialog: View {
                                 }
                             }
                         }
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .padding(.vertical, Dimens.middleMargin)
                     }
+                    .background(Colors.pageBackgroundColor)  // 设置灰色背景
                     
                     // 底部操作区域
                     bottomActionView
@@ -69,13 +80,11 @@ struct UploadDocumentDialog: View {
         }
         .fileImporter(
             isPresented: $showFilePicker,
-            allowedContentTypes: [.plainText, .text], // .txt 文件
+            allowedContentTypes: [.plainText, .text],
             allowsMultipleSelection: false
         ) { result in
-            // 修复：处理 Result<[URL], Error> 类型，因为 allowsMultipleSelection: false 时返回的是数组
             switch result {
             case .success(let urls):
-                // 取第一个选中的文件
                 if let url = urls.first {
                     handleFileSelection(url)
                 } else {
@@ -210,7 +219,6 @@ struct UploadDocumentDialog: View {
     
     /// 处理文件选择结果
     private func handleFileSelection(_ url: URL) {
-        // 获取文件访问权限
         guard url.startAccessingSecurityScopedResource() else {
             alertMessage = "无法访问文件"
             showAlert = true
@@ -220,7 +228,6 @@ struct UploadDocumentDialog: View {
             url.stopAccessingSecurityScopedResource()
         }
         
-        // 检查文件格式（支持 .txt, .doc, .docx, .md）
         let fileExtension = url.pathExtension.lowercased()
         let allowedExtensions = ["txt", "doc", "docx", "md"]
         
@@ -230,7 +237,6 @@ struct UploadDocumentDialog: View {
             return
         }
         
-        // 上传文件
         uploadFile(fileURL: url)
     }
     
@@ -269,8 +275,10 @@ struct UploadDocumentDialog: View {
     }
 }
 
-/// 目录单选行视图
-struct DirectoryRadioRow: View {
+// MARK: - 目录卡片组件
+
+/// 目录卡片视图
+struct DirectoryCard: View {
     let directory: Directory
     let isSelected: Bool
     let onSelect: () -> Void
@@ -278,9 +286,17 @@ struct DirectoryRadioRow: View {
     var body: some View {
         Button(action: onSelect) {
             HStack {
+                // 目录图标
+                Image(systemName: "folder.fill")
+                    .font(.system(size: Dimens.middleIcon))
+                    .foregroundColor(isSelected ? Colors.primaryColor : Colors.grayColor)
+                
+                // 目录名称
                 Text(directory.directory)
                     .font(.system(size: Dimens.normalFont))
                     .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 
                 Spacer()
                 
@@ -291,14 +307,15 @@ struct DirectoryRadioRow: View {
             }
             .padding(.horizontal, Dimens.middleMargin)
             .padding(.vertical, Dimens.middleMargin)
+            .background(Colors.whiteColor)
+            .cornerRadius(Dimens.borderRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                    .stroke(isSelected ? Colors.primaryColor : Colors.grayColor.opacity(0.3), lineWidth: isSelected ? 1.5 : 1)
+            )
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
         }
-        .background(Colors.whiteColor)
-        .overlay(
-            Rectangle()
-                .fill(Colors.grayColor.opacity(0.3))
-                .frame(height: 1),
-            alignment: .bottom
-        )
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

@@ -1,3 +1,10 @@
+//
+//  ChatHistoryDialog.swift
+//  chat
+//
+//  Created by 吴文强 on 2026/3/24.
+//
+
 import SwiftUI
 
 /// 会话记录对话框组件
@@ -27,9 +34,9 @@ struct ChatHistoryDialog: View {
                     // 标题栏
                     headerView
                     
-                    // 可滚动的内容区域
+                    // 可滚动的内容区域 - 设置灰色背景
                     ScrollView {
-                        LazyVStack(spacing: 0) {
+                        LazyVStack(spacing: Dimens.middleMargin) {
                             if isLoading {
                                 ProgressView()
                                     .padding(.vertical, Dimens.largeMargin)
@@ -37,7 +44,8 @@ struct ChatHistoryDialog: View {
                                 emptyStateView
                             } else {
                                 ForEach(sessions) { session in
-                                    SessionHistoryRow(
+                                    // 会话记录卡片
+                                    SessionCard(
                                         session: session,
                                         onTap: {
                                             onSessionSelected(session.chatId)
@@ -56,7 +64,10 @@ struct ChatHistoryDialog: View {
                                 }
                             }
                         }
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .padding(.vertical, Dimens.middleMargin)
                     }
+                    .background(Colors.pageBackgroundColor)  // 设置灰色背景
                 }
                 .frame(
                     width: geometry.size.width,
@@ -219,37 +230,48 @@ struct ChatHistoryDialog: View {
     }
 }
 
-/// 会话记录行视图
-struct SessionHistoryRow: View {
+// MARK: - 会话记录卡片组件
+
+/// 会话记录卡片视图
+struct SessionCard: View {
     let session: ChatSessionGroup
     let onTap: () -> Void
     
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                // 第一条消息内容
+            HStack(spacing: Dimens.middleMargin) {
+                // 左侧：第一条消息内容
                 Text(session.firstMessage)
                     .font(.system(size: Dimens.normalFont))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                // 更新时间
-                Text(session.timeAgo)
-                    .font(.system(size: Dimens.normalFont - 2))
-                    .foregroundColor(Colors.grayColor)
+                // 右侧：更新时间 + 向右箭头
+                HStack(spacing: Dimens.smallIcon) {
+                    Text(session.timeAgo)
+                        .font(.system(size: Dimens.normalFont - 2))
+                        .foregroundColor(Colors.grayColor)
+                    
+                    // 灰色的向右箭头
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: Dimens.smallIcon))
+                        .foregroundColor(Colors.grayColor)
+                }
+                .fixedSize(horizontal: true, vertical: false)  // 防止内容换行
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Dimens.middleMargin)
             .padding(.vertical, Dimens.middleMargin)
+            .background(Colors.whiteColor)
+            .cornerRadius(Dimens.borderRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                    .stroke(Colors.grayColor.opacity(0.3), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
         }
-        .background(Colors.whiteColor)
-        .overlay(
-            Rectangle()
-                .fill(Colors.grayColor.opacity(0.3))
-                .frame(height: 1),
-            alignment: .bottom
-        )
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
