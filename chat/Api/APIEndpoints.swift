@@ -28,6 +28,10 @@ enum APIEndpoint {
     case updatePrompt
     case getCompanyList
 
+    case getTenantUser
+    case getTenantUserList
+    case getCompanyUsers
+    case addTenantUser(String, String)
     
     var path: String {
         switch self {
@@ -78,14 +82,24 @@ enum APIEndpoint {
             return Constants.API.updatePrompt
         case .getCompanyList:
             return Constants.API.getCompanyList
+        case .getTenantUser:
+            return Constants.API.getTenantUser
+        case .getTenantUserList:
+            return Constants.API.getTenantUserList
+        case .getCompanyUsers:
+            return Constants.API.getCompanyUsers
+        case .addTenantUser(let tenantId, let userId):
+            return Constants.API.addTenantUser
+                .replacingOccurrences(of: "{tenantId}", with: tenantId)
+                .replacingOccurrences(of: "{userId}", with: userId)
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword,.addTenantUser:
                 return "POST"
-            case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId,.getPrompt:
+            case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId,.getPrompt,.getTenantUser, .getTenantUserList, .getCompanyUsers:
                 return "GET"
             case .deleteDoc:
                 return "DELETE"  // 删除文档使用 DELETE 方法

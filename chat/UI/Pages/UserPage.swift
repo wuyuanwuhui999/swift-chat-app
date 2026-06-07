@@ -53,6 +53,9 @@ struct UserPage: View {
     // 跳转状态
     @State private var showChangePasswordPage = false
     @State private var showLogoutAlert = false
+
+    @State private var tenantUserRole: Int = 0
+    @State private var navigateToTenantManagePage = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -172,6 +175,26 @@ struct UserPage: View {
                     .background(Colors.whiteColor)
                     .cornerRadius(Dimens.btnHeight / 2)
                     
+                    // 租户管理按钮（仅当用户在当前租户中的角色大于0时显示）
+                    if tenantUserRole > 0 {
+                        Button(action: {
+                            navigateToTenantManagePage = true
+                        }) {
+                            Text("租户管理")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(Colors.primaryColor)
+                                .frame(height: Dimens.btnHeight)
+                                .frame(maxWidth: .infinity)
+                                .background(Colors.whiteColor)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                        .stroke(Colors.primaryColor, lineWidth: 1)
+                                )
+                        }
+                        .background(Colors.whiteColor)
+                        .cornerRadius(Dimens.btnHeight / 2)
+                    }
+
                     // 退出登录按钮
                     Button(action: {
                         showLogoutAlert = true
@@ -199,6 +222,7 @@ struct UserPage: View {
         .background(Colors.pageBackgroundColor)
         .onAppear {
             loadUserData()
+            loadTenantUserRole()
         }
         // 头像选择器
         .photosPicker(isPresented: $showAvatarPicker, selection: $selectedItem, matching: .images)
@@ -233,6 +257,9 @@ struct UserPage: View {
         }
         .fullScreenCover(isPresented: $navigateToCompanyPage) {
             CompanyPage()
+        }
+        .fullScreenCover(isPresented: $navigateToTenantManagePage) {
+            TenantManagePage()
         }
     }
     
@@ -423,6 +450,22 @@ struct UserPage: View {
                 formatter.dateFormat = "yyyy-MM-dd"
                 if let date = formatter.date(from: birthday) {
                     selectedBirthday = date
+                }
+            }
+        }
+    }
+
+    /// 加载当前用户在当前租户内的角色
+    private func loadTenantUserRole() {
+        guard let tenantId = appState.currentTenant?.id else { return }
+        
+        HTTPClient.shared.getTenantUser(tenantId: tenantId) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let tenantUser):
+                    self.tenantUserRole = tenantUser.roleType
+                case .failure(let error):
+                    print("❌ 获取租户用户角色失败: \(error.localizedDescription)")
                 }
             }
         }

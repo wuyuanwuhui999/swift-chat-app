@@ -21,7 +21,6 @@
 		F1BCCB192F79F209004CFEB0 /* 添加租户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */; };
 		F1BCCB1A2F79F209004CFEB0 /* 修改密码页面.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFE2F79F209004CFEB0 /* 修改密码页面.png */; };
 		F1BCCB1B2F79F209004CFEB0 /* 用户信息.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB022F79F209004CFEB0 /* 用户信息.png */; };
-		F1BCCB1C2F79F209004CFEB0 /* 账号密码登录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */; };
 		F1BCCB1D2F79F209004CFEB0 /* 我的文档.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */; };
 		F1BCCB1E2F79F209004CFEB0 /* 修改用户信息.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFF2F79F209004CFEB0 /* 修改用户信息.png */; };
 		F1BCCB1F2F79F209004CFEB0 /* 邮箱验证码登录.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */; };
@@ -68,7 +67,6 @@
 		F1BCCB012F79F209004CFEB0 /* 选择文档目录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "选择文档目录.png"; sourceTree = "<group>"; };
 		F1BCCB022F79F209004CFEB0 /* 用户信息.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "用户信息.png"; sourceTree = "<group>"; };
 		F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "邮箱验证码登录.png"; sourceTree = "<group>"; };
-		F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "账号密码登录.png"; sourceTree = "<group>"; };
 		F1BCCB052F79F209004CFEB0 /* 找回密码页面.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "找回密码页面.png"; sourceTree = "<group>"; };
 		F1BCCB062F79F209004CFEB0 /* 重置密码.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "重置密码.png"; sourceTree = "<group>"; };
 		F1BCCB072F79F209004CFEB0 /* 重置密码页面.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "重置密码页面.png"; sourceTree = "<group>"; };
@@ -126,7 +124,6 @@
 				F1BCCB012F79F209004CFEB0 /* 选择文档目录.png */,
 				F1BCCB022F79F209004CFEB0 /* 用户信息.png */,
 				F1BCCB032F79F209004CFEB0 /* 邮箱验证码登录.png */,
-				F1BCCB042F79F209004CFEB0 /* 账号密码登录.png */,
 				F1BCCB052F79F209004CFEB0 /* 找回密码页面.png */,
 				F1BCCB652F8B6ED6004CFEB0 /* gitee-push.sh */,
 				F1BCCB672F8B6EF2004CFEB0 /* github-push.sh */,
@@ -232,7 +229,6 @@
 				F1BCCB192F79F209004CFEB0 /* 添加租户.png in Resources */,
 				F1BCCB1A2F79F209004CFEB0 /* 修改密码页面.png in Resources */,
 				F1BCCB1B2F79F209004CFEB0 /* 用户信息.png in Resources */,
-				F1BCCB1C2F79F209004CFEB0 /* 账号密码登录.png in Resources */,
 				F1BCCB1D2F79F209004CFEB0 /* 我的文档.png in Resources */,
 				F1BCCB1E2F79F209004CFEB0 /* 修改用户信息.png in Resources */,
 				F1BCCB1F2F79F209004CFEB0 /* 邮箱验证码登录.png in Resources */,
