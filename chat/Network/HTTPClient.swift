@@ -1351,23 +1351,30 @@ extension HTTPClient {
         task.resume()
     }
 
-    /// 获取租户下的用户列表
+    /// 获取租户下的用户列表（支持关键词搜索）
     /// - Parameters:
     ///   - tenantId: 租户ID
+    ///   - keyword: 搜索关键词（可选）
     ///   - pageNum: 页码
     ///   - pageSize: 每页大小
     ///   - completion: 完成回调
     func getTenantUserList(
         tenantId: String,
+        keyword: String? = nil,
         pageNum: Int,
         pageSize: Int,
         completion: @escaping (Result<([TenantUser], Int), NetworkError>) -> Void
     ) {
-        let parameters: [String: Any] = [
+        var parameters: [String: Any] = [
             "tenantId": tenantId,
             "pageNum": pageNum,
             "pageSize": pageSize
         ]
+        
+        // 如果有搜索关键词，添加到参数中
+        if let keyword = keyword, !keyword.isEmpty {
+            parameters["keyword"] = keyword
+        }
         
         guard var urlComponents = URLComponents(string: baseURL + Constants.API.getTenantUserList) else {
             completion(.failure(.invalidURL))
@@ -1611,6 +1618,127 @@ extension HTTPClient {
                 }
             } catch {
                 print("❌ 解析添加用户响应失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    // MARK: - 管理员管理相关方法
+
+    /// 设为管理员
+    func addAdmin(tenantId: String, userId: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
+        request(endpoint: .addAdmin(tenantId, userId)) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data > 0))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "操作失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 取消管理员
+    func cancelAdmin(tenantId: String, userId: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
+        request(endpoint: .cancelAdmin(tenantId, userId)) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data > 0))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "操作失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }    
+
+    /// 搜索公司用户（支持分页）
+    func searchCompanyUsers(
+        keyword: String,
+        companyId: String,
+        pageNum: Int,
+        pageSize: Int,
+        completion: @escaping (Result<([UserData], Int), NetworkError>) -> Void
+    ) {
+        let parameters: [String: Any] = [
+            "keyword": keyword,
+            "companyId": companyId,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.searchCompanyUsersWithPage) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[UserData]>.self, from: data)
+                
+                if response.isSuccess, let users = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success((users, response.total ?? 0)))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "搜索失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析搜索公司用户响应失败: \(error)")
                 DispatchQueue.main.async {
                     completion(.failure(.decodingError))
                 }

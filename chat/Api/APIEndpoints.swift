@@ -32,6 +32,10 @@ enum APIEndpoint {
     case getTenantUserList
     case getCompanyUsers
     case addTenantUser(String, String)
+
+    case addAdmin(String, String)  // 设为管理员
+    case cancelAdmin(String, String)  // 取消管理员
+    case searchCompanyUsersWithPage  // 搜索公司用户（带分页）
     
     var path: String {
         switch self {
@@ -92,19 +96,29 @@ enum APIEndpoint {
             return Constants.API.addTenantUser
                 .replacingOccurrences(of: "{tenantId}", with: tenantId)
                 .replacingOccurrences(of: "{userId}", with: userId)
+        case .addAdmin(let tenantId, let userId):
+            return Constants.API.addAdmin
+                .replacingOccurrences(of: "{tenantId}", with: tenantId)
+                .replacingOccurrences(of: "{userId}", with: userId)
+        case .cancelAdmin(let tenantId, let userId):
+            return Constants.API.cancelAdmin
+                .replacingOccurrences(of: "{tenantId}", with: tenantId)
+                .replacingOccurrences(of: "{userId}", with: userId)
+        case .searchCompanyUsersWithPage:
+            return Constants.API.searchCompanyUsersWithPage
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc,.updateAvater, .vertifyUser,.resetPassword,.addTenantUser:
-                return "POST"
-            case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId,.getPrompt,.getTenantUser, .getTenantUserList, .getCompanyUsers:
-                return "GET"
-            case .deleteDoc:
-                return "DELETE"  // 删除文档使用 DELETE 方法
-        case .updateUser,.updatePassword,.updatePrompt:
-               return "PUT"
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser:
+            return "POST"
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchCompanyUsersWithPage:
+            return "GET"
+        case .deleteDoc:
+            return "DELETE"  // 删除文档使用 DELETE 方法
+        case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin:
+            return "PUT"
         }
     }
     

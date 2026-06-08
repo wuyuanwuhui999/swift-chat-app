@@ -46,5 +46,10 @@ struct Constants {
         static let getTenantUserList = "/service/tenant/getTenantUserList"
         static let getCompanyUsers = "/service/company/getCompanyUsers"
         static let addTenantUser = "/service/tenant/addTenantUser"
+
+        static let addAdmin = "/service/tenant/addAdmin/{tenantId}/{userId}"
+        static let cancelAdmin = "/service/tenant/cancelAdmin/{tenantId}/{userId}"
+        static let searchTenantUsers = "/service/tenant/getTenantUserList"
+        static let searchCompanyUsersWithPage = "/service/company/searchCompanyUsers"
     }
 }
