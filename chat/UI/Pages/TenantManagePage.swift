@@ -235,6 +235,7 @@ struct TenantManagePage: View {
                 .font(.system(size: Dimens.normalFont))
                 .foregroundColor(Colors.grayColor)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, Dimens.largeMargin)
     }
     

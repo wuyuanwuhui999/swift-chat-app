@@ -427,18 +427,18 @@ struct UserSearchRow: View {
                     .font(.system(size: Dimens.normalFont - 2))
                     .foregroundColor(Colors.grayColor)
                     .padding(.horizontal, Dimens.middleMargin)
-                    .padding(.vertical, Dimens.smallIcon)
+                    .padding(.vertical, Dimens.smallMargin)
                     .background(Colors.grayColor.opacity(0.2))
-                    .cornerRadius(Dimens.borderRadius)
+                    .cornerRadius(Dimens.borderRadius * 2)
             } else {
                 Button(action: onAdd) {
                     Text("添加")
                         .font(.system(size: Dimens.normalFont))
                         .foregroundColor(Colors.whiteColor)
                         .padding(.horizontal, Dimens.middleMargin)
-                        .padding(.vertical, Dimens.smallIcon)
+                        .padding(.vertical, Dimens.smallMargin)
                         .background(Colors.primaryColor)
-                        .cornerRadius(Dimens.borderRadius)
+                        .cornerRadius(Dimens.borderRadius * 2)
                 }
             }
         }

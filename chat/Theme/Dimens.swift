@@ -16,6 +16,7 @@ struct Dimens {
     static let middleFont:CGFloat = 20
     static let bigFont:CGFloat = 30
     
+    static let smallMargin: CGFloat = 10
     static let middleMargin: CGFloat = 15
     static let largeMargin: CGFloat = 20
     
@@ -40,6 +41,7 @@ extension CGFloat {
     static let middleFont: CGFloat = Dimens.middleFont
     static let bigFont: CGFloat = Dimens.bigFont
     
+    static let smallMargin: CGFloat = Dimens.smallMargin
     static let middleMargin: CGFloat = Dimens.middleMargin
     static let largeMargin: CGFloat = Dimens.largeMargin
     
