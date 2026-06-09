@@ -59,10 +59,6 @@ AI与前端结合的实战经验（从接口调用到UI交互）
 ![重置密码](修改密码页面.png)
 ![重置密码](找回密码页面.png)
 ![重置密码](注册页面.png)
-![重置密码](音乐播放器-收藏页.png)
-![重置密码](音乐播放器-评论页面.png)
-![ai智能聊天助手](ai智能聊天助手.png)
-![ai聊天RAG文档查询](ai聊天RAG文档查询.png)
 ![ai聊天菜单功能](ai聊天菜单功能.png)
 ![ai聊天会话记录](ai聊天会话记录.png)
 ![ai聊天切换模型](rag文档查询.png)
@@ -71,6 +67,7 @@ AI与前端结合的实战经验（从接口调用到UI交互）
 ![我的文档](我的文档.png)
 ![ai聊天切换模型](选择文档.png)
 ![添加用户](添加用户.png)
+![搜索租户](搜索租户.png)
 ![选择文档目录](选择文档目录.png)
 ![提示词列表](提示词列表.png)
 ![设置提示词](设置提示词.png)
@@ -78,84 +75,82 @@ AI与前端结合的实战经验（从接口调用到UI交互）
 ![租户管理2](租户管理2.png)
 =============================界面预览（如果无法预览，请查看项目根目录png文件）==========================
 
-如果打不开github地址，请用github的镜像地址，例如
-原地址：https://github.com/wuyuanwuhui999/springboot3-app-service
-镜像地址：https://bgithub.xyz/wuyuanwuhui999/springboot3-app-service
+如果打不开github地址，请用github的镜像地址，例如   
+原地址：https://github.com/wuyuanwuhui999/springboot3-app-service   
+镜像地址：https://bgithub.xyz/wuyuanwuhui999/springboot3-app-service   
 
-后端接口项目和sql语句：
-github springboot2旧项目：https://github.com/wuyuanwuhui99/springboot-app-service （密钥丢失无法登录，该不在更新，迁移到wuyuanwuhui999账号下）
-github springboot3新项目：https://github.com/wuyuanwuhui999/springboot3-app-service
-github fast api版本：https://github.com/wuyuanwuhui999/fast-api-app-service
+后端接口项目和sql语句：   
+github springboot2旧项目：https://github.com/wuyuanwuhui99/springboot-app-service （密钥丢失无法登录，该不在更新，迁移到wuyuanwuhui999账号下）   
+github springboot3新项目：https://github.com/wuyuanwuhui999/springboot3-app-service   
+github fast api版本：https://github.com/wuyuanwuhui999/fast-api-app-service   
 
-gitee springboot2旧项目：https://gitee.com/wuyuanwuhui99/springboot-app-service
-gitee springboot3新项目：https://gitee.com/wuyuanwuhui99/springboot3-app-service
-gitee fast api版本：https://gitee.com/wuyuanwuhui99/fast-api-app-service
+gitee springboot2旧项目：https://gitee.com/wuyuanwuhui99/springboot-app-service   
+gitee springboot3新项目：https://gitee.com/wuyuanwuhui99/springboot3-app-service   
+gitee fast api版本：https://gitee.com/wuyuanwuhui99/fast-api-app-service   
 
-uniapp ai智能体App项目参见
-github：https://github.com/wuyuanwuhui999/uniapp-vite-vue3-ts-chat-app-ui
-gitee：https://github.com/wuyuanwuhui99/uniapp-vite-vue3-ts-chat-app-ui
+uniapp ai智能体App项目参见   
+github：https://github.com/wuyuanwuhui999/uniapp-vite-vue3-ts-chat-app-ui   
+gitee：https://github.com/wuyuanwuhui99/uniapp-vite-vue3-ts-chat-app-ui   
+ 
+jetpack compose ai智能体App项目参见   
+github：https://github.com/wuyuanwuhui999/andriod-jetpack-compose-chat-app   
+gitee：https://gitee.com/wuyuanwuhui99/andriod-jetpack-compose-chat-app   
 
-jetpack compose ai智能体App项目参见
-github：https://github.com/wuyuanwuhui999/andriod-jetpack-compose-chat-app
-gitee：https://gitee.com/wuyuanwuhui99/andriod-jetpack-compose-chat-app
+swift ai智能体App项目参见   
+github：https://github.com/wuyuanwuhui999/swift-chat-app   
+gitee：https://gitee.com/wuyuanwuhui99/swift-chat-app   
 
-swift ai智能体App项目参见
-github：https://github.com/wuyuanwuhui999/swift-chat-app
-gitee：https://gitee.com/wuyuanwuhui99/swift-chat-app
+flutter电影项目参见:   
+github旧地址：https://github.com/wuyuanwuhui99/flutter-movie-app-ui   
+github新地址：https://github.com/wuyuanwuhui999/flutter-movie-app-ui   
+gitee地址：https://gitee.com/wuyuanwuhui99/flutter-movie-app-ui   
 
-flutter电影项目参见:
-github旧地址：https://github.com/wuyuanwuhui99/flutter-movie-app-ui
-github新地址：https://github.com/wuyuanwuhui999/flutter-movie-app-ui
-gitee地址：https://hub.nuaa.cf/wuyuanwuhui99/flutter-movie-app-ui
+flutter音乐项目参见:   
+github旧地址：https://github.com/wuyuanwuhui99/flutter-music-app-ui   
+github新地址：https://github.com/wuyuanwuhui999/flutter-music-app-ui   
+gitee地址：https://gitee.com/wuyuanwuhui99/flutter-music-app-ui   
 
-flutter音乐项目参见:
-github旧地址：https://github.com/wuyuanwuhui99/flutter-music-app-ui
-github新地址：https://github.com/wuyuanwuhui999/flutter-music-app-ui
-gitee地址：https://hub.nuaa.cf/wuyuanwuhui99/flutter-music-app-ui
+react native电影参见:   
+github地址：https://github.com/wuyuanwuhui99/react-native-app-ui   
 
-react native电影参见:
-github地址：https://github.com/wuyuanwuhui99/react-native-app-ui
+java安卓原生电影参见：   
+通用地址：https://github.com/wuyuanwuhui99/android-java-movie-app-ui   
+gitee地址：https://gitee.com/wuyuanwuhui99/android-java-movie-app-ui   
 
-java安卓原生电影参见：
-通用地址：https://github.com/wuyuanwuhui99/android-java-movie-app-ui
-gitee地址：https://hub.nuaa.cf/wuyuanwuhui99/android-java-movie-app-ui
+uniapp电影参见：   
+github旧地址：https://github.com/wuyuanwuhui99/uniapp-vite-vue3-ts-movie-app-ui   
+github新地址：https://github.com/wuyuanwuhui999/uniapp-vite-vue3-ts-movie-app-ui   
+gitee地址：https://gitee.com/wuyuanwuhui99/uniapp-vite-vue3-ts-movie-app-ui   
 
-uniapp电影参见：
-github旧地址：https://github.com/wuyuanwuhui99/uniapp-vite-vue3-ts-movie-app-ui
-github新地址：https://github.com/wuyuanwuhui999/uniapp-vite-vue3-ts-movie-app-ui
-gitee地址：https://gitee/wuyuanwuhui99/uniapp-vite-vue3-ts-movie-app-ui
-
-uniapp音乐项目参见：
-github旧地址：https://github.com/wuyuanwuhui99/uniapp-vite-vue3-ts-music-app-ui
-github新地址：https://github.com/wuyuanwuhui999/uniapp-vite-vue3-ts-music-app-ui
-gitee地址：https://gitee/wuyuanwuhui99/uniapp-vite-vue3-ts-music-app-ui
+uniapp音乐项目参见：  
+github旧地址：https://github.com/wuyuanwuhui99/uniapp-vite-vue3-ts-music-app-ui   
+github新地址：https://github.com/wuyuanwuhui999/uniapp-vite-vue3-ts-music-app-ui   
+gitee地址：https://gitee.com/wuyuanwuhui99/uniapp-vite-vue3-ts-music-app-ui   
 
 微信小程序版本参见：
-通用地址：https://github.com/wuyuanwuhui99/weixin-movie-app-ui、
-国内镜像地址：https://hub.nuaa.cf/wuyuanwuhui99/weixin-movie-app-ui
+通用地址：https://github.com/wuyuanwuhui99/weixin-movie-app-ui.  
+国内镜像地址：https://bgithub.xyz/wuyuanwuhui99/weixin-movie-app-ui.  
 
-harmony鸿蒙电影参见:
-github旧地址：https://github.com/wuyuanwuhui99/Harmony_movie_app_ui
-github新地址：https://github.com/wuyuanwuhui999/Harmony_movie_app_ui
-gitee地址：https://hub.nuaa.cf/wuyuanwuhui99/Harmony_movie_app_ui
+harmony鸿蒙电影参见:   
+github旧地址：https://github.com/wuyuanwuhui99/Harmony_movie_app_ui.  
+github新地址：https://github.com/wuyuanwuhui999/Harmony_movie_app_ui.  
+gitee地址：https://gitee.com/wuyuanwuhui99/Harmony_movie_app_ui.  
 
-harmony鸿蒙音乐项目参见:
-github旧地址：https://github.com/wuyuanwuhui99/harmony_music_app_ui
-github新地址：https://github.com/wuyuanwuhui999/harmony_music_app_ui
-gitee地址：https://hub.nuaa.cf/wuyuanwuhui99/harmony_music_app_ui
+harmony鸿蒙音乐项目参见:   
+github旧地址：https://github.com/wuyuanwuhui99/harmony_music_app_ui.  
+github新地址：https://github.com/wuyuanwuhui999/harmony_music_app_ui.  
+gitee地址：https://gitee.com/wuyuanwuhui99/harmony_music_app_ui.  
 
-vue在线音乐项目：
-通用地址：https://github.com/wuyuanwuhui99/vue-music-app-ui
-国内镜像地址：https://hub.nuaa.cf/wuyuanwuhui99/vue-music-app-ui
+vue在线音乐项目：   
+通用地址：https://github.com/wuyuanwuhui99/vue-music-app-ui.  
+国内镜像地址：https://bgithub.xyz/wuyuanwuhui99/vue-music-app-ui.  
 
-在线音乐后端项目：
-通用地址：https://github.com/wuyuanwuhui99/koa2-music-app-service
-国内镜像地址：https://hub.nuaa.cf/wuyuanwuhui99/koa2-music-app-service
+在线音乐后端项目： 
+通用地址：https://github.com/wuyuanwuhui99/koa2-music-app-service   
+国内镜像地址：https://bgithub.xyz/wuyuanwuhui99/koa2-music-app-service.  
 
-vue3+ts明日头条项目：
-通用地址：https://github.com/wuyuanwuhui99/vue3-ts-toutiao-app-ui
-国内镜像地址：https://hub.nuaa.cf/wuyuanwuhui99/vue3-ts-toutiao-app-ui
+vue3+ts明日头条项目：   
+通用地址：https://github.com/wuyuanwuhui99/vue3-ts-toutiao-app-ui.  
+国内镜像地址：https://bgithub.xyz/wuyuanwuhui99/vue3-ts-toutiao-app-ui   
 
-本站所有音乐和图片均来自互联网收集而来，版权归原创者所有，本网站只提供web页面服务，并不提供资源存储，也不参与录制、上传 若本站收录的节目无意侵犯了贵司版权，请联系
-
-邮箱：275018723@qq.com
+邮箱：275018723@qq.com.  
