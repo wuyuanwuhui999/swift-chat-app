@@ -18,7 +18,6 @@
 		F1BCCB162F79F209004CFEB0 /* 添加用户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF92F79F209004CFEB0 /* 添加用户.png */; };
 		F1BCCB172F79F209004CFEB0 /* 修改密码.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFD2F79F209004CFEB0 /* 修改密码.png */; };
 		F1BCCB182F79F209004CFEB0 /* 更改用户信息2.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF22F79F209004CFEB0 /* 更改用户信息2.png */; };
-		F1BCCB192F79F209004CFEB0 /* 添加租户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */; };
 		F1BCCB1A2F79F209004CFEB0 /* 修改密码页面.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFE2F79F209004CFEB0 /* 修改密码页面.png */; };
 		F1BCCB1B2F79F209004CFEB0 /* 用户信息.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB022F79F209004CFEB0 /* 用户信息.png */; };
 		F1BCCB1D2F79F209004CFEB0 /* 我的文档.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */; };
@@ -57,7 +56,6 @@
 		F1BCCAF72F79F209004CFEB0 /* 设置提示词.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "设置提示词.png"; sourceTree = "<group>"; };
 		F1BCCAF82F79F209004CFEB0 /* 提示词列表.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "提示词列表.png"; sourceTree = "<group>"; };
 		F1BCCAF92F79F209004CFEB0 /* 添加用户.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "添加用户.png"; sourceTree = "<group>"; };
-		F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "添加租户.png"; sourceTree = "<group>"; };
 		F1BCCAFB2F79F209004CFEB0 /* 忘记密码.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "忘记密码.png"; sourceTree = "<group>"; };
 		F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "我的文档.png"; sourceTree = "<group>"; };
 		F1BCCAFD2F79F209004CFEB0 /* 修改密码.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "修改密码.png"; sourceTree = "<group>"; };
@@ -114,7 +112,6 @@
 				F1BCCAF72F79F209004CFEB0 /* 设置提示词.png */,
 				F1BCCAF82F79F209004CFEB0 /* 提示词列表.png */,
 				F1BCCAF92F79F209004CFEB0 /* 添加用户.png */,
-				F1BCCAFA2F79F209004CFEB0 /* 添加租户.png */,
 				F1BCCAFB2F79F209004CFEB0 /* 忘记密码.png */,
 				F1BCCAFC2F79F209004CFEB0 /* 我的文档.png */,
 				F1BCCAFD2F79F209004CFEB0 /* 修改密码.png */,
@@ -226,7 +223,6 @@
 				F1BCCB162F79F209004CFEB0 /* 添加用户.png in Resources */,
 				F1BCCB172F79F209004CFEB0 /* 修改密码.png in Resources */,
 				F1BCCB182F79F209004CFEB0 /* 更改用户信息2.png in Resources */,
-				F1BCCB192F79F209004CFEB0 /* 添加租户.png in Resources */,
 				F1BCCB1A2F79F209004CFEB0 /* 修改密码页面.png in Resources */,
 				F1BCCB1B2F79F209004CFEB0 /* 用户信息.png in Resources */,
 				F1BCCB1D2F79F209004CFEB0 /* 我的文档.png in Resources */,
