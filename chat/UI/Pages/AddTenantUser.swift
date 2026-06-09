@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 添加租户用户页面
+/// 添加租户用户页面（独立页面）
 struct AddTenantUser: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
@@ -37,17 +37,16 @@ struct AddTenantUser: View {
             // 标题栏
             customNavigationBar
             
+            // 搜索框（直接显示，无卡片包装）
+            searchBarView
+            
             // 内容区域
             ScrollView {
                 VStack(spacing: Dimens.middleMargin) {
-                    // 搜索框
-                    searchBarView
-                    
                     // 用户列表卡片
                     userListCardView
                 }
                 .padding(.horizontal, Dimens.middleMargin)
-                .padding(.top, Dimens.middleMargin)
                 .padding(.bottom, Dimens.middleMargin)
             }
             .background(Colors.pageBackgroundColor)
@@ -64,6 +63,7 @@ struct AddTenantUser: View {
         .onAppear {
             loadAddedUsers()
         }
+        .navigationBarHidden(true)
     }
     
     // MARK: - 视图组件
@@ -108,7 +108,7 @@ struct AddTenantUser: View {
         )
     }
     
-    /// 搜索框视图
+    /// 搜索框视图（胶囊型，直接显示）
     private var searchBarView: some View {
         HStack {
             HStack {
@@ -143,8 +143,12 @@ struct AddTenantUser: View {
         }
         .padding(.horizontal, Dimens.middleMargin)
         .padding(.vertical, Dimens.smallIcon)
-        .background(Colors.whiteColor)
-        .cornerRadius(Dimens.borderRadius)
+        .overlay(
+            Rectangle()
+                .fill(Colors.grayColor.opacity(0.3))
+                .frame(height: 1),
+            alignment: .bottom
+        )
     }
     
     /// 用户列表卡片视图
@@ -211,6 +215,7 @@ struct AddTenantUser: View {
                 .font(.system(size: Dimens.normalFont - 2))
                 .foregroundColor(Colors.grayColor)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, Dimens.largeMargin)
     }
     
@@ -225,6 +230,7 @@ struct AddTenantUser: View {
                 .font(.system(size: Dimens.normalFont))
                 .foregroundColor(Colors.grayColor)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, Dimens.largeMargin)
     }
     

@@ -31,47 +31,49 @@ struct TenantManagePage: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var tenantUserRole: Int = 0
-    @State private var showAddUserPage = false
+    @State private var navigateToAddUser = false
     
     // 下拉刷新状态
     @State private var isRefreshing = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // 标题栏
-            customNavigationBar
-            
-            // 搜索框（直接显示，无卡片包装）
-            searchBarView
-            
-            // 内容区域
-            ScrollView {
-                VStack(spacing: Dimens.middleMargin) {
-                    // 用户列表卡片
-                    userListCardView
+        NavigationStack {
+            VStack(spacing: 0) {
+                // 标题栏
+                customNavigationBar
+                
+                // 搜索框（直接显示，无卡片包装）
+                searchBarView
+                
+                // 内容区域
+                ScrollView {
+                    VStack(spacing: Dimens.middleMargin) {
+                        // 用户列表卡片
+                        userListCardView
+                    }
+                    .padding(.horizontal, Dimens.middleMargin)
+                    .padding(.bottom, Dimens.middleMargin)
                 }
-                .padding(.horizontal, Dimens.middleMargin)
-                .padding(.top, Dimens.middleMargin)
-                .padding(.bottom, Dimens.middleMargin)
+                .background(Colors.pageBackgroundColor)
+                .refreshable {
+                    // 下拉刷新
+                    await refreshData()
+                }
             }
             .background(Colors.pageBackgroundColor)
-            .refreshable {
-                // 下拉刷新
-                await refreshData()
+            .alert("提示", isPresented: $showAlert) {
+                Button("确定", role: .cancel) { }
+            } message: {
+                Text(alertMessage)
             }
-        }
-        .background(Colors.pageBackgroundColor)
-        .alert("提示", isPresented: $showAlert) {
-            Button("确定", role: .cancel) { }
-        } message: {
-            Text(alertMessage)
-        }
-        .onAppear {
-            loadTenantUserList()
-            loadCurrentTenantUserRole()
-        }
-        .sheet(isPresented: $showAddUserPage) {
-            AddTenantUser()
+            .onAppear {
+                loadTenantUserList()
+                loadCurrentTenantUserRole()
+            }
+            .navigationDestination(isPresented: $navigateToAddUser) {
+                AddTenantUser()
+                    .navigationBarHidden(true)
+            }
         }
     }
     
@@ -100,7 +102,7 @@ struct TenantManagePage: View {
             
             // 添加用户按钮
             Button(action: {
-                showAddUserPage = true
+                navigateToAddUser = true
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: Dimens.middleIcon))
@@ -153,7 +155,6 @@ struct TenantManagePage: View {
         }
         .padding(.horizontal, Dimens.middleMargin)
         .padding(.vertical, Dimens.smallIcon)
-        .background(Colors.whiteColor)
         .overlay(
             Rectangle()
                 .fill(Colors.grayColor.opacity(0.3))
