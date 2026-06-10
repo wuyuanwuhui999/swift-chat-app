@@ -359,8 +359,17 @@ extension HTTPClient {
     }
     
     /// 获取模型列表
-    func getModelList(completion: @escaping (Result<[ChatModel], NetworkError>) -> Void) {
-        request(endpoint: .getModelList) { (result: Result<BaseResponse<[ChatModel]>, NetworkError>) in
+    /// - Parameters:
+    ///   - companyId: 公司ID（必传参数）
+    ///   - completion: 完成回调
+    func getModelList(companyId: String, completion: @escaping (Result<[ChatModel], NetworkError>) -> Void) {
+        // companyId 是必传参数，不能为空
+        guard !companyId.isEmpty else {
+            completion(.failure(.custom(message: "companyId 不能为空")))
+            return
+        }
+        
+        request(endpoint: .getModelList(companyId)) { (result: Result<BaseResponse<[ChatModel]>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let models = response.data {

@@ -1,4 +1,4 @@
-// config/APIEndpoints.swift
+// chat/chat/Api/APIEndpoints.swift
 
 import Foundation
 
@@ -11,14 +11,14 @@ enum APIEndpoint {
     case sendEmailVertifyCode
     case loginByEmail
     case getTenantList
-    case getModelList
+    case getModelList(String)  // 改为必传参数，companyId 不能为 nil
     case getDirectoryList
     case getDocListByDirId
     case createDir
     case getChatHistory
     case getChatHistoryByChatId
     case uploadDoc
-    case deleteDoc(String)  // 添加 deleteDoc，关联值传递 docId
+    case deleteDoc(String)
     case updateUser
     case updateAvater
     case vertifyUser
@@ -33,9 +33,9 @@ enum APIEndpoint {
     case getCompanyUsers
     case addTenantUser(String, String)
 
-    case addAdmin(String, String)  // 设为管理员
-    case cancelAdmin(String, String)  // 取消管理员
-    case searchCompanyUsersWithPage  // 搜索公司用户（带分页）
+    case addAdmin(String, String)
+    case cancelAdmin(String, String)
+    case searchCompanyUsersWithPage
     
     var path: String {
         switch self {
@@ -68,7 +68,6 @@ enum APIEndpoint {
         case .uploadDoc:
             return Constants.API.uploadDoc
         case .deleteDoc(let docId):
-            // 替换路径中的 {docId} 参数
             return Constants.API.deleteDoc.replacingOccurrences(of: "{docId}", with: docId)
         case .updateUser:
             return Constants.API.updateUser
@@ -116,14 +115,21 @@ enum APIEndpoint {
         case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchCompanyUsersWithPage:
             return "GET"
         case .deleteDoc:
-            return "DELETE"  // 删除文档使用 DELETE 方法
+            return "DELETE"
         case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin:
             return "PUT"
         }
     }
     
+    /// 构建带参数的 URL
     func url(baseURL: String) -> URL? {
-        let components = URLComponents(string: baseURL + path)
+        var components = URLComponents(string: baseURL + path)
+        
+        // 为 getModelList 添加 query 参数（companyId 是必传参数）
+        if case .getModelList(let companyId) = self {
+            components?.queryItems = [URLQueryItem(name: "companyId", value: companyId)]
+        }
+        
         return components?.url
     }
 }

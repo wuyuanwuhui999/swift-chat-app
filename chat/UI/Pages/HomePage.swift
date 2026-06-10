@@ -382,19 +382,28 @@ struct HomePage: View {
         isLoading = true
         let group = DispatchGroup()
         
+        // 获取公司ID（必须先有公司ID才能获取模型列表）
+        let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId()
+        
+        // 如果没有公司ID，提示错误
+        guard let validCompanyId = companyId, !validCompanyId.isEmpty else {
+            print("❌ 无法获取模型列表：公司ID为空")
+            isLoading = false
+            return
+        }
+        
         // 获取租户列表（带上 companyId）
         group.enter()
-        let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId()
-        HTTPClient.shared.getTenantList(companyId: companyId) { result in
+        HTTPClient.shared.getTenantList(companyId: validCompanyId) { result in
             DispatchQueue.main.async {
                 self.handleTenantListResult(result)
                 group.leave()
             }
         }
         
-        // 获取模型列表
+        // 获取模型列表（必须传入 companyId）
         group.enter()
-        HTTPClient.shared.getModelList { result in
+        HTTPClient.shared.getModelList(companyId: validCompanyId) { result in
             DispatchQueue.main.async {
                 self.handleModelListResult(result)
                 group.leave()
