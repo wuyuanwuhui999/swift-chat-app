@@ -30,11 +30,14 @@ struct TenantManagePage: View {
     // 其他状态
     @State private var showAlert = false
     @State private var alertMessage = ""
-    @State private var tenantUserRole: Int = 0
+    @State private var tenantUserRole: Int = 0  // 当前登录用户在当前租户内的角色
     @State private var navigateToAddUser = false
     
     // 下拉刷新状态
     @State private var isRefreshing = false
+    
+    // 记录当前滑动打开的用户ID，用于自动关闭其他打开的条目
+    @State private var activeSwipeUserId: String?
     
     var body: some View {
         NavigationStack {
@@ -56,7 +59,6 @@ struct TenantManagePage: View {
                 }
                 .background(Colors.pageBackgroundColor)
                 .refreshable {
-                    // 下拉刷新
                     await refreshData()
                 }
             }
@@ -100,13 +102,19 @@ struct TenantManagePage: View {
             
             Spacer()
             
-            // 添加用户按钮
-            Button(action: {
-                navigateToAddUser = true
-            }) {
-                Image(systemName: "plus")
-                    .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.primaryColor)
+            // 添加用户按钮（仅当当前用户是超级管理员或管理员时显示）
+            if tenantUserRole >= 1 {
+                Button(action: {
+                    navigateToAddUser = true
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: Dimens.middleIcon))
+                        .foregroundColor(Colors.primaryColor)
+                }
+            } else {
+                // 占位符保持布局
+                Color.clear
+                    .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
             }
         }
         .padding(.horizontal, Dimens.middleMargin)
@@ -188,15 +196,27 @@ struct TenantManagePage: View {
         
         LazyVStack(spacing: 0) {
             ForEach(Array(users.enumerated()), id: \.element.id) { index, user in
-                TenantUserRow(
+                SwipeableTenantUserRow(
                     tenantUser: user,
                     currentUserRole: tenantUserRole,
+                    isActiveSwipe: activeSwipeUserId == user.id,
+                    onSwipeStateChanged: { userId, isOpen in
+                        if isOpen {
+                            // 关闭其他打开的条目
+                            if let currentActive = activeSwipeUserId, currentActive != userId {
+                                activeSwipeUserId = nil
+                            }
+                            activeSwipeUserId = userId
+                        } else {
+                            if activeSwipeUserId == userId {
+                                activeSwipeUserId = nil
+                            }
+                        }
+                    },
                     onDelete: {
-                        // 删除用户（由滑动删除触发）
                         deleteTenantUser(user)
                     },
                     onRoleChange: {
-                        // 切换管理员状态
                         toggleAdminStatus(user)
                     }
                 )
@@ -268,7 +288,6 @@ struct TenantManagePage: View {
         isSearching = true
         isSearchLoading = true
         
-        // 复用 getTenantUserList 接口，传入 keyword 参数
         HTTPClient.shared.getTenantUserList(
             tenantId: tenantId,
             keyword: keyword,
@@ -295,6 +314,8 @@ struct TenantManagePage: View {
     private func refreshData() async {
         await MainActor.run {
             isRefreshing = true
+            // 刷新时关闭所有滑动打开的条目
+            activeSwipeUserId = nil
         }
         
         // 重置状态
@@ -342,6 +363,8 @@ struct TenantManagePage: View {
             currentPage = 1
             tenantUsers = []
             hasMoreData = true
+            // 刷新时关闭所有滑动打开的条目
+            activeSwipeUserId = nil
         }
         
         HTTPClient.shared.getTenantUserList(
@@ -407,11 +430,6 @@ struct TenantManagePage: View {
     
     /// 执行删除用户
     private func performDeleteUser(_ user: TenantUser) {
-        // 注意：这里需要后端提供删除租户用户的接口
-        // 假设接口是 /service/tenant/removeTenantUser/{tenantId}/{userId}
-        // 由于原代码中没有删除接口，这里暂时只做本地移除
-        // 实际使用时需要调用删除接口
-        
         // 从列表中移除
         if isSearching {
             searchResults.removeAll { $0.id == user.id }
@@ -518,32 +536,101 @@ struct TenantManagePage: View {
     }
 }
 
-// MARK: - 租户用户行组件（支持滑动删除）
+// MARK: - 可滑动租户用户行组件（支持双向滑动恢复）
 
-/// 租户用户行视图
-struct TenantUserRow: View {
+/// 可滑动租户用户行视图
+struct SwipeableTenantUserRow: View {
     let tenantUser: TenantUser
-    let currentUserRole: Int
+    let currentUserRole: Int  // 当前登录用户角色 (0:普通, 1:管理员, 2:超级管理员)
+    let isActiveSwipe: Bool
+    let onSwipeStateChanged: (String, Bool) -> Void
     let onDelete: () -> Void
     let onRoleChange: () -> Void
     
+    // 滑动偏移量
     @State private var offset: CGFloat = 0
-    @State private var isDragging = false
+    // 拖拽起始位置
+    @State private var dragStartLocation: CGFloat = 0
     
-    // 是否显示管理员操作按钮（当前用户角色 > 1）
-    private var canManageRole: Bool {
-        return currentUserRole > 1
+    // 计算滑动操作区域的宽度
+    private var actionButtonsWidth: CGFloat {
+        var width: CGFloat = 0
+        if showAdminButton {
+            width += 100  // 设为管理员/取消管理员按钮宽度
+        }
+        if showDeleteButton {
+            width += 70   // 删除按钮宽度
+        }
+        return width
     }
     
-    // 是否已经是管理员
-    private var isAdmin: Bool {
+    // 当前用户是否为超级管理员
+    private var isSuperAdmin: Bool {
+        return currentUserRole == 2
+    }
+    
+    // 当前用户是否为普通管理员
+    private var isNormalAdmin: Bool {
+        return currentUserRole == 1
+    }
+    
+    // 当前用户是否为普通用户
+    private var isNormalUser: Bool {
+        return currentUserRole == 0
+    }
+    
+    // 目标用户是否为超级管理员
+    private var targetIsSuperAdmin: Bool {
+        return tenantUser.roleType == 2
+    }
+    
+    // 目标用户是否为管理员
+    private var targetIsAdmin: Bool {
         return tenantUser.roleType == 1
     }
     
-    // 角色按钮文本
-    private var roleButtonText: String {
-        return isAdmin ? "取消管理员" : "设为管理员"
+    // 目标用户是否为普通用户
+    private var targetIsNormalUser: Bool {
+        return tenantUser.roleType == 0
     }
+    
+    // 是否显示管理员操作按钮
+    // 只有当前登录用户是超级管理员时，才显示设为管理员/取消管理员按钮
+    private var showAdminButton: Bool {
+        guard isSuperAdmin else { return false }
+        // 不能对超级管理员进行操作
+        return !targetIsSuperAdmin
+    }
+    
+    // 管理员按钮文本
+    private var adminButtonText: String {
+        return targetIsAdmin ? "取消管理员" : "设为管理员"
+    }
+    
+    // 是否显示删除按钮
+    // 规则：
+    // 1. 当前用户是超级管理员：可以对所有人显示删除按钮（但不能删除自己）
+    // 2. 当前用户是普通管理员：只对普通用户显示删除按钮（不能删除管理员和超级管理员，也不能删除自己）
+    // 3. 当前用户是普通用户：不显示删除按钮
+    private var showDeleteButton: Bool {
+        if targetIsSuperAdmin {
+            return false  // 不能删除超级管理员
+        }
+        
+        if isSuperAdmin {
+            // 超级管理员不能删除自己
+            return tenantUser.userId != appState.userData?.id
+        }
+        
+        if isNormalAdmin {
+            // 普通管理员只能删除普通用户，不能删除其他管理员，也不能删除自己
+            return targetIsNormalUser && tenantUser.userId != appState.userData?.id
+        }
+        
+        return false
+    }
+    
+    @ObservedObject private var appState = AppState.shared
     
     var body: some View {
         GeometryReader { geometry in
@@ -552,15 +639,15 @@ struct TenantUserRow: View {
                 HStack(spacing: 0) {
                     Spacer()
                     
-                    // 角色管理按钮（仅当 currentUserRole > 1 时显示）
-                    if canManageRole {
+                    // 管理员操作按钮（仅当超级管理员且目标不是超级管理员时显示）
+                    if showAdminButton {
                         Button(action: {
-                            withAnimation {
+                            withAnimation(.easeOut(duration: 0.25)) {
                                 resetOffset()
                             }
                             onRoleChange()
                         }) {
-                            Text(roleButtonText)
+                            Text(adminButtonText)
                                 .font(.system(size: Dimens.normalFont))
                                 .foregroundColor(.white)
                                 .frame(width: 100, height: geometry.size.height)
@@ -569,17 +656,19 @@ struct TenantUserRow: View {
                     }
                     
                     // 删除按钮
-                    Button(action: {
-                        withAnimation {
-                            resetOffset()
+                    if showDeleteButton {
+                        Button(action: {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                resetOffset()
+                            }
+                            onDelete()
+                        }) {
+                            Text("删除")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(.white)
+                                .frame(width: 70, height: geometry.size.height)
+                                .background(Colors.warnColor)
                         }
-                        onDelete()
-                    }) {
-                        Text("删除")
-                            .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(.white)
-                            .frame(width: 70, height: geometry.size.height)
-                            .background(Colors.warnColor)
                     }
                 }
                 
@@ -620,44 +709,67 @@ struct TenantUserRow: View {
                 .padding(.vertical, Dimens.middleMargin)
                 .background(Colors.whiteColor)
                 .offset(x: offset)
-                .gesture(
+                .highPriorityGesture(
                     DragGesture()
                         .onChanged { value in
-                            isDragging = true
                             let newOffset = value.translation.width
-                            // 只允许向左滑动
+                            
+                            // 只允许向左滑动（负值）
                             if newOffset < 0 {
-                                offset = max(newOffset, -170) // 最大滑动距离
+                                // 限制最大滑动距离不超过按钮总宽度
+                                let maxOffset = -actionButtonsWidth
+                                offset = max(newOffset, maxOffset)
+                            } else if newOffset > 0 && offset < 0 {
+                                // 向右滑动时，如果当前已经向左滑开，则恢复
+                                offset = min(0, offset + newOffset)
                             }
+                            
+                            dragStartLocation = value.startLocation.x
                         }
                         .onEnded { value in
-                            isDragging = false
-                            let threshold: CGFloat = 50
+                            let threshold: CGFloat = actionButtonsWidth / 2
+                            
                             if offset < -threshold {
                                 // 完全展开
-                                withAnimation {
-                                    offset = -170
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    offset = -actionButtonsWidth
                                 }
+                                onSwipeStateChanged(tenantUser.id, true)
                             } else {
                                 // 复位
-                                withAnimation {
-                                    offset = 0
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    resetOffset()
                                 }
                             }
                         }
                 )
+                .onTapGesture {
+                    // 点击时复位
+                    if offset < 0 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            resetOffset()
+                        }
+                    }
+                }
             }
             .frame(height: Dimens.middleAvater + Dimens.middleMargin * 2)
             .clipped()
         }
         .frame(height: Dimens.middleAvater + Dimens.middleMargin * 2)
+        .onChange(of: isActiveSwipe) { newValue in
+            if !newValue && offset < 0 {
+                // 当其他条目打开时，关闭当前条目
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    resetOffset()
+                }
+            }
+        }
     }
     
     /// 复位偏移量
     private func resetOffset() {
-        withAnimation {
-            offset = 0
-        }
+        offset = 0
+        onSwipeStateChanged(tenantUser.id, false)
     }
 }
 
