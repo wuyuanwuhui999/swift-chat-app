@@ -18,6 +18,7 @@ struct Company: Codable, Identifiable {
     let updateDate: String?
     let createdBy: String
     let updatedBy: String?
+    let role: Int?  // 当前用户在公司中的角色，1=普通管理员，2=超级管理员
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -29,10 +30,26 @@ struct Company: Codable, Identifiable {
         case updateDate
         case createdBy
         case updatedBy
+        case role
     }
     
     /// 状态是否启用
     var isActive: Bool {
         return status == 1
+    }
+    
+    /// 当前用户是否为普通管理员（role == 1）
+    var isNormalAdmin: Bool {
+        return role == 1
+    }
+    
+    /// 当前用户是否为超级管理员（role == 2）
+    var isSuperAdmin: Bool {
+        return role == 2
+    }
+    
+    /// 当前用户是否为管理员（role == 1 或 role == 2）
+    var isAdmin: Bool {
+        return role == 1 || role == 2
     }
 }

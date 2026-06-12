@@ -1,5 +1,5 @@
 //
-//  AddTenantUser.swift
+//  AddTenantUserPage.swift
 //  chat
 //
 //  Created by 吴文强 on 2026/6/9.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// 添加租户用户页面（独立页面）
-struct AddTenantUser: View {
+struct AddTenantUserPage: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
     
@@ -448,5 +448,5 @@ struct UserSearchRow: View {
 }
 
 #Preview {
-    AddTenantUser()
+    AddTenantUserPage()
 }

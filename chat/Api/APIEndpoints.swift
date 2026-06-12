@@ -36,6 +36,9 @@ enum APIEndpoint {
     case addAdmin(String, String)
     case cancelAdmin(String, String)
     case searchCompanyUsersWithPage
+
+    case searchUsers
+    case addCompanyUser
     
     var path: String {
         switch self {
@@ -91,6 +94,10 @@ enum APIEndpoint {
             return Constants.API.getTenantUserList
         case .getCompanyUsers:
             return Constants.API.getCompanyUsers
+        case .searchUsers:
+            return Constants.API.searchUsers
+        case .addCompanyUser:
+            return Constants.API.addCompanyUser
         case .addTenantUser(let tenantId, let userId):
             return Constants.API.addTenantUser
                 .replacingOccurrences(of: "{tenantId}", with: tenantId)
@@ -110,9 +117,9 @@ enum APIEndpoint {
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser:
             return "POST"
-        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchCompanyUsersWithPage:
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchUsers, .searchCompanyUsersWithPage:
             return "GET"
         case .deleteDoc:
             return "DELETE"

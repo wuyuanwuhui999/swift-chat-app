@@ -1756,6 +1756,427 @@ extension HTTPClient {
         
         task.resume()
     }
+
+    /// 添加用户到公司
+    /// - Parameters:
+    ///   - companyId: 公司ID
+    ///   - userId: 用户ID
+    ///   - role: 角色 (0: 普通用户, 1: 管理员)
+    ///   - positionId: 职位ID（可选）
+    ///   - completion: 完成回调，返回 data > 0 表示成功
+    func addCompanyUser(
+        companyId: String,
+        userId: String,
+        role: Int,
+        positionId: String?,
+        completion: @escaping (Result<Int, NetworkError>) -> Void
+    ) {
+        var parameters: [String: Any] = [
+            "userId": userId,
+            "companyId": companyId,
+            "role": role
+        ]
+        
+        if let positionId = positionId, !positionId.isEmpty {
+            parameters["positionId"] = positionId
+        }
+        
+        print("🌐 添加用户请求参数: \(parameters)")
+        
+        request(endpoint: .addCompanyUser, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess {
+                    if let data = response.data {
+                        print("✅ 添加用户成功，返回数据: \(data)")
+                        completion(.success(data))
+                    } else {
+                        print("⚠️ 添加用户响应中 data 字段为空")
+                        completion(.success(0))
+                    }
+                } else {
+                    print("❌ 添加用户失败: \(response.msg ?? "未知错误")")
+                    completion(.failure(.custom(message: response.msg ?? "添加用户失败")))
+                }
+            case .failure(let error):
+                print("❌ 添加用户请求失败: \(error.localizedDescription)")
+                completion(.failure(error))
+            }
+        }
+    }
+
+    // MARK: - 公司用户管理相关方法
+
+    /// 获取公司用户列表
+    /// - Parameters:
+    ///   - companyId: 公司ID
+    ///   - keyword: 搜索关键词（可选）
+    ///   - pageNum: 页码
+    ///   - pageSize: 每页大小
+    ///   - completion: 完成回调
+    func getCompanyUsers(
+        companyId: String,
+        keyword: String? = nil,
+        pageNum: Int,
+        pageSize: Int,
+        completion: @escaping (Result<([UserData], Int), NetworkError>) -> Void
+    ) {
+        var parameters: [String: Any] = [
+            "companyId": companyId,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
+        
+        if let keyword = keyword, !keyword.isEmpty {
+            parameters["keyword"] = keyword
+        }
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getCompanyUsers) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        print("🌐 获取公司用户列表URL: \(url)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            // 打印原始响应数据
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📥 公司用户列表响应: \(jsonString)")
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[UserData]>.self, from: data)
+                
+                if response.isSuccess, let users = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success((users, response.total ?? 0)))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取公司用户列表失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析公司用户列表失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    // MARK: - 部门/职位相关方法
+
+    /// 获取部门列表
+    func getDepartments(companyId: String, completion: @escaping (Result<[Department], NetworkError>) -> Void) {
+        let parameters: [String: Any] = ["companyId": companyId]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getDepartments) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        print("🌐 获取部门列表URL: \(url)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[Department]>.self, from: data)
+                
+                if response.isSuccess, let departments = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success(departments))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取部门列表失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析部门列表失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    /// 获取职位列表
+    func getPositions(departmentId: String, completion: @escaping (Result<[Position], NetworkError>) -> Void) {
+        let parameters: [String: Any] = ["departmentId": departmentId]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getPositions) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        print("🌐 获取职位列表URL: \(url)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[Position]>.self, from: data)
+                
+                if response.isSuccess, let positions = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success(positions))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "获取职位列表失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析职位列表失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
+
+    // MARK: - 用户搜索相关方法
+
+    /// 搜索用户（用于添加用户）
+    /// - Parameters:
+    ///   - keyword: 搜索关键词
+    ///   - companyId: 公司ID
+    ///   - pageNum: 页码
+    ///   - pageSize: 每页大小
+    ///   - completion: 完成回调
+    func searchUsers(
+        keyword: String,
+        companyId: String,
+        pageNum: Int,
+        pageSize: Int,
+        completion: @escaping (Result<([SearchUserResult], Int), NetworkError>) -> Void
+    ) {
+        let parameters: [String: Any] = [
+            "keyword": keyword,
+            "companyId": companyId,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
+        
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.searchUsers) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        
+        guard let url = urlComponents.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
+            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        }
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+        } catch {
+            completion(.failure(.custom(message: "参数序列化失败")))
+            return
+        }
+        
+        print("🌐 搜索用户URL: \(url)")
+        print("📤 搜索参数: \(parameters)")
+        
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    completion(.failure(.custom(message: "无效的响应")))
+                }
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            
+            // 打印原始响应数据
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📥 搜索用户响应: \(jsonString)")
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(BaseResponse<[SearchUserResult]>.self, from: data)
+                
+                if response.isSuccess, let users = response.data {
+                    DispatchQueue.main.async {
+                        completion(.success((users, response.total ?? 0)))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(message: response.msg ?? "搜索用户失败")))
+                    }
+                }
+            } catch {
+                print("❌ 解析搜索用户响应失败: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError))
+                }
+            }
+        }
+        
+        task.resume()
+    }
 }
 
 // 登录响应模型

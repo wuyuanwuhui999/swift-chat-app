@@ -56,6 +56,7 @@ struct UserPage: View {
 
     @State private var tenantUserRole: Int = 0
     @State private var navigateToTenantManagePage = false
+    @State private var navigateToUserManagePage = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -175,6 +176,26 @@ struct UserPage: View {
                     .background(Colors.whiteColor)
                     .cornerRadius(Dimens.btnHeight / 2)
                     
+                    // 用户管理按钮（当前用户是普通管理员或超级管理员时显示，role >= 1）
+                    if let company = appState.currentCompany, company.isAdmin {
+                        Button(action: {
+                            navigateToUserManagePage = true
+                        }) {
+                            Text("用户管理")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(Colors.primaryColor)
+                                .frame(height: Dimens.btnHeight)
+                                .frame(maxWidth: .infinity)
+                                .background(Colors.whiteColor)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                        .stroke(Colors.primaryColor, lineWidth: 1)
+                                )
+                        }
+                        .background(Colors.whiteColor)
+                        .cornerRadius(Dimens.btnHeight / 2)
+                    }
+
                     // 租户管理按钮（仅当用户在当前租户中的角色大于0时显示）
                     if tenantUserRole > 0 {
                         Button(action: {
@@ -194,6 +215,27 @@ struct UserPage: View {
                         .background(Colors.whiteColor)
                         .cornerRadius(Dimens.btnHeight / 2)
                     }
+
+                    // 用户管理按钮（仅当当前用户是系统管理员或超级管理员时显示，role > 1）
+                    if let company = appState.currentCompany, company.role ?? 0 > 1 {
+                        Button(action: {
+                            navigateToUserManagePage = true
+                        }) {
+                            Text("用户管理")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(Colors.primaryColor)
+                                .frame(height: Dimens.btnHeight)
+                                .frame(maxWidth: .infinity)
+                                .background(Colors.whiteColor)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                        .stroke(Colors.primaryColor, lineWidth: 1)
+                                )
+                        }
+                        .background(Colors.whiteColor)
+                        .cornerRadius(Dimens.btnHeight / 2)
+                    }
+
 
                     // 退出登录按钮
                     Button(action: {
@@ -260,6 +302,9 @@ struct UserPage: View {
         }
         .fullScreenCover(isPresented: $navigateToTenantManagePage) {
             TenantManagePage()
+        }
+        .fullScreenCover(isPresented: $navigateToUserManagePage) {
+            UserManagePage()
         }
     }
     

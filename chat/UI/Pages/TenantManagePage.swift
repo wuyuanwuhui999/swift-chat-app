@@ -73,7 +73,7 @@ struct TenantManagePage: View {
                 loadCurrentTenantUserRole()
             }
             .navigationDestination(isPresented: $navigateToAddUser) {
-                AddTenantUser()
+                AddTenantUserPage()
                     .navigationBarHidden(true)
             }
         }
