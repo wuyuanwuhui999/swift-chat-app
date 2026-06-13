@@ -12,18 +12,18 @@ struct UserManagePage: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
     
-    // 用户列表相关状态
-    @State private var users: [UserData] = []
+    // 用户列表相关状态 - 使用 CompanyUser 类型
+    @State private var users: [CompanyUser] = []
     @State private var isLoading = false
     @State private var isLoadingMore = false
     @State private var currentPage = 1
     @State private var hasMoreData = true
     @State private var pageSize = 20
     
-    // 搜索相关状态
+    // 搜索相关状态 - 使用 CompanyUser 类型
     @State private var searchText = ""
     @State private var isSearching = false
-    @State private var searchResults: [UserData] = []
+    @State private var searchResults: [CompanyUser] = []
     @State private var isSearchLoading = false
     @State private var searchWorkItem: DispatchWorkItem?
     
@@ -31,6 +31,8 @@ struct UserManagePage: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var navigateToAddUser = false
+    @State private var selectedUser: CompanyUser?  // 选中的用户
+    @State private var showUserInfoPage = false    // 是否显示用户详情页
     
     // 下拉刷新状态
     @State private var isRefreshing = false
@@ -70,6 +72,13 @@ struct UserManagePage: View {
             .navigationDestination(isPresented: $navigateToAddUser) {
                 AddUserPage()
                     .navigationBarHidden(true)
+            }
+            // 跳转到用户详情页
+            .navigationDestination(isPresented: $showUserInfoPage) {
+                if let user = selectedUser {
+                    UserInfoPage(companyUser: user)
+                        .navigationBarHidden(true)
+                }
             }
         }
     }
@@ -125,7 +134,7 @@ struct UserManagePage: View {
                     .foregroundColor(Colors.grayColor)
                     .font(.system(size: Dimens.smallIcon))
                 
-                TextField("搜索用户", text: $searchText)
+                TextField("搜索用户（姓名或工号）", text: $searchText)
                     .font(.system(size: Dimens.normalFont))
                     .onChange(of: searchText) { newValue in
                         handleSearchTextChange(newValue)
@@ -184,10 +193,12 @@ struct UserManagePage: View {
         
         LazyVStack(spacing: 0) {
             ForEach(Array(displayUsers.enumerated()), id: \.element.id) { index, user in
-                UserManageRow(
-                    user: user,
-                    isAdmin: isUserAdmin(user)
-                )
+                // 使用新的 UserManageRow 组件显示部门和职位，并添加点击事件
+                UserManageRow(companyUser: user)
+                    .onTapGesture {
+                        selectedUser = user
+                        showUserInfoPage = true
+                    }
                 
                 if index < displayUsers.count - 1 {
                     Divider()
@@ -225,15 +236,6 @@ struct UserManagePage: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Dimens.largeMargin)
-    }
-    
-    // MARK: - 辅助方法
-    
-    /// 判断用户是否为管理员
-    private func isUserAdmin(_ user: UserData) -> Bool {
-        guard let role = user.role else { return false }
-        let roleInt = Int(role) ?? 0
-        return roleInt >= 1
     }
     
     // MARK: - 搜索方法（实时搜索，防抖）
@@ -373,48 +375,51 @@ struct UserManagePage: View {
     }
 }
 
-// MARK: - 用户管理行组件
+// MARK: - 用户管理行组件（显示部门、职位信息，支持点击）
 
 /// 用户管理行视图
+/// 显示用户头像、姓名、角色标签、部门名称、职位名称
 struct UserManageRow: View {
-    let user: UserData
-    let isAdmin: Bool
+    let companyUser: CompanyUser
     
     var body: some View {
-        HStack(spacing: Dimens.middleMargin) {
-            // 用户头像
-            UserAvatar(
-                avatarUrl: user.avater,
-                username: user.username,
-                size: Dimens.middleAvater
-            )
-            
-            // 用户信息
-            VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                Text(user.username)
-                    .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+        VStack(alignment: .leading, spacing: Dimens.smallMargin) {
+            // 第一行：头像 + 用户名 + 角色标签
+            HStack(spacing: Dimens.middleMargin) {
+                // 用户头像
+                UserAvatar(
+                    avatarUrl: companyUser.avater,
+                    username: companyUser.username,
+                    size: Dimens.middleAvater
+                )
+                VStack(spacing: Dimens.middleMargin){
+                    // 用户名
+                    Text(companyUser.username)
+                        .font(.system(size: Dimens.normalFont))
+                        .foregroundColor(.primary)
+
+                    Text(companyUser.userAccount)
+                        .font(.system(size: Dimens.normalFont - 2))
+                        .foregroundColor(Colors.grayColor)
+                }
                 
-                Text(user.userAccount)
-                    .font(.system(size: Dimens.normalFont - 2))
-                    .foregroundColor(Colors.grayColor)
-            }
-            
-            Spacer()
-            
-            // 管理员标签
-            if isAdmin {
-                Text("管理员")
-                    .font(.system(size: Dimens.normalFont - 4))
-                    .foregroundColor(Colors.primaryColor)
-                    .padding(.horizontal, Dimens.smallIcon)
-                    .padding(.vertical, 4)
-                    .background(Colors.primaryColor.opacity(0.1))
-                    .cornerRadius(Dimens.smallIcon)
+                Spacer()
+                
+                // 角色标签（管理员/超级管理员才显示）
+                if companyUser.shouldShowRoleTag {
+                    Text(companyUser.roleText)
+                        .font(.system(size: Dimens.normalFont - 4))
+                        .foregroundColor(Colors.primaryColor)
+                        .padding(.horizontal, Dimens.smallIcon)
+                        .padding(.vertical, 4)
+                        .background(Colors.primaryColor.opacity(0.1))
+                        .cornerRadius(Dimens.smallIcon)
+                }
             }
         }
         .padding(.horizontal, Dimens.middleMargin)
         .padding(.vertical, Dimens.middleMargin)
+        .contentShape(Rectangle())  // 确保整个区域可点击
     }
 }
 

@@ -1819,7 +1819,7 @@ extension HTTPClient {
         keyword: String? = nil,
         pageNum: Int,
         pageSize: Int,
-        completion: @escaping (Result<([UserData], Int), NetworkError>) -> Void
+        completion: @escaping (Result<([CompanyUser], Int), NetworkError>) -> Void
     ) {
         var parameters: [String: Any] = [
             "companyId": companyId,
@@ -1888,7 +1888,7 @@ extension HTTPClient {
             
             do {
                 let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[UserData]>.self, from: data)
+                let response = try decoder.decode(BaseResponse<[CompanyUser]>.self, from: data)
                 
                 if response.isSuccess, let users = response.data {
                     DispatchQueue.main.async {
@@ -2095,6 +2095,8 @@ extension HTTPClient {
             completion(.failure(.invalidURL))
             return
         }
+        
+        // GET 请求：将参数添加到 URL 查询字符串中
         urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
         
         guard let url = urlComponents.url else {
@@ -2103,19 +2105,14 @@ extension HTTPClient {
         }
         
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = "GET"  // 改为 GET
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         if let authHeader = TokenManager.shared.getAuthorizationHeader() {
             request.setValue(authHeader, forHTTPHeaderField: "Authorization")
         }
         
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-        } catch {
-            completion(.failure(.custom(message: "参数序列化失败")))
-            return
-        }
+        // GET 请求不需要设置 httpBody，移除相关代码
         
         print("🌐 搜索用户URL: \(url)")
         print("📤 搜索参数: \(parameters)")
@@ -2177,6 +2174,7 @@ extension HTTPClient {
         
         task.resume()
     }
+    
 }
 
 // 登录响应模型

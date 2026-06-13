@@ -52,7 +52,7 @@ struct Constants {
         static let searchCompanyUsersWithPage = "/service/company/searchCompanyUsers"
 
         static let getCompanyUsers = "/service/company/getCompanyUsers"
-        static let searchUsers = "/service/user/searchUsers"
+        static let searchUsers = "/service/company/searchUsers"
         static let addCompanyUser = "/service/company/addUser"
 
         static let getDepartments = "/service/company/getDepartments"

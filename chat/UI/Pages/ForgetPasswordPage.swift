@@ -134,7 +134,6 @@ struct ForgetPasswordPage: View {
                     .font(.system(size: Dimens.normalFont))
                     .foregroundColor(.primary)
             }
-            .frame(width: 80, alignment: .leading)
             
             // 表单内容
             content
