@@ -1,5 +1,5 @@
 //
-//  AddUserPage.swift
+//  AddCompanyUserPage.swift
 //  chat
 //
 //  Created by 吴文强 on 2026/6/11.
@@ -51,7 +51,7 @@ struct Position: Codable, Identifiable {
 }
 
 /// 添加用户页面
-struct AddUserPage: View {
+struct AddCompanyUserPage: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
     
@@ -780,5 +780,5 @@ struct AddUserRow: View {
 }
 
 #Preview {
-    AddUserPage()
+    AddCompanyUserPage()
 }

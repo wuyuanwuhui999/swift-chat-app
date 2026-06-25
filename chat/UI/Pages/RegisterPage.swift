@@ -485,7 +485,7 @@ struct RegisterPage: View {
         isRegistering = true
         
         // 构建用户数据
-        var userData = UserData(
+        var userData = User(
             id: nil,
             userAccount: userAccount,
             createDate: nil,

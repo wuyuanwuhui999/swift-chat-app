@@ -14,7 +14,7 @@ struct TenantUser: Codable, Identifiable {
     let tenantName: String?  // 改为可选类型，因为后端可能返回 null
     let userId: String
     let userAccount: String
-    let roleType: Int // 用户角色 (0-普通用户，1-租户管理员，2-超级管理员)
+    let role: Int // 用户角色 (0-普通用户，1-租户管理员，2-超级管理员)
     let joinDate: String?
     let createBy: String?
     let username: String
@@ -28,7 +28,7 @@ struct TenantUser: Codable, Identifiable {
         case tenantName
         case userId
         case userAccount
-        case roleType
+        case role
         case joinDate
         case createBy
         case username
@@ -39,7 +39,7 @@ struct TenantUser: Codable, Identifiable {
     
     /// 角色显示文本
     var roleText: String {
-        switch roleType {
+        switch role {
         case 1:
             return "管理员"
         case 2:
@@ -51,7 +51,7 @@ struct TenantUser: Codable, Identifiable {
     
     /// 是否显示角色标签
     var shouldShowRoleTag: Bool {
-        return roleType > 0
+        return role > 0
     }
     
     /// 获取租户名称（带默认值）

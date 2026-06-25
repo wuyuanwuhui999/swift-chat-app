@@ -14,7 +14,7 @@ struct AddTenantUserPage: View {
     
     // 搜索相关状态
     @State private var searchText = ""
-    @State private var searchResults: [UserData] = []
+    @State private var searchResults: [User] = []
     @State private var isSearchLoading = false
     @State private var searchWorkItem: DispatchWorkItem?
     @State private var currentPage = 1
@@ -24,6 +24,8 @@ struct AddTenantUserPage: View {
     
     // 已添加的用户ID集合
     @State private var addedUserIds: Set<String> = []
+    // 正在添加的用户ID集合（用于显示加载状态）
+    @State private var addingUserIds: Set<String> = []
     
     // 提示相关
     @State private var showAlert = false
@@ -178,6 +180,7 @@ struct AddTenantUserPage: View {
                 UserSearchRow(
                     user: user,
                     isAdded: addedUserIds.contains(user.id ?? ""),
+                    isAdding: addingUserIds.contains(user.id ?? ""),
                     onAdd: {
                         addUserToTenant(user)
                     }
@@ -363,23 +366,32 @@ struct AddTenantUserPage: View {
     // MARK: - 添加用户
     
     /// 添加用户到租户
-    private func addUserToTenant(_ user: UserData) {
+    private func addUserToTenant(_ user: User) {
         guard let tenantId = appState.currentTenant?.id,
               let userId = user.id else { return }
         
+        // 防止重复点击
+        guard !addingUserIds.contains(userId) else { return }
+        
+        // 标记为正在添加
+        addingUserIds.insert(userId)
+        
         HTTPClient.shared.addTenantUser(tenantId: tenantId, userId: userId) { result in
             DispatchQueue.main.async {
+                // 移除正在添加标记
+                self.addingUserIds.remove(userId)
+                
                 switch result {
                 case .success(let data):
                     if data > 0 {
+                        // 添加成功
                         self.alertMessage = "添加成功"
                         self.showAlert = true
                         // 标记为已添加
-                        if let userId = user.id {
-                            self.addedUserIds.insert(userId)
-                        }
+                        self.addedUserIds.insert(userId)
                     } else {
-                        self.alertMessage = "添加失败"
+                        // data <= 0 表示添加失败
+                        self.alertMessage = "添加失败，请稍后重试"
                         self.showAlert = true
                     }
                 case .failure(let error):
@@ -395,8 +407,9 @@ struct AddTenantUserPage: View {
 
 /// 用户搜索行视图
 struct UserSearchRow: View {
-    let user: UserData
+    let user: User
     let isAdded: Bool
+    let isAdding: Bool
     let onAdd: () -> Void
     
     var body: some View {
@@ -421,7 +434,7 @@ struct UserSearchRow: View {
             
             Spacer()
             
-            // 添加按钮 / 已添加标签
+            // 添加按钮 / 已添加标签 / 加载状态
             if isAdded {
                 Text("已添加")
                     .font(.system(size: Dimens.normalFont - 2))
@@ -430,6 +443,10 @@ struct UserSearchRow: View {
                     .padding(.vertical, Dimens.smallMargin)
                     .background(Colors.grayColor.opacity(0.2))
                     .cornerRadius(Dimens.borderRadius * 2)
+            } else if isAdding {
+                // 加载状态
+                ProgressView()
+                    .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
             } else {
                 Button(action: onAdd) {
                     Text("添加")

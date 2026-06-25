@@ -45,21 +45,43 @@ class HTTPClient {
     }
     
     // 通用请求方法
+    // HTTPClient.swift - 修改 request 方法
+
+    // 通用请求方法
     func request<T: Codable>(
         endpoint: APIEndpoint,
         method: String? = nil,
         parameters: [String: Any]? = nil,
         completion: @escaping (Result<BaseResponse<T>, NetworkError>) -> Void
     ) {
-        guard let url = endpoint.url(baseURL: baseURL) else {
+        // 获取基础 URL
+        guard var urlComponents = URLComponents(string: baseURL + endpoint.path) else {
             print("❌ 无效的URL")
             completion(.failure(.invalidURL))
             return
         }
         
+        let httpMethod = method ?? endpoint.method
+        
+        // 如果是 GET 方法且有参数，将参数拼接到 URL 查询字符串
+        if httpMethod == "GET" || httpMethod == "DELETE" {
+            if let parameters = parameters, !parameters.isEmpty {
+                var queryItems: [URLQueryItem] = []
+                for (key, value) in parameters {
+                    queryItems.append(URLQueryItem(name: key, value: "\(value)"))
+                }
+                urlComponents.queryItems = queryItems
+            }
+        }
+        
+        guard let url = urlComponents.url else {
+            print("❌ 构建URL失败")
+            completion(.failure(.invalidURL))
+            return
+        }
+        
         var request = URLRequest(url: url)
-        // 使用 endpoint.method 或传入的 method 参数
-        request.httpMethod = method ?? endpoint.method
+        request.httpMethod = httpMethod
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // 添加Authorization header
@@ -67,15 +89,17 @@ class HTTPClient {
             request.setValue(authHeader, forHTTPHeaderField: "Authorization")
         }
         
-        // 添加请求参数（仅对 POST/PUT 等方法）
-        if let parameters = parameters, !parameters.isEmpty {
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-                print("📤 请求参数: \(parameters)")
-            } catch {
-                print("❌ 参数序列化失败: \(error)")
-                completion(.failure(.custom(message: "参数序列化失败")))
-                return
+        // 仅对非 GET/DELETE 方法添加请求参数到 body
+        if httpMethod != "GET" && httpMethod != "DELETE" {
+            if let parameters = parameters, !parameters.isEmpty {
+                do {
+                    request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+                    print("📤 请求参数: \(parameters)")
+                } catch {
+                    print("❌ 参数序列化失败: \(error)")
+                    completion(.failure(.custom(message: "参数序列化失败")))
+                    return
+                }
             }
         }
         
@@ -162,7 +186,6 @@ class HTTPClient {
         
         task.resume()
     }
-
 }
 
 extension String {
@@ -187,7 +210,7 @@ extension HTTPClient {
             "password": encryptedPassword
         ]
         
-        request(endpoint: .login, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+        request(endpoint: .login, parameters: parameters) { (result: Result<BaseResponse<User>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let userData = response.data, let token = response.token {
@@ -203,8 +226,8 @@ extension HTTPClient {
     }
     
     // 获取用户数据
-    func getUserData(completion: @escaping (Result<UserData, NetworkError>) -> Void) {
-        request(endpoint: .getUserData) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+    func getUserData(completion: @escaping (Result<User, NetworkError>) -> Void) {
+        request(endpoint: .getUserData) { (result: Result<BaseResponse<User>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let userData = response.data {
@@ -245,7 +268,7 @@ extension HTTPClient {
             "code": code
         ]
         
-        request(endpoint: .loginByEmail, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+        request(endpoint: .loginByEmail, parameters: parameters) { (result: Result<BaseResponse<User>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let userData = response.data, let token = response.token {
@@ -262,100 +285,23 @@ extension HTTPClient {
     
     /// 获取用户租户列表
     func getTenantList(companyId: String? = nil, completion: @escaping (Result<[Tenant], NetworkError>) -> Void) {
+        // 构建带参数的URL
         var parameters: [String: Any] = [:]
         if let companyId = companyId, !companyId.isEmpty {
             parameters["companyId"] = companyId
         }
-        
-        // 构建带参数的URL
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getTenantList) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        if !parameters.isEmpty {
-            urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-                
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("❌ 获取租户列表网络错误: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ 无效的响应")
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            print("📊 HTTP状态码: \(httpResponse.statusCode)")
-            
-            guard httpResponse.statusCode == 200 else {
-                print("⚠️ 服务器错误: \(httpResponse.statusCode)")
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                print("❌ 无返回数据")
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            // 打印响应数据
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 租户列表响应: \(jsonString)")
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[Tenant]>.self, from: data)
-                
+        request(endpoint: .getTenantList, parameters: parameters) { (result: Result<BaseResponse<[Tenant]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let tenants = response.data {
-                    print("✅ 获取租户列表成功，共 \(tenants.count) 个租户")
-                    DispatchQueue.main.async {
-                        completion(.success(tenants))
-                    }
+                    completion(.success(tenants))
                 } else {
-                    print("❌ 获取租户列表失败: \(response.msg ?? "未知错误")")
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取租户列表失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取租户列表失败")))
                 }
-            } catch {
-                print("❌ 解析租户列表失败: \(error)")
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("❌ 原始数据: \(jsonString)")
-                }
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
     
     /// 获取模型列表
@@ -369,7 +315,12 @@ extension HTTPClient {
             return
         }
         
-        request(endpoint: .getModelList(companyId)) { (result: Result<BaseResponse<[ChatModel]>, NetworkError>) in
+        // 直接使用 request 方法，传入 endpoint 和 parameters
+        // 由于 getModelList 的 endpoint 已经包含了 companyId 的处理，
+        // 但为了统一，我们通过 parameters 传递 companyId，让 request 方法处理
+        let parameters: [String: Any] = ["companyId": companyId]
+        
+        request(endpoint: .getModelList(companyId), parameters: parameters) { (result: Result<BaseResponse<[ChatModel]>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let models = response.data {
@@ -926,7 +877,7 @@ extension HTTPClient {
     // MARK: - 用户信息相关方法
 
     /// 更新用户信息
-    func updateUser(userData: UserData, completion: @escaping (Result<UserData, NetworkError>) -> Void) {
+    func updateUser(userData: User, completion: @escaping (Result<User, NetworkError>) -> Void) {
         let parameters: [String: Any] = [
             "username": userData.username,
             "telephone": userData.telephone,
@@ -937,7 +888,7 @@ extension HTTPClient {
             "sign": userData.sign
         ]
         
-        request(endpoint: .updateUser, method: "PUT", parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+        request(endpoint: .updateUser, method: "PUT", parameters: parameters) { (result: Result<BaseResponse<User>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let updatedUser = response.data {
@@ -1075,7 +1026,7 @@ extension HTTPClient {
     }
 
     /// 注册新用户
-    func register(userData: UserData, completion: @escaping (Result<LoginResponse, NetworkError>) -> Void) {
+    func register(userData: User, completion: @escaping (Result<LoginResponse, NetworkError>) -> Void) {
         let parameters: [String: Any] = [
             "userAccount": userData.userAccount,
             "password": userData.password?.md5 ?? "",
@@ -1088,7 +1039,7 @@ extension HTTPClient {
             "sign": userData.sign
         ]
         
-        request(endpoint: .register, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+        request(endpoint: .register, parameters: parameters) { (result: Result<BaseResponse<User>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let userData = response.data, let token = response.token {
@@ -1113,7 +1064,7 @@ extension HTTPClient {
             "code": code
         ]
         
-        request(endpoint: .resetPassword, parameters: parameters) { (result: Result<BaseResponse<UserData>, NetworkError>) in
+        request(endpoint: .resetPassword, parameters: parameters) { (result: Result<BaseResponse<User>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let userData = response.data, let token = response.token {
@@ -1481,7 +1432,7 @@ extension HTTPClient {
     /// - Parameters:
     ///   - keyword: 搜索关键词（姓名或工号）
     ///   - completion: 完成回调
-    func searchCompanyUsers(keyword: String, completion: @escaping (Result<[UserData], NetworkError>) -> Void) {
+    func searchCompanyUsers(keyword: String, completion: @escaping (Result<[User], NetworkError>) -> Void) {
         let parameters: [String: Any] = ["keyword": keyword]
         
         guard var urlComponents = URLComponents(string: baseURL + Constants.API.getCompanyUsers) else {
@@ -1536,7 +1487,7 @@ extension HTTPClient {
             
             do {
                 let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[UserData]>.self, from: data)
+                let response = try decoder.decode(BaseResponse<[User]>.self, from: data)
                 
                 if response.isSuccess, let users = response.data {
                     DispatchQueue.main.async {
@@ -1557,83 +1508,28 @@ extension HTTPClient {
         
         task.resume()
     }
-
+    
     /// 添加用户到租户
     /// - Parameters:
     ///   - tenantId: 租户ID
     ///   - userId: 用户ID
     ///   - completion: 完成回调（返回data大于0表示成功）
     func addTenantUser(tenantId: String, userId: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
-        let urlPath = Constants.API.addTenantUser
-            .replacingOccurrences(of: "{tenantId}", with: tenantId)
-            .replacingOccurrences(of: "{userId}", with: userId)
+        // POST 请求，不需要 body 参数，所有参数都在 URL 路径中
+        let parameters: [String: Any] = [:]
         
-        guard let url = URL(string: baseURL + urlPath) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 添加租户用户URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<Int>.self, from: data)
-                
-                if let data = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(data))
-                    }
+        request(endpoint: .addTenantUser(tenantId, userId), parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "添加用户失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "添加用户到租户失败")))
                 }
-            } catch {
-                print("❌ 解析添加用户响应失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
     // MARK: - 管理员管理相关方法
@@ -1676,7 +1572,7 @@ extension HTTPClient {
         companyId: String,
         pageNum: Int,
         pageSize: Int,
-        completion: @escaping (Result<([UserData], Int), NetworkError>) -> Void
+        completion: @escaping (Result<([User], Int), NetworkError>) -> Void
     ) {
         let parameters: [String: Any] = [
             "keyword": keyword,
@@ -1735,7 +1631,7 @@ extension HTTPClient {
             
             do {
                 let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[UserData]>.self, from: data)
+                let response = try decoder.decode(BaseResponse<[User]>.self, from: data)
                 
                 if response.isSuccess, let users = response.data {
                     DispatchQueue.main.async {
@@ -2179,6 +2075,6 @@ extension HTTPClient {
 
 // 登录响应模型
 struct LoginResponse {
-    let userData: UserData
+    let userData: User
     let token: String
 }

@@ -343,7 +343,7 @@ struct TenantManagePage: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let tenantUser):
-                    self.tenantUserRole = tenantUser.roleType
+                    self.tenantUserRole = tenantUser.role
                 case .failure(let error):
                     print("❌ 获取租户用户角色失败: \(error.localizedDescription)")
                 }
@@ -447,7 +447,7 @@ struct TenantManagePage: View {
     private func toggleAdminStatus(_ user: TenantUser) {
         guard let tenantId = appState.currentTenant?.id else { return }
         
-        let isAdmin = user.roleType == 1
+        let isAdmin = user.role == 1
         
         if isAdmin {
             // 取消管理员
@@ -504,7 +504,7 @@ struct TenantManagePage: View {
                 tenantName: tenantUsers[index].tenantName,
                 userId: tenantUsers[index].userId,
                 userAccount: tenantUsers[index].userAccount,
-                roleType: newRoleType,
+                role: newRoleType,
                 joinDate: tenantUsers[index].joinDate,
                 createBy: tenantUsers[index].createBy,
                 username: tenantUsers[index].username,
@@ -523,7 +523,7 @@ struct TenantManagePage: View {
                 tenantName: searchResults[index].tenantName,
                 userId: searchResults[index].userId,
                 userAccount: searchResults[index].userAccount,
-                roleType: newRoleType,
+                role: newRoleType,
                 joinDate: searchResults[index].joinDate,
                 createBy: searchResults[index].createBy,
                 username: searchResults[index].username,
@@ -581,17 +581,17 @@ struct SwipeableTenantUserRow: View {
     
     // 目标用户是否为超级管理员
     private var targetIsSuperAdmin: Bool {
-        return tenantUser.roleType == 2
+        return tenantUser.role == 2
     }
     
     // 目标用户是否为管理员
     private var targetIsAdmin: Bool {
-        return tenantUser.roleType == 1
+        return tenantUser.role == 1
     }
     
     // 目标用户是否为普通用户
     private var targetIsNormalUser: Bool {
-        return tenantUser.roleType == 0
+        return tenantUser.role == 0
     }
     
     // 是否显示管理员操作按钮

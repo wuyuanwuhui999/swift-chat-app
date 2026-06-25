@@ -70,7 +70,7 @@ struct UserManagePage: View {
                 loadCompanyUsers()
             }
             .navigationDestination(isPresented: $navigateToAddUser) {
-                AddUserPage()
+                AddCompanyUserPage()
                     .navigationBarHidden(true)
             }
             // 跳转到用户详情页

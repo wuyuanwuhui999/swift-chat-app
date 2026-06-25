@@ -1,7 +1,7 @@
-// chat/chat/Models/UserData.swift
+// chat/chat/Models/User.swift
 import Foundation
 
-struct UserData: Codable {
+struct User: Codable {
     var id: String?
     var userAccount: String
     var createDate: String?

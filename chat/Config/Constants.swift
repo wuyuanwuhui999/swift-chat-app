@@ -2,7 +2,7 @@ import Foundation
 // 在 Constants 结构体中添加新的 API 路径
 struct Constants {
     // API基础域名
-    static let baseURL = "http://127.0.0.1:3000"
+    static let baseURL = "http://127.0.0.1:4000"
     
     // WebSocket 地址
     static let webSocketURL = "ws://127.0.0.1:4000/service/chat/ws/chat"
@@ -44,7 +44,7 @@ struct Constants {
         static let getCompanyList = "/service/company/getCompanyList"
         static let getTenantUser = "/service/tenant/getTenantUser"
         static let getTenantUserList = "/service/tenant/getTenantUserList"
-        static let addTenantUser = "/service/tenant/addTenantUser"
+        static let addTenantUser = "/service/tenant/addTenantUser/{tenantId}/{userId}"
 
         static let addAdmin = "/service/tenant/addAdmin/{tenantId}/{userId}"
         static let cancelAdmin = "/service/tenant/cancelAdmin/{tenantId}/{userId}"
@@ -53,7 +53,7 @@ struct Constants {
 
         static let getCompanyUsers = "/service/company/getCompanyUsers"
         static let searchUsers = "/service/company/searchUsers"
-        static let addCompanyUser = "/service/company/addUser"
+        static let addCompanyUser = "/service/company/addCompanyUser"
 
         static let getDepartments = "/service/company/getDepartments"
         static let getPositions = "/service/company/getPositions"

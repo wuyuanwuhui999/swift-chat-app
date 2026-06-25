@@ -12,7 +12,7 @@ import PhotosUI
 struct UserPage: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var userData: UserData?
+    @State private var userData: User?
     @State private var isLoading = false
     @State private var navigateToCompanyPage = false
     
@@ -508,7 +508,7 @@ struct UserPage: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let tenantUser):
-                    self.tenantUserRole = tenantUser.roleType
+                    self.tenantUserRole = tenantUser.role
                 case .failure(let error):
                     print("❌ 获取租户用户角色失败: \(error.localizedDescription)")
                 }

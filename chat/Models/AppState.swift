@@ -11,7 +11,7 @@ import Combine
 class AppState: ObservableObject {
     static let shared = AppState()
     
-    @Published var userData: UserData?
+    @Published var userData: User?
     @Published var token: String?
     @Published var isLoggedIn: Bool = false
     @Published var currentTenant: Tenant?  // 当前选中的租户
@@ -93,7 +93,7 @@ class AppState: ObservableObject {
         self.currentCompany = nil
     }
     
-    func updateUserData(_ userData: UserData) {
+    func updateUserData(_ userData: User) {
         self.userData = userData
     }
     
