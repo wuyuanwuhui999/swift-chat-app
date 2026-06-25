@@ -268,8 +268,16 @@ struct AddTenantUserPage: View {
     /// 执行搜索
     private func performSearch(reset: Bool = true) {
         guard !searchText.isEmpty else { return }
+        
+        // 获取租户ID和公司ID
         guard let tenantId = appState.currentTenant?.id else {
             print("❌ 未找到租户ID")
+            return
+        }
+        
+        // 获取公司ID
+        guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
+            print("❌ 未找到公司ID")
             return
         }
         
@@ -282,6 +290,7 @@ struct AddTenantUserPage: View {
         // 使用封装好的 request 方法
         HTTPClient.shared.searchTenantUsers(
             tenantId: tenantId,
+            companyId: companyId,
             keyword: searchText,
             pageNum: currentPage,
             pageSize: pageSize

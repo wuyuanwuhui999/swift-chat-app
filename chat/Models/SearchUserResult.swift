@@ -22,11 +22,11 @@ struct SearchUserResult: Codable, Identifiable {
     let sex: String
     let role: String?
     let password: String?
-    let sign: String
+    let sign: String?          // ✅ 改为可选类型，兼容后端不返回该字段的情况
     let region: String?
     let disabled: Int?
     let permission: Int?
-    let checked: Int?  // 0: 未添加, 1: 已添加
+    let checked: Int?          // 0: 未添加, 1: 已添加
     
     enum CodingKeys: String, CodingKey {
         case id

@@ -1428,85 +1428,42 @@ extension HTTPClient {
         task.resume()
     }
 
-    /// 搜索公司用户
+    // MARK: - 搜索公司用户（支持分页）
+
+    /// 搜索公司用户（支持分页）
     /// - Parameters:
     ///   - keyword: 搜索关键词（姓名或工号）
-    ///   - completion: 完成回调
-    func searchCompanyUsers(keyword: String, completion: @escaping (Result<[User], NetworkError>) -> Void) {
-        let parameters: [String: Any] = ["keyword": keyword]
+    ///   - companyId: 公司ID
+    ///   - pageNum: 页码
+    ///   - pageSize: 每页大小
+    ///   - completion: 完成回调，返回用户列表和总数
+    func searchCompanyUsers(
+        keyword: String,
+        companyId: String,
+        pageNum: Int,
+        pageSize: Int,
+        completion: @escaping (Result<([SearchUserResult], Int), NetworkError>) -> Void
+    ) {
+        let parameters: [String: Any] = [
+            "keyword": keyword,
+            "companyId": companyId,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getCompanyUsers) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 搜索公司用户URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[User]>.self, from: data)
-                
+        // 使用封装好的 request 方法
+        request(endpoint: .searchCompanyUsers, parameters: parameters) { (result: Result<BaseResponse<[SearchUserResult]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let users = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(users))
-                    }
+                    completion(.success((users, response.total ?? 0)))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "搜索用户失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "搜索失败")))
                 }
-            } catch {
-                print("❌ 解析搜索结果失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
     
     /// 添加用户到租户
@@ -1581,7 +1538,7 @@ extension HTTPClient {
             "pageSize": pageSize
         ]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.searchCompanyUsersWithPage) else {
+        guard var urlComponents = URLComponents(string: baseURL + Constants.API.searchCompanyUsers) else {
             completion(.failure(.invalidURL))
             return
         }
@@ -1963,123 +1920,18 @@ extension HTTPClient {
         
         task.resume()
     }
-
-    // MARK: - 用户搜索相关方法
-
-    /// 搜索用户（用于添加用户）
-    /// - Parameters:
-    ///   - keyword: 搜索关键词
-    ///   - companyId: 公司ID
-    ///   - pageNum: 页码
-    ///   - pageSize: 每页大小
-    ///   - completion: 完成回调
-    func searchUsers(
-        keyword: String,
-        companyId: String,
-        pageNum: Int,
-        pageSize: Int,
-        completion: @escaping (Result<([SearchUserResult], Int), NetworkError>) -> Void
-    ) {
-        let parameters: [String: Any] = [
-            "keyword": keyword,
-            "companyId": companyId,
-            "pageNum": pageNum,
-            "pageSize": pageSize
-        ]
-        
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.searchUsers) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        // GET 请求：将参数添加到 URL 查询字符串中
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"  // 改为 GET
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        // GET 请求不需要设置 httpBody，移除相关代码
-        
-        print("🌐 搜索用户URL: \(url)")
-        print("📤 搜索参数: \(parameters)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            // 打印原始响应数据
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 搜索用户响应: \(jsonString)")
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[SearchUserResult]>.self, from: data)
-                
-                if response.isSuccess, let users = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success((users, response.total ?? 0)))
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "搜索用户失败")))
-                    }
-                }
-            } catch {
-                print("❌ 解析搜索用户响应失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
-            }
-        }
-        
-        task.resume()
-    }
     
     /// 搜索租户用户
     /// - Parameters:
     ///   - tenantId: 租户ID
+    ///   - companyId: 公司ID
     ///   - keyword: 搜索关键词（姓名或工号）
     ///   - pageNum: 页码
     ///   - pageSize: 每页大小
     ///   - completion: 完成回调
     func searchTenantUsers(
         tenantId: String,
+        companyId: String,
         keyword: String,
         pageNum: Int,
         pageSize: Int,
@@ -2087,6 +1939,7 @@ extension HTTPClient {
     ) {
         let parameters: [String: Any] = [
             "tenantId": tenantId,
+            "companyId": companyId,
             "keyword": keyword,
             "pageNum": pageNum,
             "pageSize": pageSize

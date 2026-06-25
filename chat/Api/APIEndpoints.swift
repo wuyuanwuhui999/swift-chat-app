@@ -35,9 +35,8 @@ enum APIEndpoint {
 
     case addAdmin(String, String)
     case cancelAdmin(String, String)
-    case searchCompanyUsersWithPage
+    case searchCompanyUsers
 
-    case searchUsers
     case addCompanyUser
     case searchTenantUsers    
     
@@ -95,8 +94,6 @@ enum APIEndpoint {
             return Constants.API.getTenantUserList
         case .getCompanyUsers:
             return Constants.API.getCompanyUsers
-        case .searchUsers:
-            return Constants.API.searchUsers
         case .addCompanyUser:
             return Constants.API.addCompanyUser
         case .addTenantUser(let tenantId, let userId):
@@ -111,8 +108,8 @@ enum APIEndpoint {
             return Constants.API.cancelAdmin
                 .replacingOccurrences(of: "{tenantId}", with: tenantId)
                 .replacingOccurrences(of: "{userId}", with: userId)
-        case .searchCompanyUsersWithPage:
-            return Constants.API.searchCompanyUsersWithPage
+        case .searchCompanyUsers:
+            return Constants.API.searchCompanyUsers
         case .searchTenantUsers:
             return Constants.API.searchTenantUsers
         }
@@ -122,7 +119,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser:
             return "POST"
-        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchUsers, .searchCompanyUsersWithPage,.searchTenantUsers:
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers:
             return "GET"
         case .deleteDoc:
             return "DELETE"

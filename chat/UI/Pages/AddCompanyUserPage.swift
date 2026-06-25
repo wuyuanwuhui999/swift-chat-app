@@ -554,7 +554,7 @@ struct AddCompanyUserPage: View {
             searchResults = []
         }
         
-        HTTPClient.shared.searchUsers(
+        HTTPClient.shared.searchCompanyUsers(
             keyword: searchText,
             companyId: companyId,
             pageNum: currentPage,
