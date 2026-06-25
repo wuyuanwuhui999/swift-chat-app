@@ -44,14 +44,22 @@ class HTTPClient {
         self.session = URLSession(configuration: configuration)
     }
     
-    // 通用请求方法
-    // HTTPClient.swift - 修改 request 方法
+    // MARK: - 通用请求方法（支持自定义 Body 和 Headers）
 
-    // 通用请求方法
+    /// 通用请求方法（支持自定义 Body 和 Headers）
+    /// - Parameters:
+    ///   - endpoint: API 端点
+    ///   - method: HTTP 方法（可选，默认使用 endpoint 的 method）
+    ///   - parameters: URL 查询参数（可选）
+    ///   - customBody: 自定义 HTTP Body 数据（可选）
+    ///   - customHeaders: 自定义 HTTP Headers（可选）
+    ///   - completion: 完成回调
     func request<T: Codable>(
         endpoint: APIEndpoint,
         method: String? = nil,
         parameters: [String: Any]? = nil,
+        customBody: Data? = nil,
+        customHeaders: [String: String]? = nil,
         completion: @escaping (Result<BaseResponse<T>, NetworkError>) -> Void
     ) {
         // 获取基础 URL
@@ -82,15 +90,31 @@ class HTTPClient {
         
         var request = URLRequest(url: url)
         request.httpMethod = httpMethod
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // 添加Authorization header
+        // 设置 Content-Type（如果没有自定义 headers 或没有指定 Content-Type）
+        if customHeaders == nil || customHeaders?["Content-Type"] == nil {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        
+        // 添加自定义 headers
+        if let customHeaders = customHeaders {
+            for (key, value) in customHeaders {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+        }
+        
+        // 添加 Authorization header
         if let authHeader = TokenManager.shared.getAuthorizationHeader() {
             request.setValue(authHeader, forHTTPHeaderField: "Authorization")
         }
         
-        // 仅对非 GET/DELETE 方法添加请求参数到 body
-        if httpMethod != "GET" && httpMethod != "DELETE" {
+        // 设置请求体
+        if let customBody = customBody {
+            // 使用自定义 Body
+            request.httpBody = customBody
+            print("📤 使用自定义 Body，长度: \(customBody.count) bytes")
+        } else if httpMethod != "GET" && httpMethod != "DELETE" {
+            // 非 GET/DELETE 方法，使用参数构建 JSON Body
             if let parameters = parameters, !parameters.isEmpty {
                 do {
                     request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
@@ -104,6 +128,7 @@ class HTTPClient {
         }
         
         print("🌐 请求URL: \(url)")
+        print("📤 请求方法: \(httpMethod)")
         
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
@@ -335,157 +360,51 @@ extension HTTPClient {
     }
     
     /// 获取目录列表
+    /// - Parameters:
+    ///   - tenantId: 租户ID
+    ///   - completion: 完成回调，返回目录列表
     func getDirectoryList(tenantId: String, completion: @escaping (Result<[Directory], NetworkError>) -> Void) {
         let parameters: [String: Any] = ["tenantId": tenantId]
         
-        // 构建带参数的URL
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getDirectoryList) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[Directory]>.self, from: data)
+        // 使用封装好的 request 方法发起网络请求
+        request(endpoint: .getDirectoryList, parameters: parameters) { (result: Result<BaseResponse<[Directory]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let directories = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(directories))
-                    }
+                    completion(.success(directories))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取目录列表失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取目录列表失败")))
                 }
-            } catch {
-                print("❌ 解析失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
     /// 获取目录下的文档列表
+    /// - Parameters:
+    ///   - tenantId: 租户ID
+    ///   - directoryId: 目录ID
+    ///   - completion: 完成回调，返回文档列表
     func getDocListByDirId(tenantId: String, directoryId: String, completion: @escaping (Result<[Document], NetworkError>) -> Void) {
         let parameters: [String: Any] = [
             "tenantId": tenantId,
             "directoryId": directoryId
         ]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getDocListByDirId) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[Document]>.self, from: data)
+        // 使用封装好的 request 方法发起网络请求
+        request(endpoint: .getDocListByDirId, parameters: parameters) { (result: Result<BaseResponse<[Document]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let documents = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(documents))
-                    }
+                    completion(.success(documents))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取文档列表失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取文档列表失败")))
                 }
-            } catch {
-                print("❌ 解析失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
     /// 创建目录
@@ -599,83 +518,19 @@ extension HTTPClient {
         task.resume()
     }
     
+    /// 根据聊天ID获取会话历史记录
+    /// - Parameters:
+    ///   - chatId: 聊天ID
+    ///   - completion: 完成回调，返回历史记录列表
     func getChatHistoryByChatId(chatId: String, completion: @escaping (Result<[ChatHistory], NetworkError>) -> Void) {
         let parameters: [String: Any] = ["chatId": chatId]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getChatHistoryByChatId) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 请求URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("❌ 网络错误: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ 无效的响应")
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            print("📊 HTTP状态码: \(httpResponse.statusCode)")
-            
-            guard httpResponse.statusCode == 200 else {
-                print("⚠️ 服务器错误: \(httpResponse.statusCode)")
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                print("❌ 无返回数据")
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            // 打印原始响应数据
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 原始响应数据:")
-                print(jsonString)
-            } else {
-                print("📥 响应数据长度: \(data.count) bytes")
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[ChatHistory]>.self, from: data)
-                print("✅ 数据解析成功，status: \(response.status), isSuccess: \(response.isSuccess)")
-                if let msg = response.msg {
-                    print("💬 服务器消息: \(msg)")
-                }
-                
+        // 使用封装好的 request 方法发起网络请求
+        request(endpoint: .getChatHistoryByChatId, parameters: parameters) { (result: Result<BaseResponse<[ChatHistory]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let histories = response.data {
-                    // 打印详细的会话记录数据
+                    // 打印详细的会话记录数据（用于调试）
                     print("📋 会话记录详情（共 \(histories.count) 条）:")
                     for (index, history) in histories.enumerated() {
                         print("  第\(index + 1)条记录:")
@@ -687,67 +542,38 @@ extension HTTPClient {
                         print("    - createTime: \(history.createTime ?? "nil")")
                         print("    - updateTime: \(history.updateTime ?? "nil")")
                     }
-                    
-                    DispatchQueue.main.async {
-                        completion(.success(histories))
-                    }
+                    completion(.success(histories))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取会话记录失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取会话记录失败")))
                 }
-            } catch {
-                print("❌ 数据解析失败: \(error)")
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("❌ 原始数据: \(jsonString)")
-                }
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
+    /// 上传文档
+    /// - Parameters:
+    ///   - fileURL: 文件本地URL
+    ///   - tenantId: 租户ID
+    ///   - directoryId: 目录ID
+    ///   - completion: 完成回调，返回上传成功消息
+    /// 上传文档
     func uploadDoc(
         fileURL: URL,
         tenantId: String,
         directoryId: String,
         completion: @escaping (Result<String, NetworkError>) -> Void
     ) {
-        // 构建 URL（替换路径参数）
-        let urlPath = Constants.API.uploadDoc
-            .replacingOccurrences(of: "{tenantId}", with: tenantId)
-            .replacingOccurrences(of: "{directoryId}", with: directoryId)
-        
-        guard let url = URL(string: baseURL + urlPath) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        // 创建 multipart/form-data 请求
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        // 添加 Authorization header
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        // 生成边界字符串
+        // 构建 multipart/form-data 请求体
         let boundary = "Boundary-\(UUID().uuidString)"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let filename = fileURL.lastPathComponent
+        let mimeType = getMimeType(for: filename)
         
-        // 构建 multipart body
         var body = Data()
         
-        // 添加文件数据
         do {
             let fileData = try Data(contentsOf: fileURL)
-            let filename = fileURL.lastPathComponent
-            let mimeType = getMimeType(for: filename)
-            
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
             body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
@@ -759,75 +585,33 @@ extension HTTPClient {
             return
         }
         
-        // 添加结束边界
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
-        request.httpBody = body
+        var headers: [String: String] = [:]
+        headers["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
         
-        print("🌐 上传文档URL: \(url)")
-        print("📁 文件名: \(fileURL.lastPathComponent)")
-        print("🏢 租户ID: \(tenantId)")
-        print("📂 目录ID: \(directoryId)")
+        print("🌐 上传文档，租户ID: \(tenantId)，目录ID: \(directoryId)")
+        print("📁 文件名: \(filename)")
         
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("❌ 上传网络错误: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            print("📊 上传响应状态码: \(httpResponse.statusCode)")
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            // 打印响应数据
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 上传响应数据: \(jsonString)")
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<EmptyData>.self, from: data)
-                
+        // 使用封装好的 request 方法
+        request(
+            endpoint: .uploadDoc(tenantId, directoryId),
+            method: "POST",
+            parameters: nil,
+            customBody: body,
+            customHeaders: headers
+        ) { (result: Result<BaseResponse<EmptyData>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess {
-                    DispatchQueue.main.async {
-                        completion(.success(response.msg ?? "上传成功"))
-                    }
+                    completion(.success(response.msg ?? "上传成功"))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "上传失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "上传失败")))
                 }
-            } catch {
-                print("❌ 解析上传响应失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
     /// 根据文件名获取 MIME 类型
@@ -902,32 +686,20 @@ extension HTTPClient {
         }
     }
 
+    // MARK: - 用户信息相关方法
+
     /// 更新用户头像
+    /// - Parameters:
+    ///   - imageData: 头像图片数据
+    ///   - completion: 完成回调，返回头像URL
     func updateAvatar(imageData: Data, completion: @escaping (Result<String, NetworkError>) -> Void) {
-        // 构建 URL
-        guard let url = URL(string: baseURL + Constants.API.updateAvater) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        // 创建 multipart/form-data 请求
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        // 添加 Authorization header
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        // 生成边界字符串
+        // 构建 multipart/form-data 请求体
         let boundary = "Boundary-\(UUID().uuidString)"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let filename = "avatar_\(Date().timeIntervalSince1970).jpg"
         
-        // 构建 multipart body
         var body = Data()
         
         // 添加文件数据
-        let filename = "avatar_\(Date().timeIntervalSince1970).jpg"
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
@@ -937,72 +709,31 @@ extension HTTPClient {
         // 添加结束边界
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
-        request.httpBody = body
+        // 设置请求头
+        var headers: [String: String] = [:]
+        headers["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
         
-        print("🌐 上传头像URL: \(url)")
-        print("📁 文件名: \(filename)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("❌ 上传头像网络错误: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            print("📊 上传头像响应状态码: \(httpResponse.statusCode)")
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            // 打印响应数据
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 上传头像响应数据: \(jsonString)")
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<StringData>.self, from: data)
-                
+        // 使用封装好的 request 方法发起网络请求（使用自定义 body 和 headers）
+        request(
+            endpoint: .updateAvater,
+            method: "POST",
+            parameters: nil,
+            customBody: body,
+            customHeaders: headers
+        ) { (result: Result<BaseResponse<StringData>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess {
                     // 返回头像URL
                     let avatarUrl = response.data?.value ?? ""
-                    DispatchQueue.main.async {
-                        completion(.success(avatarUrl))
-                    }
+                    completion(.success(avatarUrl))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "上传头像失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "上传头像失败")))
                 }
-            } catch {
-                print("❌ 解析上传头像响应失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
     
     // MARK: - 注册相关方法
@@ -1105,82 +836,25 @@ extension HTTPClient {
     // MARK: - 提示词相关方法
 
     /// 获取用户提示词
+    /// - Parameters:
+    ///   - tenantId: 租户ID
+    ///   - completion: 完成回调，返回提示词信息
     func getPrompt(tenantId: String, completion: @escaping (Result<Prompt, NetworkError>) -> Void) {
         let parameters: [String: Any] = ["tenantId": tenantId]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getPrompt) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 获取提示词URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("❌ 获取提示词网络错误: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<Prompt>.self, from: data)
-                
+        // 使用封装好的 request 方法发起网络请求
+        request(endpoint: .getPrompt, parameters: parameters) { (result: Result<BaseResponse<Prompt>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let prompt = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(prompt))
-                    }
+                    completion(.success(prompt))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取提示词失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取提示词失败")))
                 }
-            } catch {
-                print("❌ 解析提示词响应失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
     
     // MARK: - 提示词相关方法
@@ -1224,91 +898,27 @@ extension HTTPClient {
     }
 
     // MARK: - 租户用户管理相关方法
-    
+
     /// 获取当前用户在当前租户内的信息
     /// - Parameters:
     ///   - tenantId: 租户ID
-    ///   - completion: 完成回调
+    ///   - completion: 完成回调，返回租户用户信息
     func getTenantUser(tenantId: String, completion: @escaping (Result<TenantUser, NetworkError>) -> Void) {
         let parameters: [String: Any] = ["tenantId": tenantId]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getTenantUser) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 获取租户用户信息URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            // 打印原始响应数据
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 租户用户信息原始响应: \(jsonString)")
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<TenantUser>.self, from: data)
-                
+        // 使用封装好的 request 方法发起网络请求
+        request(endpoint: .getTenantUser, parameters: parameters) { (result: Result<BaseResponse<TenantUser>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let tenantUser = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(tenantUser))
-                    }
+                    completion(.success(tenantUser))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取租户用户信息失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取租户用户信息失败")))
                 }
-            } catch {
-                print("❌ 解析租户用户信息失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
     /// 获取租户下的用户列表（支持关键词搜索）
@@ -1843,82 +1453,28 @@ extension HTTPClient {
         task.resume()
     }
 
+    // MARK: - 部门/职位相关方法
+
     /// 获取职位列表
+    /// - Parameters:
+    ///   - departmentId: 部门ID
+    ///   - completion: 完成回调，返回职位列表
     func getPositions(departmentId: String, completion: @escaping (Result<[Position], NetworkError>) -> Void) {
         let parameters: [String: Any] = ["departmentId": departmentId]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getPositions) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 获取职位列表URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[Position]>.self, from: data)
-                
+        // 使用封装好的 request 方法发起网络请求
+        request(endpoint: .getPositions, parameters: parameters) { (result: Result<BaseResponse<[Position]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let positions = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(positions))
-                    }
+                    completion(.success(positions))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取职位列表失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取职位列表失败")))
                 }
-            } catch {
-                print("❌ 解析职位列表失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
     
     /// 搜索租户用户

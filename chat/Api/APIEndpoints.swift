@@ -17,7 +17,7 @@ enum APIEndpoint {
     case createDir
     case getChatHistory
     case getChatHistoryByChatId
-    case uploadDoc
+    case uploadDoc(String, String)  // tenantId, directoryId
     case deleteDoc(String)
     case updateUser
     case updateAvater
@@ -39,6 +39,7 @@ enum APIEndpoint {
 
     case addCompanyUser
     case searchTenantUsers    
+    case getPositions
     
     var path: String {
         switch self {
@@ -68,8 +69,10 @@ enum APIEndpoint {
             return Constants.API.getChatHistory
         case .getChatHistoryByChatId:
             return Constants.API.getChatHistoryByChatId
-        case .uploadDoc:
+        case .uploadDoc(let tenantId, let directoryId):
             return Constants.API.uploadDoc
+                .replacingOccurrences(of: "{tenantId}", with: tenantId)
+                .replacingOccurrences(of: "{directoryId}", with: directoryId)
         case .deleteDoc(let docId):
             return Constants.API.deleteDoc.replacingOccurrences(of: "{docId}", with: docId)
         case .updateUser:
@@ -112,6 +115,8 @@ enum APIEndpoint {
             return Constants.API.searchCompanyUsers
         case .searchTenantUsers:
             return Constants.API.searchTenantUsers
+        case .getPositions:
+            return Constants.API.getPositions
         }
     }
     
@@ -119,7 +124,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser:
             return "POST"
-        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers:
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers,.getPositions:
             return "GET"
         case .deleteDoc:
             return "DELETE"
