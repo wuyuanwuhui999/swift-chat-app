@@ -39,6 +39,7 @@ enum APIEndpoint {
 
     case searchUsers
     case addCompanyUser
+    case searchTenantUsers    
     
     var path: String {
         switch self {
@@ -112,6 +113,8 @@ enum APIEndpoint {
                 .replacingOccurrences(of: "{userId}", with: userId)
         case .searchCompanyUsersWithPage:
             return Constants.API.searchCompanyUsersWithPage
+        case .searchTenantUsers:
+            return Constants.API.searchTenantUsers
         }
     }
     
@@ -119,7 +122,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser:
             return "POST"
-        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchUsers, .searchCompanyUsersWithPage:
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUser, .getTenantUserList, .getCompanyUsers, .searchUsers, .searchCompanyUsersWithPage,.searchTenantUsers:
             return "GET"
         case .deleteDoc:
             return "DELETE"

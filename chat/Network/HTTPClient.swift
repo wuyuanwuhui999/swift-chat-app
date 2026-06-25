@@ -2071,6 +2071,40 @@ extension HTTPClient {
         task.resume()
     }
     
+    /// 搜索租户用户
+    /// - Parameters:
+    ///   - tenantId: 租户ID
+    ///   - keyword: 搜索关键词（姓名或工号）
+    ///   - pageNum: 页码
+    ///   - pageSize: 每页大小
+    ///   - completion: 完成回调
+    func searchTenantUsers(
+        tenantId: String,
+        keyword: String,
+        pageNum: Int,
+        pageSize: Int,
+        completion: @escaping (Result<([SearchUserResult], Int), NetworkError>) -> Void
+    ) {
+        let parameters: [String: Any] = [
+            "tenantId": tenantId,
+            "keyword": keyword,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
+        
+        request(endpoint: .searchTenantUsers, parameters: parameters) { (result: Result<BaseResponse<[SearchUserResult]>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let users = response.data {
+                    completion(.success((users, response.total ?? 0)))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "搜索租户用户失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // 登录响应模型

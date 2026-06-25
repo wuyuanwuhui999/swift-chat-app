@@ -14,7 +14,7 @@ struct AddTenantUserPage: View {
     
     // 搜索相关状态
     @State private var searchText = ""
-    @State private var searchResults: [User] = []
+    @State private var searchResults: [SearchUserResult] = []  // 修改为 SearchUserResult 类型
     @State private var isSearchLoading = false
     @State private var searchWorkItem: DispatchWorkItem?
     @State private var currentPage = 1
@@ -268,8 +268,8 @@ struct AddTenantUserPage: View {
     /// 执行搜索
     private func performSearch(reset: Bool = true) {
         guard !searchText.isEmpty else { return }
-        guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
-            print("❌ 未找到公司ID")
+        guard let tenantId = appState.currentTenant?.id else {
+            print("❌ 未找到租户ID")
             return
         }
         
@@ -279,9 +279,10 @@ struct AddTenantUserPage: View {
             searchResults = []
         }
         
-        HTTPClient.shared.searchCompanyUsers(
+        // 使用封装好的 request 方法
+        HTTPClient.shared.searchTenantUsers(
+            tenantId: tenantId,
             keyword: searchText,
-            companyId: companyId,
             pageNum: currentPage,
             pageSize: pageSize
         ) { result in
@@ -304,10 +305,10 @@ struct AddTenantUserPage: View {
                     }
                     // 判断是否还有更多数据
                     self.hasMoreData = self.searchResults.count < total
-                    print("✅ 搜索用户成功，共 \(users.count) 条，总计 \(total) 条")
+                    print("✅ 搜索租户用户成功，共 \(users.count) 条，总计 \(total) 条")
                     
                 case .failure(let error):
-                    print("❌ 搜索用户失败: \(error.localizedDescription)")
+                    print("❌ 搜索租户用户失败: \(error.localizedDescription)")
                     if reset {
                         self.searchResults = []
                     }
@@ -366,7 +367,7 @@ struct AddTenantUserPage: View {
     // MARK: - 添加用户
     
     /// 添加用户到租户
-    private func addUserToTenant(_ user: User) {
+    private func addUserToTenant(_ user: SearchUserResult) {
         guard let tenantId = appState.currentTenant?.id,
               let userId = user.id else { return }
         
@@ -407,7 +408,7 @@ struct AddTenantUserPage: View {
 
 /// 用户搜索行视图
 struct UserSearchRow: View {
-    let user: User
+    let user: SearchUserResult  // 修改为 SearchUserResult 类型
     let isAdded: Bool
     let isAdding: Bool
     let onAdd: () -> Void

@@ -7,31 +7,6 @@
 
 import SwiftUI
 
-/// 添加用户搜索结果模型
-struct SearchUserResult: Codable, Identifiable {
-    let id: String?
-    let userAccount: String
-    let createDate: String?
-    let updateDate: String?
-    let username: String
-    let telephone: String
-    let email: String
-    let avater: String?
-    let birthday: String?
-    let sex: String
-    let role: String?
-    let password: String?
-    let sign: String
-    let region: String?
-    let disabled: Int?
-    let permission: Int?
-    let checked: Int?  // 0: 不在该公司, 1: 已在该公司
-    
-    var isAdded: Bool {
-        return checked == 1
-    }
-}
-
 /// 部门模型
 struct Department: Codable, Identifiable {
     let id: String
