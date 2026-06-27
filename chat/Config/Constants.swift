@@ -48,10 +48,10 @@ struct Constants {
 
         static let addAdmin = "/service/tenant/addAdmin/{tenantId}/{userId}"
         static let cancelAdmin = "/service/tenant/cancelAdmin/{tenantId}/{userId}"
-        static let searchCompanyUsers = "/service/company/searchCompanyUsers"
+        static let searchCompanyUsers = "/service/company/searchUsers"
 
         static let getCompanyUsers = "/service/company/getCompanyUsers"
-        static let addCompanyUser = "/service/company/addCompanyUser"
+        static let addCompanyUser = "/service/company/addUser"
 
         static let getDepartments = "/service/company/getDepartments"
         static let getPositions = "/service/company/getPositions"

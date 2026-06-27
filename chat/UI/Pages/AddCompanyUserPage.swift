@@ -42,6 +42,8 @@ struct AddCompanyUserPage: View {
     
     // 已添加的用户ID集合
     @State private var addedUserIds: Set<String> = []
+    // 正在添加的用户ID集合（用于显示加载状态）
+    @State private var addingUserIds: Set<String> = []
     
     // 添加对话框相关状态
     @State private var showAddDialog = false
@@ -78,15 +80,14 @@ struct AddCompanyUserPage: View {
         return isSuperAdmin
     }
     
-    /// 表单是否有效
+    /// 表单是否有效（选择了部门和职位，超级管理员还需选择角色）
     private var isFormValid: Bool {
-        if isSuperAdmin {
-            // 超级管理员需要选择部门和职位
-            return selectedDepartmentId != nil && selectedPositionId != nil
-        } else {
-            // 普通管理员直接添加，不需要验证
-            return true
+        // 必须选择部门和职位
+        guard selectedDepartmentId != nil && selectedPositionId != nil else {
+            return false
         }
+        // 如果是超级管理员，还需要选择角色（默认已选0）
+        return true
     }
     
     var body: some View {
@@ -236,16 +237,12 @@ struct AddCompanyUserPage: View {
                 AddUserRow(
                     user: user,
                     isAdded: addedUserIds.contains(user.id ?? "") || user.isAdded,
+                    isAdding: addingUserIds.contains(user.id ?? ""),
                     onAdd: {
                         selectedUser = user
-                        if isSuperAdmin {
-                            // 超级管理员，弹出对话框选择角色、部门、职位
-                            loadDepartments()
-                            showAddDialog = true
-                        } else if isNormalAdmin {
-                            // 普通管理员，直接添加为普通用户（不需要部门职位）
-                            addUserToCompany(user: user, role: 0, positionId: nil)
-                        }
+                        // 加载部门和职位数据，然后显示对话框
+                        loadDepartmentsAndPositions()
+                        showAddDialog = true
                     }
                 )
                 
@@ -266,7 +263,7 @@ struct AddCompanyUserPage: View {
         }
     }
     
-    /// 添加用户对话框
+    /// 添加用户对话框 - 选择部门和职位
     @ViewBuilder
     private var addUserDialog: some View {
         if showAddDialog, let user = selectedUser {
@@ -280,15 +277,15 @@ struct AddCompanyUserPage: View {
                 
                 VStack(spacing: Dimens.middleMargin) {
                     // 标题
-                    Text("添加用户")
+                    Text("选择部门和职位")
                         .font(.system(size: Dimens.middleFont))
                         .foregroundColor(.primary)
                         .padding(.top, Dimens.middleMargin)
                     
                     // 用户名
-                    Text(user.username)
+                    Text("用户：\(user.username)")
                         .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
+                        .foregroundColor(Colors.grayColor)
                         .padding(.horizontal, Dimens.middleMargin)
                     
                     // 角色选项（仅超级管理员显示）
@@ -329,77 +326,79 @@ struct AddCompanyUserPage: View {
                         .padding(.horizontal, Dimens.middleMargin)
                     }
                     
-                    // 部门选择（仅超级管理员显示）
-                    if showRoleOption {
-                        VStack(alignment: .leading, spacing: Dimens.smallMargin) {
-                            Text("部门")
-                                .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(.primary)
-                            
-                            if isLoadingDepartments {
-                                HStack {
-                                    Spacer()
-                                    ProgressView()
-                                        .padding(.vertical, Dimens.smallMargin)
-                                    Spacer()
+                    // 部门选择
+                    VStack(alignment: .leading, spacing: Dimens.smallMargin) {
+                        Text("部门")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.primary)
+                        
+                        if isLoadingDepartments {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .padding(.vertical, Dimens.smallMargin)
+                                Spacer()
+                            }
+                        } else {
+                            Picker("选择部门", selection: $selectedDepartmentId) {
+                                Text("请选择部门").tag(nil as String?)
+                                ForEach(departments) { dept in
+                                    Text(dept.departmentName).tag(dept.id as String?)
                                 }
-                            } else {
-                                Picker("选择部门", selection: $selectedDepartmentId) {
-                                    Text("请选择部门").tag(nil as String?)
-                                    ForEach(departments) { dept in
-                                        Text(dept.departmentName).tag(dept.id as String?)
-                                    }
-                                }
-                                .pickerStyle(MenuPickerStyle())
-                                .frame(maxWidth: .infinity)
-                                .padding(.horizontal, Dimens.middleMargin)
-                                .frame(height: Dimens.inputHeight)
-                                .background(Colors.pageBackgroundColor)
-                                .cornerRadius(Dimens.inputHeight / 2)
-                                .onChange(of: selectedDepartmentId) { newValue in
-                                    if let deptId = newValue {
-                                        loadPositions(departmentId: deptId)
-                                    } else {
-                                        positions = []
-                                        selectedPositionId = nil
-                                    }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, Dimens.middleMargin)
+                            .frame(height: Dimens.inputHeight)
+                            .background(Colors.pageBackgroundColor)
+                            .cornerRadius(Dimens.inputHeight / 2)
+                            .onChange(of: selectedDepartmentId) { newValue in
+                                if let deptId = newValue {
+                                    loadPositions(departmentId: deptId)
+                                } else {
+                                    positions = []
+                                    selectedPositionId = nil
                                 }
                             }
                         }
-                        .padding(.horizontal, Dimens.middleMargin)
                     }
+                    .padding(.horizontal, Dimens.middleMargin)
                     
-                    // 职位选择（仅超级管理员且已选择部门时显示）
-                    if showRoleOption && selectedDepartmentId != nil {
-                        VStack(alignment: .leading, spacing: Dimens.smallMargin) {
-                            Text("职位")
-                                .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(.primary)
-                            
-                            if isLoadingPositions {
-                                HStack {
-                                    Spacer()
-                                    ProgressView()
-                                        .padding(.vertical, Dimens.smallMargin)
-                                    Spacer()
-                                }
-                            } else {
-                                Picker("选择职位", selection: $selectedPositionId) {
-                                    Text("请选择职位").tag(nil as String?)
-                                    ForEach(positions) { pos in
-                                        Text(pos.positionName).tag(pos.id as String?)
-                                    }
-                                }
-                                .pickerStyle(MenuPickerStyle())
-                                .frame(maxWidth: .infinity)
-                                .padding(.horizontal, Dimens.middleMargin)
-                                .frame(height: Dimens.inputHeight)
-                                .background(Colors.pageBackgroundColor)
-                                .cornerRadius(Dimens.inputHeight / 2)
+                    // 职位选择
+                    VStack(alignment: .leading, spacing: Dimens.smallMargin) {
+                        Text("职位")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.primary)
+                        
+                        if isLoadingPositions {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .padding(.vertical, Dimens.smallMargin)
+                                Spacer()
                             }
+                        } else if selectedDepartmentId != nil {
+                            Picker("选择职位", selection: $selectedPositionId) {
+                                Text("请选择职位").tag(nil as String?)
+                                ForEach(positions) { pos in
+                                    Text(pos.positionName).tag(pos.id as String?)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, Dimens.middleMargin)
+                            .frame(height: Dimens.inputHeight)
+                            .background(Colors.pageBackgroundColor)
+                            .cornerRadius(Dimens.inputHeight / 2)
+                        } else {
+                            Text("请先选择部门")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(Colors.grayColor)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, Dimens.smallMargin)
                         }
-                        .padding(.horizontal, Dimens.middleMargin)
                     }
+                    .padding(.horizontal, Dimens.middleMargin)
                     
                     // 按钮区域
                     HStack(spacing: Dimens.middleMargin) {
@@ -616,9 +615,18 @@ struct AddCompanyUserPage: View {
     
     // MARK: - 部门/职位加载方法
     
-    /// 加载部门列表
-    private func loadDepartments() {
-        guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else { return }
+    /// 加载部门和职位数据（先加载部门，部门加载完成后自动加载职位）
+    private func loadDepartmentsAndPositions() {
+        guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
+            print("❌ 未找到公司ID")
+            return
+        }
+        
+        // 重置部门相关状态
+        departments = []
+        positions = []
+        selectedDepartmentId = nil
+        selectedPositionId = nil
         
         isLoadingDepartments = true
         HTTPClient.shared.getDepartments(companyId: companyId) { result in
@@ -627,8 +635,10 @@ struct AddCompanyUserPage: View {
                 switch result {
                 case .success(let depts):
                     self.departments = depts
+                    print("✅ 获取部门列表成功，共 \(depts.count) 个部门")
                 case .failure(let error):
                     print("❌ 获取部门列表失败: \(error.localizedDescription)")
+                    self.showAlert(message: "获取部门列表失败")
                 }
             }
         }
@@ -637,14 +647,20 @@ struct AddCompanyUserPage: View {
     /// 加载职位列表
     private func loadPositions(departmentId: String) {
         isLoadingPositions = true
+        // 清空之前的职位列表
+        positions = []
+        selectedPositionId = nil
+        
         HTTPClient.shared.getPositions(departmentId: departmentId) { result in
             DispatchQueue.main.async {
                 self.isLoadingPositions = false
                 switch result {
                 case .success(let posList):
                     self.positions = posList
+                    print("✅ 获取职位列表成功，共 \(posList.count) 个职位")
                 case .failure(let error):
                     print("❌ 获取职位列表失败: \(error.localizedDescription)")
+                    self.showAlert(message: "获取职位列表失败")
                 }
             }
         }
@@ -655,7 +671,10 @@ struct AddCompanyUserPage: View {
     /// 添加用户到公司
     private func addUserToCompany(user: SearchUserResult, role: Int, positionId: String?) {
         guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId(),
-              let userId = user.id else { return }
+              let userId = user.id else {
+            showAlert(message: "缺少必要参数")
+            return
+        }
         
         // 普通管理员只能添加普通用户（role = 0）
         let finalRole: Int
@@ -665,6 +684,13 @@ struct AddCompanyUserPage: View {
             finalRole = role
         }
         
+        // 标记为正在添加
+        addingUserIds.insert(userId)
+        
+        // 关闭对话框
+        showAddDialog = false
+        resetDialogState()
+        
         HTTPClient.shared.addCompanyUser(
             companyId: companyId,
             userId: userId,
@@ -672,38 +698,41 @@ struct AddCompanyUserPage: View {
             positionId: positionId
         ) { result in
             DispatchQueue.main.async {
+                // 移除正在添加标记
+                self.addingUserIds.remove(userId)
+                
                 switch result {
                 case .success(let data):
                     if data > 0 {
-                        self.alertMessage = "添加成功"
-                        self.showAlert = true
+                        self.showAlert(message: "添加成功")
                         // 标记为已添加
-                        if let userId = user.id {
-                            self.addedUserIds.insert(userId)
-                        }
+                        self.addedUserIds.insert(userId)
                         // 更新搜索结果中的状态
                         self.performSearch(reset: true)
-                        self.showAddDialog = false
-                        self.resetDialogState()
                     } else {
-                        self.alertMessage = "添加失败"
-                        self.showAlert = true
+                        self.showAlert(message: "添加失败，请稍后重试")
                     }
                 case .failure(let error):
-                    self.alertMessage = error.localizedDescription
-                    self.showAlert = true
+                    self.showAlert(message: error.localizedDescription)
                 }
             }
         }
+    }
+    
+    /// 显示提示框
+    private func showAlert(message: String) {
+        alertMessage = message
+        showAlert = true
     }
 }
 
 // MARK: - 添加用户行组件
 
-/// 添加用户行视图
+/// 添加用户行视图（支持加载状态）
 struct AddUserRow: View {
     let user: SearchUserResult
     let isAdded: Bool
+    let isAdding: Bool
     let onAdd: () -> Void
     
     var body: some View {
@@ -728,7 +757,7 @@ struct AddUserRow: View {
             
             Spacer()
             
-            // 添加按钮 / 已添加标签
+            // 添加按钮 / 已添加标签 / 加载状态
             if isAdded {
                 Text("已添加")
                     .font(.system(size: Dimens.normalFont - 2))
@@ -737,6 +766,9 @@ struct AddUserRow: View {
                     .padding(.vertical, Dimens.smallMargin)
                     .background(Colors.grayColor.opacity(0.2))
                     .cornerRadius(Dimens.borderRadius * 2)
+            } else if isAdding {
+                ProgressView()
+                    .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
             } else {
                 Button(action: onAdd) {
                     Text("添加")
