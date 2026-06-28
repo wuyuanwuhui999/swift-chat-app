@@ -94,7 +94,7 @@ struct UserManagePage: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.primaryColor)
+                    .foregroundColor(Colors.subColor)
             }
             
             Spacer()
@@ -112,7 +112,7 @@ struct UserManagePage: View {
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.primaryColor)
+                    .foregroundColor(Colors.subColor)
             }
         }
         .padding(.horizontal, Dimens.middleMargin)
@@ -392,11 +392,23 @@ struct UserManageRow: View {
                     username: companyUser.username,
                     size: Dimens.middleAvater
                 )
-                VStack(spacing: Dimens.middleMargin){
-                    // 用户名
-                    Text(companyUser.username)
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
+                VStack(alignment: .leading,spacing: Dimens.middleMargin){
+                    HStack(spacing:Dimens.middleMargin){
+                        // 用户名
+                        Text(companyUser.username)
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.primary)
+                        // 角色标签（管理员/超级管理员才显示）
+                        if companyUser.shouldShowRoleTag {
+                            Text(companyUser.roleText)
+                                .font(.system(size: Dimens.normalFont - 4))
+                                .foregroundColor(Colors.primaryColor)
+                                .padding(.horizontal, Dimens.smallIcon)
+                                .padding(.vertical, 4)
+                                .background(Colors.primaryColor.opacity(0.1))
+                                .cornerRadius(Dimens.smallIcon)
+                        }
+                    }
 
                     Text(companyUser.userAccount)
                         .font(.system(size: Dimens.normalFont - 2))
@@ -405,16 +417,7 @@ struct UserManageRow: View {
                 
                 Spacer()
                 
-                // 角色标签（管理员/超级管理员才显示）
-                if companyUser.shouldShowRoleTag {
-                    Text(companyUser.roleText)
-                        .font(.system(size: Dimens.normalFont - 4))
-                        .foregroundColor(Colors.primaryColor)
-                        .padding(.horizontal, Dimens.smallIcon)
-                        .padding(.vertical, 4)
-                        .background(Colors.primaryColor.opacity(0.1))
-                        .cornerRadius(Dimens.smallIcon)
-                }
+                
             }
         }
         .padding(.horizontal, Dimens.middleMargin)

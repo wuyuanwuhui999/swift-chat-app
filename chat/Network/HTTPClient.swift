@@ -895,31 +895,7 @@ extension HTTPClient {
                 completion(.failure(error))
             }
         }
-    }
-
-    // MARK: - 租户用户管理相关方法
-
-    /// 获取当前用户在当前租户内的信息
-    /// - Parameters:
-    ///   - tenantId: 租户ID
-    ///   - completion: 完成回调，返回租户用户信息
-    func getTenantUser(tenantId: String, completion: @escaping (Result<TenantUser, NetworkError>) -> Void) {
-        let parameters: [String: Any] = ["tenantId": tenantId]
-        
-        // 使用封装好的 request 方法发起网络请求
-        request(endpoint: .getTenantUser, parameters: parameters) { (result: Result<BaseResponse<TenantUser>, NetworkError>) in
-            switch result {
-            case .success(let response):
-                if response.isSuccess, let tenantUser = response.data {
-                    completion(.success(tenantUser))
-                } else {
-                    completion(.failure(.custom(message: response.msg ?? "获取租户用户信息失败")))
-                }
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
-    }
+    } 
 
     /// 获取租户下的用户列表（支持关键词搜索）
     /// - Parameters:

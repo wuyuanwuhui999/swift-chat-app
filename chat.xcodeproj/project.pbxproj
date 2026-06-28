@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */; };
 		F1BCCB0F2F79F209004CFEB0 /* 租户管理2.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCB0A2F79F209004CFEB0 /* 租户管理2.png */; };
 		F1BCCB152F79F209004CFEB0 /* 忘记密码.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAFB2F79F209004CFEB0 /* 忘记密码.png */; };
 		F1BCCB162F79F209004CFEB0 /* 添加用户.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BCCAF92F79F209004CFEB0 /* 添加用户.png */; };
@@ -26,7 +25,6 @@
 
 /* Begin PBXFileReference section */
 		F1BCCA5C2F72D836004CFEB0 /* chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = chat.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "提示词.txt"; sourceTree = "<group>"; };
 		F1BCCAF12F79F209004CFEB0 /* 更改用户信息1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息1.png"; sourceTree = "<group>"; };
 		F1BCCAF22F79F209004CFEB0 /* 更改用户信息2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息2.png"; sourceTree = "<group>"; };
 		F1BCCAF32F79F209004CFEB0 /* 更改用户信息3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "更改用户信息3.png"; sourceTree = "<group>"; };
@@ -79,7 +77,6 @@
 				F1BCCB062F79F209004CFEB0 /* 重置密码.png */,
 				F1BCCB092F79F209004CFEB0 /* 租户管理.png */,
 				F1BCCB0A2F79F209004CFEB0 /* 租户管理2.png */,
-				F1BCCAE52F7917E1004CFEB0 /* 提示词.txt */,
 				F1BCCA5E2F72D836004CFEB0 /* chat */,
 				F1BCCA5D2F72D836004CFEB0 /* Products */,
 			);
@@ -171,7 +168,6 @@
 				F1BCCB272F79F209004CFEB0 /* 租户管理.png in Resources */,
 				F1BCCB2A2F79F209004CFEB0 /* 切换租户.png in Resources */,
 				F1BCCB2E2F79F209004CFEB0 /* 更改用户信息1.png in Resources */,
-				F1BCCAE62F7917EB004CFEB0 /* 提示词.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

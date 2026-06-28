@@ -1,3 +1,4 @@
+// chat/chat/Models/Tenant.swift
 // models/Tenant.swift
 import Foundation
 
@@ -32,6 +33,7 @@ struct Tenant: Codable, Identifiable {
     let updateDate: String?
     let createdBy: String?      // 改为可选类型
     let updatedBy: String?      // 改为可选类型
+    let role: Int?              // 新增：当前用户在该租户中的角色 (0-普通用户，1-管理员，2-超级管理员)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -43,6 +45,7 @@ struct Tenant: Codable, Identifiable {
         case updateDate
         case createdBy
         case updatedBy
+        case role
     }
     
     /// 格式化创建时间
@@ -69,5 +72,23 @@ struct Tenant: Codable, Identifiable {
         }
         
         return dateString
+    }
+    
+    /// 角色显示文本
+    var roleText: String {
+        guard let role = role else { return "" }
+        switch role {
+        case 1:
+            return "管理员"
+        case 2:
+            return "超级管理员"
+        default:
+            return ""
+        }
+    }
+    
+    /// 是否显示角色标签
+    var shouldShowRoleTag: Bool {
+        return (role ?? 0) > 0
     }
 }

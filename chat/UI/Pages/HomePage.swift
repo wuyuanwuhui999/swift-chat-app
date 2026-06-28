@@ -435,7 +435,7 @@ struct HomePage: View {
         }
     }
 
-    /// 处理租户列表结果
+     /// 处理租户列表结果
     private func handleTenantListResult(_ result: Result<[Tenant], NetworkError>) {
         switch result {
         case .success(let tenants):

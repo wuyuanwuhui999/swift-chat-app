@@ -54,10 +54,13 @@ struct UserPage: View {
     @State private var showChangePasswordPage = false
     @State private var showLogoutAlert = false
 
-    @State private var tenantUserRole: Int = 0
     @State private var navigateToTenantManagePage = false
     @State private var navigateToUserManagePage = false
     
+    private var tenantUserRole: Int {
+        return appState.currentTenant?.role ?? 0
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // 自定义白色背景标题栏
@@ -264,7 +267,6 @@ struct UserPage: View {
         .background(Colors.pageBackgroundColor)
         .onAppear {
             loadUserData()
-            loadTenantUserRole()
         }
         // 头像选择器
         .photosPicker(isPresented: $showAvatarPicker, selection: $selectedItem, matching: .images)
@@ -319,7 +321,7 @@ struct UserPage: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.primaryColor)
+                    .foregroundColor(Colors.subColor)
             }
             
             Spacer()
@@ -495,22 +497,6 @@ struct UserPage: View {
                 formatter.dateFormat = "yyyy-MM-dd"
                 if let date = formatter.date(from: birthday) {
                     selectedBirthday = date
-                }
-            }
-        }
-    }
-
-    /// 加载当前用户在当前租户内的角色
-    private func loadTenantUserRole() {
-        guard let tenantId = appState.currentTenant?.id else { return }
-        
-        HTTPClient.shared.getTenantUser(tenantId: tenantId) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let tenantUser):
-                    self.tenantUserRole = tenantUser.role
-                case .failure(let error):
-                    print("❌ 获取租户用户角色失败: \(error.localizedDescription)")
                 }
             }
         }

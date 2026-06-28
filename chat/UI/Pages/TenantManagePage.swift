@@ -30,7 +30,6 @@ struct TenantManagePage: View {
     // 其他状态
     @State private var showAlert = false
     @State private var alertMessage = ""
-    @State private var tenantUserRole: Int = 0  // 当前登录用户在当前租户内的角色
     @State private var navigateToAddUser = false
     
     // 下拉刷新状态
@@ -39,6 +38,10 @@ struct TenantManagePage: View {
     // 记录当前滑动打开的用户ID，用于自动关闭其他打开的条目
     @State private var activeSwipeUserId: String?
     
+    private var tenantUserRole: Int {
+        return appState.currentTenant?.role ?? 0
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -70,7 +73,6 @@ struct TenantManagePage: View {
             }
             .onAppear {
                 loadTenantUserList()
-                loadCurrentTenantUserRole()
             }
             .navigationDestination(isPresented: $navigateToAddUser) {
                 AddTenantUserPage()
@@ -90,7 +92,7 @@ struct TenantManagePage: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.primaryColor)
+                    .foregroundColor(Colors.subColor)
             }
             
             Spacer()
@@ -109,7 +111,7 @@ struct TenantManagePage: View {
                 }) {
                     Image(systemName: "plus")
                         .font(.system(size: Dimens.middleIcon))
-                        .foregroundColor(Colors.primaryColor)
+                        .foregroundColor(Colors.subColor)
                 }
             } else {
                 // 占位符保持布局
@@ -122,7 +124,7 @@ struct TenantManagePage: View {
         .background(Colors.whiteColor)
         .overlay(
             Rectangle()
-                .fill(Colors.grayColor.opacity(0.3))
+                .fill(Colors.grayColor)
                 .frame(height: 1),
             alignment: .bottom
         )
@@ -332,22 +334,6 @@ struct TenantManagePage: View {
         
         await MainActor.run {
             isRefreshing = false
-        }
-    }
-    
-    /// 加载当前用户在当前租户内的角色
-    private func loadCurrentTenantUserRole() {
-        guard let tenantId = appState.currentTenant?.id else { return }
-        
-        HTTPClient.shared.getTenantUser(tenantId: tenantId) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let tenantUser):
-                    self.tenantUserRole = tenantUser.role
-                case .failure(let error):
-                    print("❌ 获取租户用户角色失败: \(error.localizedDescription)")
-                }
-            }
         }
     }
     

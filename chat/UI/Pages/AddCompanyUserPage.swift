@@ -136,7 +136,7 @@ struct AddCompanyUserPage: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Dimens.middleIcon))
-                    .foregroundColor(Colors.primaryColor)
+                    .foregroundColor(Colors.subColor)
             }
             
             Spacer()
@@ -161,7 +161,7 @@ struct AddCompanyUserPage: View {
         .background(Colors.whiteColor)
         .overlay(
             Rectangle()
-                .fill(Colors.grayColor.opacity(0.3))
+                .fill(Colors.grayColor)
                 .frame(height: 1),
             alignment: .bottom
         )
