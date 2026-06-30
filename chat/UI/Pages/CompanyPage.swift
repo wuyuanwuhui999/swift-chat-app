@@ -98,7 +98,7 @@ struct CompanyPage: View {
             // 标题
             Text("选择公司/个人空间")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -293,7 +293,7 @@ struct CompanyCard: View {
                 // 公司名称
                 Text(company.name)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 

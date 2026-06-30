@@ -35,7 +35,7 @@ struct ChatHeader: View {
                 }) {
                     Text(appState.currentTenant?.name ?? "选择租户")
                         .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                         .lineLimit(1)
                 }
                 
@@ -51,7 +51,7 @@ struct ChatHeader: View {
                 }) {
                     Text(appState.currentModel?.modelName ?? "选择模型")
                         .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }

@@ -442,7 +442,7 @@ struct UserPage: View {
             HStack {
                 Text(label)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                 
                 Spacer()
                 

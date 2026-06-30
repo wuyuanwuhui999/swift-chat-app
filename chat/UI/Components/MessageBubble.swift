@@ -37,6 +37,11 @@ struct MessageBubble: View {
     let message: ChatMessage
     @ObservedObject private var appState = AppState.shared
     
+    /// 判断消息内容是否为空（用于显示 loading 状态）
+    private var isEmptyContent: Bool {
+        return message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     var body: some View {
         HStack(alignment: .top, spacing: Dimens.middleMargin) {
             if message.isUser {
@@ -48,9 +53,12 @@ struct MessageBubble: View {
                     // 使用富文本解析
                     MessageContentView(content: message.content, isUser: true, alignToAvatar: true)
                     
-                    Text(formatTime(message.timestamp))
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(Colors.grayColor)
+                    // 用户消息显示时间（非空内容才显示时间）
+                    if !isEmptyContent {
+                        Text(formatTime(message.timestamp))
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.grayColor)
+                    }
                 }
                 .overlay(
                     // 三角形箭头指向右边，与头像居中对齐
@@ -84,12 +92,34 @@ struct MessageBubble: View {
                 
                 // AI消息内容容器（用于对齐三角形）
                 VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                    // 使用富文本解析
-                    MessageContentView(content: message.content, isUser: false, alignToAvatar: true)
+                    // 判断内容是否为空，显示 loading 状态或消息内容
+                    if isEmptyContent {
+                        // 🔥 加载中状态 - 添加白色背景和圆角
+                        HStack(spacing: Dimens.smallIcon) {
+                            ProgressView()
+                                .tint(Colors.subColor)
+                                .scaleEffect(0.8)
+                                .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                            
+                            Text("正在加载中...")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(Colors.grayColor)
+                        }
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .padding(.vertical, Dimens.middleMargin)
+                        .background(Colors.whiteColor)
+                        .cornerRadius(Dimens.borderRadius)
+                    } else {
+                        // 正常消息内容
+                        MessageContentView(content: message.content, isUser: false, alignToAvatar: true)
+                    }
                     
-                    Text(formatTime(message.timestamp))
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(Colors.grayColor)
+                    // AI消息显示时间（非空内容才显示时间）
+                    if !isEmptyContent {
+                        Text(formatTime(message.timestamp))
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.grayColor)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(
@@ -207,8 +237,11 @@ struct MessageContentView: View {
         // 用户消息示例
         MessageBubble(message: ChatMessage(content: "你好，这是一条用户消息，这条消息比较长，用来测试三角形的对齐效果", isUser: true))
         
-        // AI消息示例
+        // AI消息示例 - 正常内容
         MessageBubble(message: ChatMessage(content: "你好！我是AI助手，很高兴为你服务。这是一条AI回复消息，用来测试三角形的对齐效果", isUser: false))
+        
+        // 🔥 AI消息示例 - 空内容（显示 loading 状态，带白色背景）
+        MessageBubble(message: ChatMessage(content: "", isUser: false))
         
         // 带思考过程的AI消息示例
         MessageBubble(message: ChatMessage(content: "<think>用户发送了问候消息，我需要友好回应，这是一段比较长的思考过程，用来测试三角形在长文本中的对齐效果</think>你好！有什么我可以帮助你的吗？", isUser: false))

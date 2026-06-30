@@ -25,6 +25,8 @@ struct MessageInputBar: View {
             TextField("输入消息...", text: $messageText, axis: .vertical)
                 .font(.system(size: Dimens.normalFont))
                 .padding(.horizontal, Dimens.middleMargin)
+                .foregroundColor(.black)
+                .tint(.black)  // 设置光标颜色
                 .padding(.vertical, Dimens.smallIcon)
                 .background(Colors.pageBackgroundColor)
                 .cornerRadius(Dimens.inputHeight / 2)
@@ -43,7 +45,7 @@ struct MessageInputBar: View {
             Button(action: onSend) {
                 if isSending {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: Colors.grayColor))
+                        .progressViewStyle(CircularProgressViewStyle(tint: Colors.subColor))
                         .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
                 } else {
                     Image(systemName: "paperplane.fill")
