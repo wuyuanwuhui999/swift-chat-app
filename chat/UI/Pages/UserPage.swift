@@ -448,7 +448,7 @@ struct UserPage: View {
                 
                 Text(value.isEmpty ? "未设置" : value)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(value.isEmpty ? Colors.grayColor : .primary)
+                    .foregroundColor(value.isEmpty ? Colors.grayColor : .black)
                 
                 Image(systemName: "chevron.right")
                     .foregroundColor(Colors.grayColor)
