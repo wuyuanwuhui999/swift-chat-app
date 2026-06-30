@@ -27,11 +27,12 @@ class WebSocketManager: NSObject, ObservableObject {
         modelId: String,
         chatId: String,
         tenantId: String,
+        companyId: String,  // 新增：公司ID参数
         prompt: String,
         showThink: Bool,
         language: String,
-        docIds: [String] = [],  // 新增：文档ID列表
-        type: String = "",      // 新增：类型（document 等）
+        docIds: [String] = [],
+        type: String = "",
         onMessage: @escaping (String) -> Void,
         onComplete: @escaping () -> Void
     ) {
@@ -60,11 +61,12 @@ class WebSocketManager: NSObject, ObservableObject {
         webSocketTask = URLSession.shared.webSocketTask(with: request)
         webSocketTask?.resume()
         
-        // 4. 发送消息
+        // 4. 发送消息（传递 companyId）
         sendMessage(
             modelId: modelId,
             chatId: chatId,
             tenantId: tenantId,
+            companyId: companyId,  // 新增
             prompt: prompt,
             showThink: showThink,
             language: language,
@@ -80,6 +82,7 @@ class WebSocketManager: NSObject, ObservableObject {
         modelId: String,
         chatId: String,
         tenantId: String,
+        companyId: String,  // 新增参数
         prompt: String,
         showThink: Bool,
         language: String,
@@ -93,6 +96,7 @@ class WebSocketManager: NSObject, ObservableObject {
             "modelId": modelId,
             "chatId": chatId,
             "tenantId": tenantId,
+            "companyId": companyId,  // 新增：传递公司ID
             "type": type,
             "docIds": docIds,
             "prompt": prompt,

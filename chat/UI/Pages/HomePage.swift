@@ -276,6 +276,11 @@ struct HomePage: View {
             print("❌ 未选择租户")
             return
         }
+        // 新增：获取公司ID
+        guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
+            print("❌ 未找到公司ID")
+            return
+        }
 
         let userMessageContent = inputMessage
         let userMessage = ChatMessage(content: userMessageContent, isUser: true)
@@ -296,6 +301,7 @@ struct HomePage: View {
             modelId: model.id,
             chatId: currentChatId,
             tenantId: tenant.id,
+            companyId: companyId,  // 新增：传递公司ID
             prompt: userMessageContent,
             showThink: showThink,
             language: language,

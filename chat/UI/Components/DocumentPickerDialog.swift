@@ -80,7 +80,7 @@ struct DocumentPickerDialog: View {
         VStack(spacing: 0) {
             Text("查询文档")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Dimens.middleMargin)
             
@@ -248,7 +248,7 @@ struct DocumentPickerDialog: View {
                         
                         Text(directory.directory)
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         
                         Spacer()
                         
@@ -372,7 +372,7 @@ struct DocumentPickerDialog: View {
                     
                     Text(document.name)
                         .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     
