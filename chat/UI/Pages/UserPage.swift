@@ -173,7 +173,7 @@ struct UserPage: View {
                             .background(Colors.whiteColor)
                             .overlay(
                                 RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                                    .stroke(Colors.white, lineWidth: 1)
+                                    .stroke(.white, lineWidth: 1)
                             )
                     }
                     .background(Colors.whiteColor)
