@@ -100,7 +100,7 @@ struct TenantManagePage: View {
             // 标题
             Text("租户管理")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -671,7 +671,7 @@ struct SwipeableTenantUserRow: View {
                     VStack(alignment: .leading, spacing: Dimens.smallIcon) {
                         Text(tenantUser.username)
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         
                         Text(tenantUser.userAccount)
                             .font(.system(size: Dimens.normalFont - 2))

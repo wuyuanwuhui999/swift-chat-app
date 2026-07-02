@@ -99,7 +99,7 @@ struct PromptDialog: View {
     private var headerView: some View {
         Text("设置提示词")
             .font(.system(size: Dimens.middleFont))
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Dimens.middleMargin)
             .background(Colors.whiteColor)

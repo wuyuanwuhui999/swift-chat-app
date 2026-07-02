@@ -37,7 +37,7 @@ struct CustomDialog<Content: View>: View {
                 // 标题
                 Text(title)
                     .font(.system(size: Dimens.middleFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .padding(.top, Dimens.middleMargin)
                 
                 // 内容区域
@@ -104,7 +104,7 @@ struct CustomSelectionDialog: View {
                 // 标题
                 Text(title)
                     .font(.system(size: Dimens.middleFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .padding(.vertical, Dimens.middleMargin)
                     .frame(maxWidth: .infinity)
                     .background(Colors.whiteColor)
@@ -123,7 +123,7 @@ struct CustomSelectionDialog: View {
                         HStack {
                             Text(option)
                                 .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                             
                             Spacer()
                             
@@ -203,7 +203,7 @@ struct CustomDatePickerDialog: View {
                 // 标题
                 Text(title)
                     .font(.system(size: Dimens.middleFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .padding(.top, Dimens.middleMargin)
                 
                 // 日期选择器

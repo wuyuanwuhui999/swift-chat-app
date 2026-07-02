@@ -87,7 +87,7 @@ struct AddTenantUserPage: View {
             // 标题
             Text("添加用户")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -435,7 +435,7 @@ struct UserSearchRow: View {
             VStack(alignment: .leading, spacing: Dimens.smallIcon) {
                 Text(user.username)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                 
                 Text(user.userAccount)
                     .font(.system(size: Dimens.normalFont - 2))

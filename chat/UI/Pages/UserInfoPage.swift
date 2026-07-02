@@ -52,7 +52,7 @@ struct UserInfoPage: View {
             // 标题
             Text("用户信息")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -145,7 +145,7 @@ struct UserInfoPage: View {
         HStack {
             Text("头像")
                 .font(.system(size: Dimens.normalFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -197,14 +197,14 @@ struct UserInfoPage: View {
         HStack {
             Text(label)
                 .font(.system(size: Dimens.normalFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
                 .frame(width: 80, alignment: .leading)
             
             Spacer()
             
             Text(value)
                 .font(.system(size: Dimens.normalFont))
-                .foregroundColor(value == "未设置" ? Colors.grayColor : .primary)
+                .foregroundColor(value == "未设置" ? Colors.grayColor : .black)
                 .multilineTextAlignment(.trailing)
                 .lineLimit(3)
         }

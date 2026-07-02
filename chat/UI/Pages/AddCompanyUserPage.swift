@@ -144,7 +144,7 @@ struct AddCompanyUserPage: View {
             // 标题
             Text("添加用户")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -279,7 +279,7 @@ struct AddCompanyUserPage: View {
                     // 标题
                     Text("选择部门和职位")
                         .font(.system(size: Dimens.middleFont))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                         .padding(.top, Dimens.middleMargin)
                     
                     // 用户名
@@ -293,7 +293,7 @@ struct AddCompanyUserPage: View {
                         VStack(alignment: .leading, spacing: Dimens.smallMargin) {
                             Text("角色")
                                 .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                             
                             HStack(spacing: Dimens.middleMargin) {
                                 Button(action: {
@@ -304,7 +304,7 @@ struct AddCompanyUserPage: View {
                                             .foregroundColor(selectedRole == "0" ? Colors.primaryColor : Colors.grayColor)
                                         Text("普通用户")
                                             .font(.system(size: Dimens.normalFont))
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.black)
                                     }
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -317,7 +317,7 @@ struct AddCompanyUserPage: View {
                                             .foregroundColor(selectedRole == "1" ? Colors.primaryColor : Colors.grayColor)
                                         Text("管理员")
                                             .font(.system(size: Dimens.normalFont))
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.black)
                                     }
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -330,7 +330,7 @@ struct AddCompanyUserPage: View {
                     VStack(alignment: .leading, spacing: Dimens.smallMargin) {
                         Text("部门")
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         
                         if isLoadingDepartments {
                             HStack {
@@ -368,7 +368,7 @@ struct AddCompanyUserPage: View {
                     VStack(alignment: .leading, spacing: Dimens.smallMargin) {
                         Text("职位")
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         
                         if isLoadingPositions {
                             HStack {
@@ -748,7 +748,7 @@ struct AddUserRow: View {
             VStack(alignment: .leading, spacing: Dimens.smallIcon) {
                 Text(user.username)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                 
                 Text(user.userAccount)
                     .font(.system(size: Dimens.normalFont - 2))

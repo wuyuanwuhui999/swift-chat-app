@@ -102,7 +102,7 @@ struct UserManagePage: View {
             // 标题
             Text("用户管理")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -397,7 +397,7 @@ struct UserManageRow: View {
                         // 用户名
                         Text(companyUser.username)
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         // 角色标签（管理员/超级管理员才显示）
                         if companyUser.shouldShowRoleTag {
                             Text(companyUser.roleText)

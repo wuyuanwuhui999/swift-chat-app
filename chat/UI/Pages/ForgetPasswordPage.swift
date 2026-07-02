@@ -97,7 +97,7 @@ struct ForgetPasswordPage: View {
             // 标题
             Text("忘记密码")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -132,7 +132,7 @@ struct ForgetPasswordPage: View {
                 }
                 Text(label)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
             }
             
             // 表单内容

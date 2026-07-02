@@ -65,7 +65,7 @@ struct LoginPage: View {
                             VStack(spacing: Dimens.middleMargin / 2) {
                                 Text("账号密码登录")
                                     .font(.system(size: Dimens.normalFont))
-                                    .foregroundColor(selectedTab == 0 ? Colors.primaryColor : Colors.grayColor)
+                                    .foregroundColor(selectedTab == 0 ? Colors.primaryColor : Colors.blackColor)
                                 Rectangle()
                                     .fill(selectedTab == 0 ? Colors.primaryColor : Color.clear)
                                     .frame(height: 2)
@@ -110,10 +110,11 @@ struct LoginPage: View {
                         VStack(spacing: Dimens.middleMargin) {
                             // 邮箱输入框（带内部发送按钮）
                             ZStack(alignment: .trailing) {
-                                TextField("请输入邮箱", text: $email)
+                                TextField("", text: $email, prompt: Text("请输入邮箱").foregroundColor(.gray))
                                     .font(.system(size: Dimens.normalFont))
                                     .autocapitalization(.none)
                                     .keyboardType(.emailAddress)
+                                    .foregroundColor(.black) // 依然用于控制用户输入的文字颜色
                                     .onChange(of: email) { newValue in
                                         validateEmail()
                                     }
@@ -140,13 +141,14 @@ struct LoginPage: View {
                             
                             // 验证码输入框
                             ZStack(alignment: .trailing) {
-                                TextField("请输入验证码", text: $verificationCode)
+                                TextField("", text: $verificationCode,prompt: Text("请输入验证码").foregroundColor(.gray))
                                     .font(.system(size: Dimens.normalFont))
                                     .keyboardType(.numberPad)
                                     .padding(.horizontal, Dimens.middleMargin)
                                     .padding(.trailing, countdown > 0 ? Dimens.inputHeight + Dimens.middleMargin : Dimens.middleMargin)
                                     .frame(height: Dimens.inputHeight)
                                     .background(Color.white)
+                                    .foregroundColor(.black) // 依然用于控制用户输入的文字颜色
                                     .overlay(
                                         RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
                                             .stroke(Colors.grayColor, lineWidth: 1)
@@ -303,10 +305,20 @@ struct LoginPage: View {
                 
                 switch result {
                 case .success(let loginResponse):
-                    // 保存用户信息和token
+                    // 1. 先保存 token 到 TokenManager
+                    TokenManager.shared.saveToken(loginResponse.token)
+                    // 2. 更新 AppState
                     appState.updateUserData(loginResponse.userData)
                     appState.updateToken(loginResponse.token)
-                    // 跳转到 CompanyPage 而不是直接进入 HomePage
+                    appState.isLoggedIn = true
+                    
+                    // 3. 验证 token 是否保存成功
+                    if let _ = TokenManager.shared.getToken() {
+                        print("✅ Token 保存验证成功")
+                    } else {
+                        print("❌ Token 保存验证失败")
+                    }
+                    
                     navigateToCompanyPage = true
                     
                 case .failure(let error):
@@ -316,8 +328,8 @@ struct LoginPage: View {
             }
         }
     }
-    
-    // MARK: - 邮箱登录
+
+    // 修改 handleEmailLogin 方法
     private func handleEmailLogin() {
         isLoggingIn = true
         
@@ -327,10 +339,21 @@ struct LoginPage: View {
                 
                 switch result {
                 case .success(let loginResponse):
-                    // 保存用户信息和token
+                    // 1. 先保存 token 到 TokenManager
+                    TokenManager.shared.saveToken(loginResponse.token)
+                    // 2. 更新 AppState
                     appState.updateUserData(loginResponse.userData)
                     appState.updateToken(loginResponse.token)
-                    // 跳转到 CompanyPage 而不是直接进入 HomePage
+                    appState.isLoggedIn = true
+                    
+                    // 3. 验证 token 是否保存成功
+                    if let _ = TokenManager.shared.getToken() {
+                        print("✅ Token 保存验证成功")
+                    } else {
+                        print("❌ Token 保存验证失败")
+                    }
+                    
+                    // 4. 跳转到 CompanyPage
                     navigateToCompanyPage = true
                     
                 case .failure(let error):

@@ -16,7 +16,7 @@ struct ModelListPopup: View {
                     HStack {
                         Text(model.modelName)
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(isCurrentModel(model) ? Colors.primaryColor : .primary)
+                            .foregroundColor(isCurrentModel(model) ? Colors.primaryColor : .black)
                         Spacer()
                         if isCurrentModel(model) {
                             Image(systemName: "checkmark")

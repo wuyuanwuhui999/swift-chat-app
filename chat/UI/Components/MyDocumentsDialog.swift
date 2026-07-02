@@ -70,7 +70,7 @@ struct MyDocumentsDialog: View {
     private var headerView: some View {
         Text("我的文档")
             .font(.system(size: Dimens.middleFont))
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Dimens.middleMargin)
             .background(Colors.whiteColor)
@@ -201,7 +201,7 @@ struct DirectoryExpandableSection: View {
                 HStack {
                     Text(directory.directory)
                         .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                     
                     Spacer()
                     
@@ -377,7 +377,7 @@ struct DocumentInfoRow: View {
             // 文件名
             Text(document.name)
                 .font(.system(size: Dimens.normalFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
                 .lineLimit(1)
                 .truncationMode(.tail)
             

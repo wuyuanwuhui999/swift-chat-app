@@ -330,11 +330,11 @@ struct UserPage: View {
             if let tenant = appState.currentTenant {
                 Text(tenant.name)
                     .font(.system(size: Dimens.middleFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
             } else {
                 Text("个人信息")
                     .font(.system(size: Dimens.middleFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
             }
             
             Spacer()
@@ -371,7 +371,7 @@ struct UserPage: View {
         HStack {
             Text("头像")
                 .font(.system(size: Dimens.normalFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             

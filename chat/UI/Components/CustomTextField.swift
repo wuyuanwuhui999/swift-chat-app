@@ -9,15 +9,17 @@ struct CustomTextField: View {
     var body: some View {
         Group {
             if isSecure {
-                SecureField(placeholder, text: $text)
+                // SecureField 同样支持 prompt 参数
+                SecureField("", text: $text, prompt: Text(placeholder).foregroundColor(.gray))
                     .focused($isFocused)
             } else {
-                TextField(placeholder, text: $text)
+                TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.gray))
                     .focused($isFocused)
                     .autocapitalization(.none)
             }
         }
         .font(.system(size: Dimens.normalFont))
+        .foregroundColor(.black) // 依然用于控制用户输入的文字颜色
         .padding(.horizontal, Dimens.middleMargin)
         .frame(height: Dimens.inputHeight)
         .background(Color.white)

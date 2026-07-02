@@ -195,7 +195,7 @@ struct RegisterPage: View {
                                                     .foregroundColor(selectedGender == String(index) ? Colors.primaryColor : Colors.grayColor)
                                                 Text(option)
                                                     .font(.system(size: Dimens.normalFont))
-                                                    .foregroundColor(.primary)
+                                                    .foregroundColor(.black)
                                             }
                                         }
                                         .buttonStyle(PlainButtonStyle())
@@ -302,7 +302,7 @@ struct RegisterPage: View {
             // 标题
             Text("注册")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -345,7 +345,7 @@ struct RegisterPage: View {
                 }
                 Text(label)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
             }
             .frame(width: 80, alignment: .leading)
             

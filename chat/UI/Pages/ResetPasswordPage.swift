@@ -144,7 +144,7 @@ struct ResetPasswordPage: View {
             // 标题
             Text("重置密码")
                 .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             
             Spacer()
             
@@ -187,7 +187,7 @@ struct ResetPasswordPage: View {
                 }
                 Text(label)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
             }
             .frame(width: 80, alignment: .leading)
             

@@ -87,7 +87,7 @@ struct ChatHistoryDialog: View {
     private var headerView: some View {
         Text("会话记录")
             .font(.system(size: Dimens.middleFont))
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Dimens.middleMargin)
             .background(Colors.whiteColor)
@@ -243,7 +243,7 @@ struct SessionCard: View {
                 // 左侧：第一条消息内容
                 Text(session.firstMessage)
                     .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)

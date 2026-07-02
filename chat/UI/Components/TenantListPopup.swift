@@ -16,7 +16,7 @@ struct TenantListPopup: View {
                     HStack {
                         Text(tenant.name)
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(isCurrentTenant(tenant) ? Colors.primaryColor : .primary)
+                            .foregroundColor(isCurrentTenant(tenant) ? Colors.primaryColor : .black)
                         Spacer()
                         if isCurrentTenant(tenant) {
                             Image(systemName: "checkmark")
