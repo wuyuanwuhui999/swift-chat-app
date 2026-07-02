@@ -165,7 +165,7 @@ struct UserPage: View {
                     Button(action: {
                         navigateToCompanyPage = true
                     }) {
-                        Text("切换公司/个人空间")
+                        Text("切换公司")
                             .font(.system(size: Dimens.normalFont))
                             .foregroundColor(.black)
                             .frame(height: Dimens.btnHeight)

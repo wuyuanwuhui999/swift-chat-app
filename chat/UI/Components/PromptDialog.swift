@@ -42,10 +42,13 @@ struct PromptDialog: View {
                                 // 编辑框
                                 TextEditor(text: $promptText)
                                     .font(.system(size: Dimens.normalFont))
+                                    .foregroundColor(.black)
                                     .frame(minHeight: 200, maxHeight: .infinity)
                                     .padding(.horizontal, Dimens.middleMargin)
                                     .padding(.vertical, Dimens.middleMargin)
                                     .cornerRadius(Dimens.borderRadius)
+                                    .scrollContentBackground(.hidden) 
+                                    .background(.white)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: Dimens.borderRadius)
                                             .stroke(Colors.grayColor, lineWidth: 1)
