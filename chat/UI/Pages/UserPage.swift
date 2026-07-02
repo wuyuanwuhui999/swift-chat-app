@@ -149,13 +149,13 @@ struct UserPage: View {
                     }) {
                         Text("修改密码")
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(Colors.primaryColor)
+                            .foregroundColor(.black)
                             .frame(height: Dimens.btnHeight)
                             .frame(maxWidth: .infinity)
                             .background(Colors.whiteColor)
                             .overlay(
                                 RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                                    .stroke(Colors.primaryColor, lineWidth: 1)
+                                    .stroke(.white, lineWidth: 1)
                             )
                     }
                     .background(Colors.whiteColor)
@@ -167,13 +167,13 @@ struct UserPage: View {
                     }) {
                         Text("切换公司/个人空间")
                             .font(.system(size: Dimens.normalFont))
-                            .foregroundColor(Colors.primaryColor)
+                            .foregroundColor(.black)
                             .frame(height: Dimens.btnHeight)
                             .frame(maxWidth: .infinity)
                             .background(Colors.whiteColor)
                             .overlay(
                                 RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                                    .stroke(Colors.primaryColor, lineWidth: 1)
+                                    .stroke(Colors.white, lineWidth: 1)
                             )
                     }
                     .background(Colors.whiteColor)
@@ -186,13 +186,13 @@ struct UserPage: View {
                         }) {
                             Text("用户管理")
                                 .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(Colors.primaryColor)
+                                .foregroundColor(.black)
                                 .frame(height: Dimens.btnHeight)
                                 .frame(maxWidth: .infinity)
                                 .background(Colors.whiteColor)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                                        .stroke(Colors.primaryColor, lineWidth: 1)
+                                        .stroke(.white, lineWidth: 1)
                                 )
                         }
                         .background(Colors.whiteColor)
@@ -206,13 +206,13 @@ struct UserPage: View {
                         }) {
                             Text("租户管理")
                                 .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(Colors.primaryColor)
+                                .foregroundColor(.black)
                                 .frame(height: Dimens.btnHeight)
                                 .frame(maxWidth: .infinity)
                                 .background(Colors.whiteColor)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                                        .stroke(Colors.primaryColor, lineWidth: 1)
+                                        .stroke(.white, lineWidth: 1)
                                 )
                         }
                         .background(Colors.whiteColor)
@@ -226,13 +226,13 @@ struct UserPage: View {
                         }) {
                             Text("用户管理")
                                 .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(Colors.primaryColor)
+                                .foregroundColor(.black)
                                 .frame(height: Dimens.btnHeight)
                                 .frame(maxWidth: .infinity)
                                 .background(Colors.whiteColor)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                                        .stroke(Colors.primaryColor, lineWidth: 1)
+                                        .stroke(.white, lineWidth: 1)
                                 )
                         }
                         .background(Colors.whiteColor)
