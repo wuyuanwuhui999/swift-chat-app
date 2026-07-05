@@ -33,6 +33,7 @@ struct HomePage: View {
     @State private var showMyDocuments = false // 是否显示我的文档对话框
     @State private var showUserPage = false // 是否显示用户页面
     @State private var showPromptDialog = false // 是否显示提示词对话框
+    @State private var showPromptManage = false  // 是否显示提示词管理页面
 
     var body: some View {
         ZStack {
@@ -69,6 +70,7 @@ struct HomePage: View {
         .overlay(myDocumentsOverlay)
         .overlay(userPageOverlay)
         .overlay(promptDialogOverlay)
+        .overlay(promptManageOverlay)
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -210,6 +212,7 @@ struct HomePage: View {
         }
     }
 
+    // 在 HomePage.swift 的 menuActionSheet 中添加
     private var menuActionSheet: ActionSheet {
         ActionSheet(
             title: Text("菜单"),
@@ -218,6 +221,7 @@ struct HomePage: View {
                 .default(Text("上传文档")) { showUploadDocument = true },
                 .default(Text("我的文档")) { showMyDocuments = true },
                 .default(Text("设置提示词")) { showPromptDialog = true },
+                .default(Text("提示词管理")) { showPromptManage = true },  // 新增
                 .cancel(Text("取消"))
             ]
         )
@@ -364,13 +368,19 @@ struct HomePage: View {
         }
     }
 
+    // MARK: - 在 HomePage 中添加/修改以下方法
+
     /// 加载提示词
     private func loadPrompt() {
         guard let tenantId = appState.currentTenant?.id else {
             print("⚠️ 无法获取提示词：未选择租户")
             return
         }
-        HTTPClient.shared.getPrompt(tenantId: tenantId) { result in
+        
+        // 从缓存获取提示词ID
+        let cachedPromptId = appState.getCachedPromptId(tenantId: tenantId)
+        
+        HTTPClient.shared.getPrompt(tenantId: tenantId, promptId: cachedPromptId) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let prompt):
@@ -378,12 +388,14 @@ struct HomePage: View {
                     self.appState.updatePrompt(prompt)
                 case .failure(let error):
                     print("❌ 获取提示词失败: \(error.localizedDescription)")
+                    // 如果获取失败，清空当前提示词
+                    self.appState.currentPrompt = nil
                 }
             }
         }
     }
 
-     /// 处理租户列表结果
+    /// 处理租户列表结果
     private func handleTenantListResult(_ result: Result<[Tenant], NetworkError>) {
         switch result {
         case .success(let tenants):
@@ -394,13 +406,25 @@ struct HomePage: View {
         }
     }
 
+    /// 处理租户选择，切换租户时重新获取提示词
+    private func handleTenantSelected(_ tenant: Tenant) {
+        appState.saveCurrentTenant(tenant)
+        showTenantList = false
+        // 切换租户后重新加载提示词（会自动使用缓存中的提示词ID）
+        loadPrompt()
+    }
+
     /// 处理当前租户
     private func handleCurrentTenant(_ tenants: [Tenant]) {
         let cachedTenantId = appState.getCachedTenantId()
         if let tenantId = cachedTenantId, let matchedTenant = tenants.first(where: { $0.id == tenantId }) {
             appState.currentTenant = matchedTenant
+            // 设置租户后加载提示词
+            loadPrompt()
         } else if let firstTenant = tenants.first {
             appState.saveCurrentTenant(firstTenant)
+            // 设置租户后加载提示词
+            loadPrompt()
         }
     }
 
@@ -547,11 +571,14 @@ struct HomePage: View {
         }
     }
 
-    /// 处理租户选择，切换租户时重新获取提示词
-    private func handleTenantSelected(_ tenant: Tenant) {
-        appState.saveCurrentTenant(tenant)
-        showTenantList = false
-        loadPrompt()
+    @ViewBuilder
+    private var promptManageOverlay: some View {
+        if showPromptManage {
+            NavigationView {
+                PromptManagePage()
+                    .navigationBarHidden(true)
+            }
+        }
     }
 }
 

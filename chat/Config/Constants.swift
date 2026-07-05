@@ -56,6 +56,8 @@ struct Constants {
         static let getPositions = "/service/company/getPositions"
         static let searchTenantUsers = "/service/tenant/searchTenantUsers"
 
-        
+        static let getPromptList = "/service/prompt/getPromptList"
+        static let deletePrompt = "/service/prompt/deletePrompt/{promptId}"
+        static let insertPrompt = "/service/prompt/insertPrompt"
     }
 }

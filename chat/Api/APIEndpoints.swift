@@ -39,6 +39,10 @@ enum APIEndpoint {
     case addCompanyUser
     case searchTenantUsers    
     case getPositions
+
+    case getPromptList
+    case deletePrompt(String)
+    case insertPrompt
     
     var path: String {
         switch self {
@@ -114,16 +118,23 @@ enum APIEndpoint {
             return Constants.API.searchTenantUsers
         case .getPositions:
             return Constants.API.getPositions
+        case .getPromptList:
+            return Constants.API.getPromptList
+        case .deletePrompt(let promptId):
+            return Constants.API.deletePrompt
+                .replacingOccurrences(of: "{tenantId}", with: promptId)
+        case .insertPrompt:
+            return Constants.API.insertPrompt
         }
     }
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser,.insertPrompt:
             return "POST"
-        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers,.getPositions:
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers,.getPositions,.getPromptList:
             return "GET"
-        case .deleteDoc:
+        case .deleteDoc,.deletePrompt:
             return "DELETE"
         case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin:
             return "PUT"

@@ -838,9 +838,10 @@ extension HTTPClient {
     /// 获取用户提示词
     /// - Parameters:
     ///   - tenantId: 租户ID
+    ///   - promptId: 提示词ID（可选，用于获取特定提示词）
     ///   - completion: 完成回调，返回提示词信息
-    func getPrompt(tenantId: String, completion: @escaping (Result<Prompt, NetworkError>) -> Void) {
-        let parameters: [String: Any] = ["tenantId": tenantId]
+    func getPrompt(tenantId: String, promptId: String? = nil, completion: @escaping (Result<Prompt, NetworkError>) -> Void) {
+        var parameters: [String: Any] = ["tenantId": tenantId,"promptId":promptId]
         
         // 使用封装好的 request 方法发起网络请求
         request(endpoint: .getPrompt, parameters: parameters) { (result: Result<BaseResponse<Prompt>, NetworkError>) in
@@ -1397,6 +1398,117 @@ extension HTTPClient {
                     completion(.success((users, response.total ?? 0)))
                 } else {
                     completion(.failure(.custom(message: response.msg ?? "搜索租户用户失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    // MARK: - 提示词管理相关方法
+
+    /// 获取提示词列表（支持分页和关键词搜索）
+    /// - Parameters:
+    ///   - tenantId: 租户ID
+    ///   - keyword: 搜索关键词（可选）
+    ///   - pageNum: 页码
+    ///   - pageSize: 每页大小
+    ///   - completion: 完成回调
+    func getPromptList(
+        tenantId: String,
+        keyword: String = "",
+        pageNum: Int = 1,
+        pageSize: Int = 20,
+        completion: @escaping (Result<([Prompt], Int), NetworkError>) -> Void
+    ) {
+        var parameters: [String: Any] = [
+            "tenantId": tenantId,
+            "pageNum": pageNum,
+            "pageSize": pageSize
+        ]
+        
+        if !keyword.isEmpty {
+            parameters["keyword"] = keyword
+        }
+        
+        request(endpoint: .getPromptList, parameters: parameters) { (result: Result<BaseResponse<[Prompt]>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let prompts = response.data {
+                    completion(.success((prompts, response.total ?? 0)))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "获取提示词列表失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 删除提示词
+    /// - Parameters:
+    ///   - promptId: 提示词ID
+    ///   - completion: 完成回调，返回删除数量
+    func deletePrompt(promptId: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
+        request(endpoint: .deletePrompt(promptId)) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "删除提示词失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 更新提示词（通过ID）
+    /// - Parameters:
+    ///   - id: 提示词ID
+    ///   - prompt: 提示词内容
+    ///   - tenantId: 租户ID
+    ///   - completion: 完成回调
+    func updatePromptById(id: String, prompt: String, tenantId: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "id": id,
+            "prompt": prompt,
+            "tenantId": tenantId
+        ]
+        
+        request(endpoint: .updatePrompt, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data > 0))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "更新提示词失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 新增提示词
+    /// - Parameters:
+    ///   - prompt: 提示词内容
+    ///   - tenantId: 租户ID
+    ///   - completion: 完成回调
+    func insertPrompt(prompt: String, tenantId: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "prompt": prompt,
+            "tenantId": tenantId
+        ]
+        
+        request(endpoint: .insertPrompt, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data > 0))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "添加提示词失败")))
                 }
             case .failure(let error):
                 completion(.failure(error))

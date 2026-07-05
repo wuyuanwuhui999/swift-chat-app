@@ -23,6 +23,7 @@ class AppState: ObservableObject {
 
     private let tenantIdKey = "current_tenant_id"
     private let modelIdKey = "current_model_id"
+    private let promptIdKey = "current_prompt_id_"
     
     private init() {
         // 从缓存加载token
@@ -121,5 +122,27 @@ class AppState: ObservableObject {
     /// 更新提示词
     func updatePrompt(_ prompt: Prompt) {
         self.currentPrompt = prompt
+    }
+
+    /// 保存当前提示词ID到缓存（拼接tenantId）
+    func saveCurrentPromptId(_ promptId: String, tenantId: String) {
+        let key = promptIdKey + tenantId
+        UserDefaults.standard.set(promptId, forKey: key)
+        print("💾 保存提示词ID到缓存: key=\(key), value=\(promptId)")
+    }
+
+    /// 获取缓存的提示词ID（基于tenantId）
+    func getCachedPromptId(tenantId: String) -> String? {
+        let key = promptIdKey + tenantId
+        let cachedId = UserDefaults.standard.string(forKey: key)
+        print("📦 从缓存获取提示词ID: key=\(key), value=\(cachedId ?? "nil")")
+        return cachedId
+    }
+
+    /// 清除指定租户的提示词缓存
+    func clearPromptCache(tenantId: String) {
+        let key = promptIdKey + tenantId
+        UserDefaults.standard.removeObject(forKey: key)
+        print("🗑️ 清除提示词缓存: key=\(key)")
     }
 }

@@ -1,11 +1,11 @@
-import Foundation
+// 在 Models/Prompt.swift 中添加
 
-/// 提示词模型
+/// 提示词模型（用于列表展示）
 struct Prompt: Codable, Identifiable {
     let id: String
     let tenantId: String
     let userId: String
-    let prompt: String  // 新增：提示词内容
+    let prompt: String
     let createTime: String?
     let updateTime: String?
     
