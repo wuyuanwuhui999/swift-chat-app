@@ -841,7 +841,11 @@ extension HTTPClient {
     ///   - promptId: 提示词ID（可选，用于获取特定提示词）
     ///   - completion: 完成回调，返回提示词信息
     func getPrompt(tenantId: String, promptId: String? = nil, completion: @escaping (Result<Prompt, NetworkError>) -> Void) {
-        var parameters: [String: Any] = ["tenantId": tenantId,"promptId":promptId]
+        // ✅ 修复：只在 promptId 不为 nil 时才添加到参数中
+        var parameters: [String: Any] = ["tenantId": tenantId]
+        if let promptId = promptId, !promptId.isEmpty {
+            parameters["promptId"] = promptId
+        }
         
         // 使用封装好的 request 方法发起网络请求
         request(endpoint: .getPrompt, parameters: parameters) { (result: Result<BaseResponse<Prompt>, NetworkError>) in
