@@ -329,29 +329,112 @@ extension HTTPClient {
         }
     }
     
-    /// 获取模型列表
-    /// - Parameters:
-    ///   - companyId: 公司ID（必传参数）
-    ///   - completion: 完成回调
-    func getModelList(companyId: String, completion: @escaping (Result<[ChatModel], NetworkError>) -> Void) {
-        // companyId 是必传参数，不能为空
-        guard !companyId.isEmpty else {
-            completion(.failure(.custom(message: "companyId 不能为空")))
-            return
+    // MARK: - 模型管理相关方法
+
+    /// 获取模型列表（支持关键词搜索）
+    func getModelList(
+        companyId: String,
+        keyword: String = "",
+        completion: @escaping (Result<([ChatModel], Int), NetworkError>) -> Void
+    ) {
+        var parameters: [String: Any] = ["companyId": companyId]
+        if !keyword.isEmpty {
+            parameters["keyword"] = keyword
         }
-        
-        // 直接使用 request 方法，传入 endpoint 和 parameters
-        // 由于 getModelList 的 endpoint 已经包含了 companyId 的处理，
-        // 但为了统一，我们通过 parameters 传递 companyId，让 request 方法处理
-        let parameters: [String: Any] = ["companyId": companyId]
         
         request(endpoint: .getModelList(companyId), parameters: parameters) { (result: Result<BaseResponse<[ChatModel]>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess, let models = response.data {
-                    completion(.success(models))
+                    completion(.success((models, response.total ?? 0)))
                 } else {
                     completion(.failure(.custom(message: response.msg ?? "获取模型列表失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 添加模型
+    func addModel(
+        modelName: String,
+        type: String,
+        companyId: String,
+        apiKey: String?,
+        baseUrl: String,
+        completion: @escaping (Result<Int, NetworkError>) -> Void
+    ) {
+        var parameters: [String: Any] = [
+            "modelName": modelName,
+            "type": type,
+            "companyId": companyId,
+            "baseUrl": baseUrl
+        ]
+        
+        if let apiKey = apiKey, !apiKey.isEmpty {
+            parameters["apiKey"] = apiKey
+        }
+        
+        request(endpoint: .addModel, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "添加模型失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 删除模型
+    func deleteModel(modelId: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
+        request(endpoint: .deleteModel(modelId)) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "删除模型失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// 更新模型
+    func updateModel(
+        modelId: String,
+        modelName: String,
+        type: String,
+        companyId: String,
+        apiKey: String?,
+        baseUrl: String,
+        completion: @escaping (Result<Int, NetworkError>) -> Void
+    ) {
+        var parameters: [String: Any] = [
+            "id": modelId,
+            "modelName": modelName,
+            "type": type,
+            "companyId": companyId,
+            "baseUrl": baseUrl
+        ]
+        
+        if let apiKey = apiKey, !apiKey.isEmpty {
+            parameters["apiKey"] = apiKey
+        }
+        
+        request(endpoint: .updateModel, parameters: parameters) { (result: Result<BaseResponse<Int>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let data = response.data {
+                    completion(.success(data))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "更新模型失败")))
                 }
             case .failure(let error):
                 completion(.failure(error))

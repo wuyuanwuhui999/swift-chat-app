@@ -1,5 +1,5 @@
 //
-//  UpdateModelPage.swift
+//  AddModelPage.swift
 //  chat
 //
 //  Created by 吴文强 on 2026/7/7.
@@ -7,13 +7,12 @@
 
 import SwiftUI
 
-/// 更新模型页面
-struct UpdateModelPage: View {
+/// 添加模型页面
+struct AddModelPage: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
     
-    let model: ChatModel
-    let onModelUpdated: (() -> Void)?
+    let onModelAdded: (() -> Void)?
     
     @State private var modelName = ""
     @State private var modelType = "ollama"
@@ -25,20 +24,25 @@ struct UpdateModelPage: View {
     @State private var alertMessage = ""
     @State private var shouldDismiss = false
     
+    // 模型类型选项
     private let modelTypes = ["ollama", "online"]
     
-    init(model: ChatModel, onModelUpdated: (() -> Void)? = nil) {
-        self.model = model
-        self.onModelUpdated = onModelUpdated
+    init(onModelAdded: (() -> Void)? = nil) {
+        self.onModelAdded = onModelAdded
     }
     
     var body: some View {
         VStack(spacing: 0) {
+            // 标题栏
             customNavigationBar
             
+            // 内容区域
             ScrollView {
                 VStack(spacing: Dimens.middleMargin) {
+                    // 表单卡片
                     formCardView
+                    
+                    // 确定/取消按钮
                     actionButtonsView
                 }
                 .padding(.horizontal, Dimens.middleMargin)
@@ -51,7 +55,7 @@ struct UpdateModelPage: View {
         .alert("提示", isPresented: $showAlert) {
             Button("确定", role: .cancel) {
                 if shouldDismiss {
-                    onModelUpdated?()
+                    onModelAdded?()
                     dismiss()
                 }
             }
@@ -59,15 +63,14 @@ struct UpdateModelPage: View {
             Text(alertMessage)
         }
         .navigationBarHidden(true)
-        .onAppear {
-            loadModelData()
-        }
     }
     
     // MARK: - 视图组件
     
+    /// 自定义导航栏
     private var customNavigationBar: some View {
         HStack {
+            // 返回按钮
             Button(action: {
                 dismiss()
             }) {
@@ -78,12 +81,14 @@ struct UpdateModelPage: View {
             
             Spacer()
             
-            Text("更新模型")
+            // 标题
+            Text("添加模型")
                 .font(.system(size: Dimens.middleFont))
                 .foregroundColor(.black)
             
             Spacer()
             
+            // 占位按钮
             Color.clear
                 .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
         }
@@ -98,19 +103,24 @@ struct UpdateModelPage: View {
         )
     }
     
+    /// 表单卡片视图
     private var formCardView: some View {
         VStack(spacing: 0) {
+            // 模型名称
             formRow(
                 label: "模型名称",
                 isRequired: true,
                 content: AnyView(
-                    TextField("请输入模型名称", text: $modelName)
+                    TextField("", text: $modelName, prompt: Text("请输入模型名称").foregroundColor(Colors.grayColor))
                         .font(.system(size: Dimens.normalFont))
+                        .foregroundColor(.black)
+                        .frame(minWidth: 0, maxWidth: .infinity)
                 )
             )
             
             DividerLine()
             
+            // 模型类型
             formRow(
                 label: "模型类型",
                 isRequired: true,
@@ -122,30 +132,37 @@ struct UpdateModelPage: View {
                     }
                     .pickerStyle(MenuPickerStyle())
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .tint(.black)
                 )
             )
             
             DividerLine()
             
+            // 模型地址
             formRow(
                 label: "模型地址",
                 isRequired: true,
                 content: AnyView(
-                    TextField("请输入模型地址", text: $baseUrl)
+                    TextField("", text: $baseUrl, prompt: Text("请输入模型地址").foregroundColor(Colors.grayColor))
                         .font(.system(size: Dimens.normalFont))
+                        .foregroundColor(.black)
                         .autocapitalization(.none)
+                        .frame(minWidth: 0, maxWidth: .infinity)
                 )
             )
             
             DividerLine()
             
+            // API Key
             formRow(
                 label: "API Key",
                 isRequired: false,
                 content: AnyView(
-                    TextField("请输入API Key（可选）", text: $apiKey)
+                    TextField("", text: $apiKey, prompt: Text("请输入API Key（可选）").foregroundColor(Colors.grayColor))
                         .font(.system(size: Dimens.normalFont))
+                        .foregroundColor(.black)
                         .autocapitalization(.none)
+                        .frame(minWidth: 0, maxWidth: .infinity)
                 )
             )
         }
@@ -153,6 +170,7 @@ struct UpdateModelPage: View {
         .cornerRadius(Dimens.borderRadius)
     }
     
+    /// 分割线
     private func DividerLine() -> some View {
         Rectangle()
             .fill(Colors.grayColor.opacity(0.3))
@@ -160,6 +178,7 @@ struct UpdateModelPage: View {
             .padding(.leading, Dimens.middleMargin)
     }
     
+    /// 表单行视图
     private func formRow(label: String, isRequired: Bool, content: AnyView) -> some View {
         HStack(alignment: .center, spacing: Dimens.middleMargin) {
             HStack(spacing: 2) {
@@ -181,8 +200,10 @@ struct UpdateModelPage: View {
         .padding(.vertical, Dimens.middleMargin)
     }
     
+    /// 确定/取消按钮视图
     private var actionButtonsView: some View {
         HStack(spacing: Dimens.middleMargin) {
+            // 取消按钮
             Button(action: {
                 dismiss()
             }) {
@@ -198,7 +219,8 @@ struct UpdateModelPage: View {
                     )
             }
             
-            Button(action: handleUpdateModel) {
+            // 确定按钮
+            Button(action: handleAddModel) {
                 if isSubmitting {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -216,26 +238,19 @@ struct UpdateModelPage: View {
         }
     }
     
-    // MARK: - 数据加载
-    
-    private func loadModelData() {
-        modelName = model.modelName
-        modelType = model.type
-        baseUrl = model.baseUrl
-        apiKey = model.apiKey ?? ""
-    }
-    
     // MARK: - 表单校验
     
+    /// 表单是否有效
     private var isFormValid: Bool {
         let trimmedName = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedUrl = baseUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmedName.isEmpty && !trimmedUrl.isEmpty
     }
     
-    // MARK: - 数据提交
+    // MARK: - 数据提交方法
     
-    private func handleUpdateModel() {
+    /// 添加模型
+    private func handleAddModel() {
         guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
             alertMessage = "未找到公司ID"
             showAlert = true
@@ -248,8 +263,7 @@ struct UpdateModelPage: View {
         
         isSubmitting = true
         
-        HTTPClient.shared.updateModel(
-            modelId: model.id,
+        HTTPClient.shared.addModel(
             modelName: trimmedName,
             type: modelType,
             companyId: companyId,
@@ -262,11 +276,11 @@ struct UpdateModelPage: View {
                 switch result {
                 case .success(let data):
                     if data > 0 {
-                        self.alertMessage = "更新成功"
+                        self.alertMessage = "添加成功"
                         self.shouldDismiss = true
                         self.showAlert = true
                     } else {
-                        self.alertMessage = "更新失败，请稍后重试"
+                        self.alertMessage = "添加失败，请稍后重试"
                         self.showAlert = true
                     }
                 case .failure(let error):
@@ -279,14 +293,5 @@ struct UpdateModelPage: View {
 }
 
 #Preview {
-    UpdateModelPage(model: ChatModel(
-        id: "1",
-        modelName: "DeepSeek-R1",
-        type: "online",
-        baseUrl: "https://api.deepseek.com/v1",
-        apiKey: "sk-xxx",
-        companyId: "company1",
-        updateTime: "2026-07-01 10:00:00",
-        createTime: "2026-07-01 10:00:00"
-    ))
+    AddModelPage()
 }

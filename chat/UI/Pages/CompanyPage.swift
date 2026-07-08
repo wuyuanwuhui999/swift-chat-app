@@ -72,6 +72,7 @@ struct CompanyPage: View {
                 loadCompanies()
             }
         }
+        .navigationBarBackButtonHidden(true)  // ← 添加这一行
     }
     
     // MARK: - 视图组件

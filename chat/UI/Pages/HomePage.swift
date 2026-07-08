@@ -34,6 +34,8 @@ struct HomePage: View {
     @State private var showUserPage = false // 是否显示用户页面
     @State private var showPromptDialog = false // 是否显示提示词对话框
     @State private var showPromptManage = false  // 是否显示提示词管理页面
+    @State private var showModelManage = false  // 是否显示模型管理页面
+
 
     var body: some View {
         ZStack {
@@ -68,9 +70,21 @@ struct HomePage: View {
         .overlay(chatHistoryOverlay)
         .overlay(uploadDocumentOverlay)
         .overlay(myDocumentsOverlay)
-        .overlay(userPageOverlay)
-        .overlay(promptDialogOverlay)
-        .overlay(promptManageOverlay)
+        .fullScreenCover(isPresented: $showModelManage) {
+            ModelManagePage()
+        }
+        .fullScreenCover(isPresented: $showUserPage) {
+            NavigationView {
+                UserPage()
+                    .navigationBarHidden(true)
+            }
+        }
+        .fullScreenCover(isPresented: $showPromptManage) {
+            NavigationView {
+                PromptManagePage()
+                    .navigationBarHidden(true)
+            }
+        }
         .actionSheet(isPresented: $showMenu) {
             menuActionSheet
         }
@@ -212,19 +226,26 @@ struct HomePage: View {
         }
     }
 
-    // 在 HomePage.swift 的 menuActionSheet 中添加
+
     private var menuActionSheet: ActionSheet {
-        ActionSheet(
-            title: Text("菜单"),
-            buttons: [
-                .default(Text("会话记录")) { showChatHistory = true },
-                .default(Text("上传文档")) { showUploadDocument = true },
-                .default(Text("我的文档")) { showMyDocuments = true },
-                .default(Text("设置提示词")) { showPromptDialog = true },
-                .default(Text("提示词管理")) { showPromptManage = true },  // 新增
-                .cancel(Text("取消"))
-            ]
-        )
+        var buttons: [ActionSheet.Button] = [
+            .default(Text("会话记录")) { showChatHistory = true },
+            .default(Text("上传文档")) { showUploadDocument = true },
+            .default(Text("我的文档")) { showMyDocuments = true },
+            .default(Text("设置提示词")) { showPromptDialog = true },
+            .default(Text("提示词管理")) { showPromptManage = true }
+        ]
+        
+        // 仅当用户在当前公司是管理员时才显示模型管理
+        if let company = appState.currentCompany, company.role ?? 0 > 0 {
+            buttons.append(.default(Text("模型管理")) {
+                showModelManage = true
+            })
+        }
+        
+        buttons.append(.cancel(Text("取消")))
+        
+        return ActionSheet(title: Text("菜单"), buttons: buttons)
     }
 
     // MARK: - 辅助方法
@@ -429,9 +450,9 @@ struct HomePage: View {
     }
 
     /// 处理模型列表结果
-    private func handleModelListResult(_ result: Result<[ChatModel], NetworkError>) {
+    private func handleModelListResult(_ result: Result<([ChatModel], Int), NetworkError>) {
         switch result {
-        case .success(let models):
+        case .success(let (models, _)):
             appState.modelList = models
             handleCurrentModel(models)
         case .failure(let error):
@@ -550,16 +571,6 @@ struct HomePage: View {
     }
 
     @ViewBuilder
-    private var userPageOverlay: some View {
-        if showUserPage {
-            NavigationView {
-                UserPage()
-                    .navigationBarHidden(true)
-            }
-        }
-    }
-
-    @ViewBuilder
     private var promptDialogOverlay: some View {
         if showPromptDialog {
             PromptDialog(
@@ -568,16 +579,6 @@ struct HomePage: View {
                     loadPrompt()
                 }
             )
-        }
-    }
-
-    @ViewBuilder
-    private var promptManageOverlay: some View {
-        if showPromptManage {
-            NavigationView {
-                PromptManagePage()
-                    .navigationBarHidden(true)
-            }
         }
     }
 }

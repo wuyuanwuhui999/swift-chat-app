@@ -36,9 +36,9 @@ struct ModelManagePage: View {
     // 当前滑动打开的条目ID
     @State private var activeSwipeModelId: String?
     
-    // 跳转到更新页面
+    // 跳转到更新页面 - 使用 NavigationLink 的 isActive 方式
+    @State private var navigateToUpdatePage = false
     @State private var selectedModel: ChatModel?
-    @State private var showUpdateModelPage = false
     
     var body: some View {
         NavigationStack {
@@ -75,7 +75,8 @@ struct ModelManagePage: View {
                 })
                 .navigationBarHidden(true)
             }
-            .navigationDestination(isPresented: $showUpdateModelPage) {
+            // 使用 NavigationLink 传递数据到更新页面
+            .navigationDestination(isPresented: $navigateToUpdatePage) {
                 if let model = selectedModel {
                     UpdateModelPage(
                         model: model,
@@ -98,6 +99,7 @@ struct ModelManagePage: View {
     /// 自定义导航栏
     private var customNavigationBar: some View {
         HStack {
+            // 返回按钮
             Button(action: {
                 dismiss()
             }) {
@@ -108,12 +110,14 @@ struct ModelManagePage: View {
             
             Spacer()
             
+            // 标题
             Text("模型管理")
                 .font(.system(size: Dimens.middleFont))
                 .foregroundColor(.black)
             
             Spacer()
             
+            // 加号按钮
             Button(action: {
                 showAddModelPage = true
             }) {
@@ -141,8 +145,9 @@ struct ModelManagePage: View {
                     .foregroundColor(Colors.grayColor)
                     .font(.system(size: Dimens.smallIcon))
                 
-                TextField("搜索模型", text: $searchText)
+                TextField("", text: $searchText, prompt: Text("搜索模型").foregroundColor(Colors.grayColor))
                     .font(.system(size: Dimens.normalFont))
+                    .foregroundColor(.black)
                     .onChange(of: searchText) { newValue in
                         handleSearchTextChange(newValue)
                     }
@@ -217,7 +222,9 @@ struct ModelManagePage: View {
                         useModel(model)
                     },
                     onEdit: {
-                        showUpdateModel(model)
+                        // 点击编辑按钮时，保存选中的模型并触发导航
+                        selectedModel = model
+                        navigateToUpdatePage = true
                     },
                     onDelete: {
                         deleteModel(model)
@@ -230,6 +237,7 @@ struct ModelManagePage: View {
                 }
             }
             
+            // 加载更多指示器
             if hasMoreData && !isLoadingMore && !isRefreshing {
                 ProgressView()
                     .padding(.vertical, Dimens.middleMargin)
@@ -293,6 +301,7 @@ struct ModelManagePage: View {
                     if reset {
                         self.models = modelList
                     } else {
+                        // 去重添加
                         let existingIds = Set(self.models.map { $0.id })
                         let newModels = modelList.filter { !existingIds.contains($0.id) }
                         self.models.append(contentsOf: newModels)
@@ -361,20 +370,16 @@ struct ModelManagePage: View {
         print("✅ 已切换模型: \(model.modelName)")
     }
     
-    /// 显示更新模型页面
-    private func showUpdateModel(_ model: ChatModel) {
-        selectedModel = model
-        showUpdateModelPage = true
-    }
-    
     /// 删除模型
     private func deleteModel(_ model: ChatModel) {
+        // 检查是否为当前使用的模型
         if appState.currentModel?.id == model.id {
             alertMessage = "当前使用中的模型不能删除"
             showAlert = true
             return
         }
         
+        // 显示确认对话框
         let alert = UIAlertController(
             title: "确认删除",
             message: "确定要删除模型 \"\(model.modelName)\" 吗？",
@@ -400,7 +405,9 @@ struct ModelManagePage: View {
                     if deletedCount > 0 {
                         self.alertMessage = "删除成功"
                         self.showAlert = true
+                        // 从列表中移除
                         self.models.removeAll { $0.id == model.id }
+                        // 如果删除的是当前使用的模型，清空 currentModel
                         if self.appState.currentModel?.id == model.id {
                             self.appState.currentModel = nil
                         }
@@ -430,12 +437,15 @@ struct SwipeableModelRow: View {
     
     @ObservedObject private var appState = AppState.shared
     
+    // 滑动偏移量
     @State private var offset: CGFloat = 0
     
+    // 计算滑动操作区域的宽度
     private var actionButtonsWidth: CGFloat {
-        return 80 + 70 + 70
+        return 80 + 70 + 70  // 使用 + 编辑 + 删除
     }
     
+    /// 判断是否为当前使用的模型
     private var isCurrentModel: Bool {
         return appState.currentModel?.id == model.id
     }
@@ -448,6 +458,7 @@ struct SwipeableModelRow: View {
             HStack(spacing: 0) {
                 Spacer()
                 
+                // 使用按钮
                 Button(action: {
                     withAnimation(.easeOut(duration: 0.25)) {
                         resetOffset()
@@ -463,6 +474,7 @@ struct SwipeableModelRow: View {
                 }
                 .disabled(isCurrentModel)
                 
+                // 编辑按钮
                 Button(action: {
                     withAnimation(.easeOut(duration: 0.25)) {
                         resetOffset()
@@ -477,6 +489,7 @@ struct SwipeableModelRow: View {
                         .background(Colors.subColor)
                 }
                 
+                // 删除按钮
                 Button(action: {
                     withAnimation(.easeOut(duration: 0.25)) {
                         resetOffset()
@@ -493,15 +506,31 @@ struct SwipeableModelRow: View {
             }
             .frame(maxWidth: .infinity)
             
-            // 前景层
-            VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                Text(model.modelName)
-                    .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.black)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                
-                HStack {
+            // 前景层（可滑动的模型卡片）
+            HStack(spacing: Dimens.smallIcon) {
+                // 左侧内容区域 - 左对齐
+                VStack(alignment: .leading, spacing: Dimens.smallIcon) {
+                    // 第一行：模型名称 + 当前使用标签（水平排列）
+                    HStack(spacing: Dimens.smallIcon) {
+                        Text(model.modelName)
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.black)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        
+                        // "当前使用中"标签 - 放在模型名称右边
+                        if isCurrentModel {
+                            Text("当前使用中")
+                                .font(.system(size: Dimens.normalFont - 4))
+                                .foregroundColor(Colors.primaryColor)
+                                .padding(.horizontal, Dimens.smallIcon)
+                                .padding(.vertical, 4)
+                                .background(Colors.primaryColor.opacity(0.1))
+                                .cornerRadius(Dimens.smallIcon)
+                        }
+                    }
+                    
+                    // 第二行：模型类型标签
                     Text(model.type)
                         .font(.system(size: Dimens.normalFont - 2))
                         .foregroundColor(Colors.grayColor)
@@ -509,17 +538,8 @@ struct SwipeableModelRow: View {
                         .padding(.vertical, 4)
                         .background(Colors.grayColor.opacity(0.2))
                         .cornerRadius(Dimens.smallIcon)
-                    
-                    if isCurrentModel {
-                        Text("当前使用中")
-                            .font(.system(size: Dimens.normalFont - 4))
-                            .foregroundColor(Colors.primaryColor)
-                            .padding(.horizontal, Dimens.smallIcon)
-                            .padding(.vertical, 4)
-                            .background(Colors.primaryColor.opacity(0.1))
-                            .cornerRadius(Dimens.smallIcon)
-                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, Dimens.middleMargin)
             .padding(.vertical, Dimens.middleMargin)
@@ -531,15 +551,19 @@ struct SwipeableModelRow: View {
                 DragGesture()
                     .onChanged { value in
                         let newOffset = value.translation.width
+                        
+                        // 只允许向左滑动（负值）
                         if newOffset < 0 {
                             let maxOffset = -actionButtonsWidth
                             offset = max(newOffset, maxOffset)
                         } else if newOffset > 0 && offset < 0 {
+                            // 向右滑动恢复
                             offset = min(0, offset + newOffset)
                         }
                     }
                     .onEnded { value in
                         let threshold: CGFloat = actionButtonsWidth / 2
+                        
                         if offset < -threshold {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 offset = -actionButtonsWidth
@@ -571,6 +595,7 @@ struct SwipeableModelRow: View {
         }
     }
     
+    /// 复位偏移量
     private func resetOffset() {
         offset = 0
         onSwipeStateChanged(model.id, false)

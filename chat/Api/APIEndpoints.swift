@@ -12,6 +12,9 @@ enum APIEndpoint {
     case loginByEmail
     case getTenantList
     case getModelList(String)  // 改为必传参数，companyId 不能为 nil
+    case addModel
+    case deleteModel(String)
+    case updateModel
     case getDirectoryList
     case getDocListByDirId
     case createDir
@@ -62,6 +65,12 @@ enum APIEndpoint {
             return Constants.API.getTenantList
         case .getModelList:
             return Constants.API.getModelList
+        case .addModel:
+            return Constants.API.addModel
+        case .deleteModel(let modelId):
+            return Constants.API.deleteModel.replacingOccurrences(of: "{modelId}", with: modelId)
+        case .updateModel:
+            return Constants.API.updateModel
         case .getDirectoryList:
             return Constants.API.getDirectoryList
         case .getDocListByDirId:
@@ -130,13 +139,13 @@ enum APIEndpoint {
     
     var method: String {
         switch self {
-        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser,.insertPrompt:
+        case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser,.insertPrompt,.addModel:
             return "POST"
         case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers,.getPositions,.getPromptList:
             return "GET"
-        case .deleteDoc,.deletePrompt:
+        case .deleteDoc,.deletePrompt,.deleteModel:
             return "DELETE"
-        case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin:
+        case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin,.updateModel:
             return "PUT"
         }
     }

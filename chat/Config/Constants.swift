@@ -26,7 +26,6 @@ struct Constants {
         static let sendEmailVertifyCode = "/service/user/sendEmailVertifyCode"
         static let loginByEmail = "/service/user/loginByEmail"
         static let getTenantList = "/service/tenant/getTenantList"
-        static let getModelList = "/service/chat/getModelList"
         static let getDirectoryList = "/service/chat/getDirectoryList"
         static let getDocListByDirId = "/service/chat/getDocListByDirId"
         static let createDir = "/service/chat/createDir"
@@ -59,5 +58,10 @@ struct Constants {
         static let getPromptList = "/service/prompt/getPromptList"
         static let deletePrompt = "/service/prompt/deletePrompt/{promptId}"
         static let insertPrompt = "/service/prompt/insertPrompt"
+        
+        static let getModelList = "/service/chat/getModelList"
+        static let addModel = "/service/chat/addModel"
+        static let deleteModel = "/service/chat/deleteModel/{modelId}"
+        static let updateModel = "/service/chat/updateModel"
     }
 }
