@@ -97,7 +97,7 @@ struct CompanyPage: View {
             Spacer()
             
             // 标题
-            Text("选择公司/个人空间")
+            Text("选择公司")
                 .font(.system(size: Dimens.middleFont))
                 .foregroundColor(.black)
             
