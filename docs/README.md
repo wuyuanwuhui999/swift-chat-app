@@ -311,6 +311,8 @@ UserDefaults 缓存 key：
 | `CompanyUser` | userId, userAccount, username, departmentId/Name, positionId/Name, role, joinDate, status | 公司成员；`displayDepartment` / `displayPosition` / `roleText` |
 | `TenantUser` | id, tenantId, tenantName, userId, userAccount, username, role, joinDate, disabled, email | 租户成员 |
 | `SearchUserResult` | 同 User + `checked`(0/1) | 搜索结果，`isAdded` 表示是否已加入 |
+| `Department` | id, companyId, departmentName, description, createTime | 部门（`getDepartments` 返回，添加公司成员时级联出职位） |
+| `Position` | id, departmentId, positionName, description, createTime | 职位（`getPositions` 返回；添加成员只提交 `positionId`，后端由它反查部门） |
 | `ChatModel` | id, modelName, type(`ollama`/`online`), baseUrl, apiKey, companyId | 大模型配置 |
 | `Prompt` | id, tenantId, userId, prompt | 提示词 |
 | `Directory` | id, userId, directory, tenantId | 知识库目录 |

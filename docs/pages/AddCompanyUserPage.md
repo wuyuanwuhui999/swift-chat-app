@@ -23,11 +23,11 @@ apis:
 
 ## 2. 位置与依赖
 
-- **源码**：`chat/chat/UI/Pages/AddCompanyUserPage.swift`（约 790 行，含 `Department` / `Position` 模型定义与内嵌 `AddUserRow` 组件）
+- **源码**：`chat/chat/UI/Pages/AddCompanyUserPage.swift`（约 762 行）
 - **入口**：[UserManagePage](UserManagePage.md) 导航栏「plus」按钮 → `.navigationDestination(isPresented: $navigateToAddUser) { AddCompanyUserPage().navigationBarHidden(true) }`（父页在 `NavigationStack` 内）
 - **出口**：仅 `dismiss()` 返回 [UserManagePage](UserManagePage.md)，无其他跳转
-- **依赖组件**：`UI/Components/UserAvatar.swift`、同文件内嵌 `AddUserRow`；对话框是**页面自绘的 `.overlay`**，未使用项目通用 `CustomDialog`
-- **依赖模型**：`Models/SearchUserResult.swift`、`Models/CompanyUser.swift`（`loadAddedUsers` 解码用）、**本文件内定义的 `Department` / `Position`**
+- **依赖组件**：`UI/Components/UserAvatar.swift`、`UI/Components/UserSearchRow.swift`（与 [AddTenantUserPage](AddTenantUserPage.md) 共用的公共行组件）；对话框是**页面自绘的 `.overlay`**，未使用项目通用 `CustomDialog`
+- **依赖模型**：`Models/SearchUserResult.swift`、`Models/CompanyUser.swift`（`loadAddedUsers` 解码用）、`Models/Department.swift`、`Models/Position.swift`
 - **依赖服务**：`HTTPClient.shared.searchCompanyUsers`、`getCompanyUsers`、`getDepartments`、`getPositions`、`addCompanyUser`、`AppState.shared`（`currentCompany`、`getCachedCompanyId()`）、`@Environment(\.dismiss)`
 
 ## 3. 状态定义
@@ -41,21 +41,21 @@ apis:
 | `isSearchLoading` | `@State Bool` | `false` | 搜索请求中 |
 | `searchWorkItem` | `@State DispatchWorkItem?` | `nil` | 防抖任务句柄 |
 | `currentPage` | `@State Int` | `1` | 搜索分页页码 |
-| `pageSize` | `@State Int` | `20` | 每页条数（全程未修改） |
+| `pageSize` | `let Int` | `20` | 每页条数（常量，往上滚动到底部加载下一页） |
 | `hasMoreData` | `@State Bool` | `true` | 是否还有下一页 |
 | `isLoadingMore` | `@State Bool` | `false` | 加载更多中 |
-| `addedUserIds` | `@State Set<String>` | `[]` | 已在公司的 ID 集合（来自 `CompanyUser.id`，见 10.1） |
+| `addedUserIds` | `@State Set<String>` | `[]` | 已在公司的 ID 集合（来自 `CompanyUser.id`，即 `company_user` 表主键） |
 | `addingUserIds` | `@State Set<String>` | `[]` | 正在添加中的用户 ID |
 | `showAddDialog` | `@State Bool` | `false` | 是否显示添加对话框 |
 | `selectedUser` | `@State SearchUserResult?` | `nil` | 对话框对应的用户 |
-| `selectedRole` | `@State String` | `"0"` | 角色选择（**字符串** "0" 普通 / "1" 管理员） |
+| `selectedRole` | `@State Int` | `0` | 角色选择（`0` 普通 / `1` 管理员，与后端 `role` 同类型） |
 | `departments` | `@State [Department]` | `[]` | 部门列表 |
 | `positions` | `@State [Position]` | `[]` | 职位列表 |
-| `selectedDepartmentId` | `@State String?` | `nil` | 选中的部门 ID |
-| `selectedPositionId` | `@State String?` | `nil` | 选中的职位 ID |
+| `selectedDepartmentId` | `@State String?` | `nil` | 选中的部门 ID（只用于级联职位，不提交后端） |
+| `selectedPositionId` | `@State String?` | `nil` | 选中的职位 ID（提交后端） |
 | `isLoadingDepartments` | `@State Bool` | `false` | 部门加载中 |
 | `isLoadingPositions` | `@State Bool` | `false` | 职位加载中 |
-| `showAlert` | `@State Bool` | `false` | 提示弹窗（与同名方法 `showAlert(message:)` 重名，见 10.1） |
+| `showAlert` | `@State Bool` | `false` | 提示弹窗开关（配套方法为 `presentAlert(_:)`） |
 | `alertMessage` | `@State String` | `""` | 提示内容 |
 | `isRefreshing` | `@State Bool` | `false` | 下拉刷新中 |
 
@@ -99,14 +99,15 @@ body: VStack(spacing: 0)          ← 无 NavigationStack，复用父页的栈
 
 ```
 LazyVStack(spacing: 0)
-├─ ForEach(searchResults.enumerated(), id: \.element.id)
-│    ├─ AddUserRow(user:isAdded:isAdding:onAdd:)
-│    │    isAdded  = addedUserIds.contains(user.id ?? "") || user.isAdded   // 叠加后端 checked
-│    │    isAdding = addingUserIds.contains(user.id ?? "")
+├─ ForEach(searchResults.enumerated(), id: \.offset)          ← 用下标做 identity，避免 id 为 nil 串行
+│    ├─ UserSearchRow(user:isAdded:isAdding:onAdd:)            ← UI/Components/UserSearchRow.swift
+│    │    isAdded  = isUserAdded(user)   // addedUserIds 命中 || 后端 checked
+│    │    isAdding = isUserAdding(user)  // id 为 nil 恒 false
 │    │    onAdd    = { selectedUser = user; loadDepartmentsAndPositions(); showAddDialog = true }
 │    └─ index < searchResults.count - 1 → Divider().padding(.leading, middleMargin)
-└─ hasMoreData && !isLoadingMore && !isRefreshing && !searchText.isEmpty
-     → ProgressView().onAppear { loadMoreUsers() }
+└─ hasMoreData && !searchText.isEmpty
+     → 居中 ProgressView().onAppear { loadMoreUsers() }        ← 往上滚动到底部即加载下一页（每页 20 条）
+       加载期间不移除该指示器，loadMoreUsers 内部用 isLoadingMore / isRefreshing 去重
 ```
 
 ### 4.2 addUserDialog（`@ViewBuilder`，挂在 `.overlay`）
@@ -122,9 +123,9 @@ ZStack
    ├─ Text("用户：\(user.username)") normalFont / grayColor
    ├─ showRoleOption →「角色」区（仅超管）
    │    ├─ Text("角色") normalFont / .black
-   │    └─ HStack：两个自绘单选
-   │         「普通用户」selectedRole == "0" → largecircle.fill.circle / primaryColor，否则 circle / grayColor
-   │         「管理员」  selectedRole == "1" → 同上
+   │    └─ HStack：两个自绘单选（`selectedRole: Int`）
+   │         「普通用户」selectedRole == 0 → largecircle.fill.circle / primaryColor，否则 circle / grayColor
+   │         「管理员」  selectedRole == 1 → 同上
    │       两个按钮均 .buttonStyle(PlainButtonStyle())
    ├─「部门」区
    │    ├─ isLoadingDepartments → 居中 ProgressView
@@ -142,7 +143,7 @@ ZStack
         ├─「取消」高 btnHeight / 透明底 / grayColor 描边 + grayColor 文字 → showAddDialog = false; resetDialogState()
         └─「确定」高 btnHeight / 圆角 btnHeight/2 / 白字
              背景 isFormValid ? Colors.primaryColor : Colors.grayColor，.disabled(!isFormValid)
-             action: role = showRoleOption ? (Int(selectedRole) ?? 0) : 0
+             action: role = showRoleOption ? selectedRole : 0
                      → addUserToCompany(user:role:positionId: selectedPositionId)
    .frame(width: UIScreen.main.bounds.width - Dimens.largeMargin * 4)
    .background(Colors.whiteColor).cornerRadius(Dimens.borderRadius)
@@ -155,9 +156,9 @@ ZStack
 | `emptyStateView` | `searchResults.isEmpty && !searchText.isEmpty` | `person.slash`（`bigIcon`/`grayColor`）+「未找到相关用户」+「请尝试其他关键词」（`normalFont - 2`） |
 | `emptySearchView` | `searchResults.isEmpty`（`searchText` 为空） | `magnifyingglass`（`bigIcon`/`grayColor`）+「输入姓名或工号搜索用户」 |
 
-### 4.4 AddUserRow（同文件内嵌）
+### 4.4 UserSearchRow（`UI/Components/UserSearchRow.swift`）
 
-结构与 [AddTenantUserPage](AddTenantUserPage.md) 的 `UserSearchRow` 完全一致（头像 + 用户名/工号 + 尾部三态「已添加」/`ProgressView`/「添加」按钮），是两份平行实现的重复组件。
+公共行组件，与 [AddTenantUserPage](AddTenantUserPage.md) 共用：头像 + 用户名/工号 + 尾部三态「已添加」/`ProgressView`/「添加」按钮。两页只在传入的 `isAdded` 计算方式上不同（本页叠加后端 `checked`）。
 
 ## 5. 核心方法
 
@@ -165,30 +166,37 @@ ZStack
 - **触发**：搜索框 `.onChange(of: searchText)`
 - **步骤**：`searchWorkItem?.cancel()` → 空串则清空结果并重置分页后 return → 非空则先重置分页/清空列表，再 `asyncAfter(.now() + 0.5)` 执行 `performSearch(reset: true)`。
 
-### `performSearch(reset: Bool = true)`
+### `performSearch(reset: Bool = true, completion: (() -> Void)? = nil)`
 - **触发**：防抖任务、`loadMoreUsers()`、`refreshData()`、**添加成功后**
 - **步骤**：
-  1. `guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else { print("❌ 未找到公司ID"); return }`。
-  2. `guard !searchText.isEmpty else { return }`。
+  1. `guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else { print("❌ 未找到公司ID"); completion?(); return }`。
+  2. `guard !searchText.isEmpty else { completion?(); return }`。
   3. `reset` → `isSearchLoading = true`、`currentPage = 1`、`searchResults = []`。
-  4. 调 `searchCompanyUsers(keyword:companyId:pageNum:pageSize:)`（注意参数顺序是 `keyword` 在前）。
-  5. 主线程回调：`isSearchLoading = false`、`isLoadingMore = false`；成功 → `reset` 整体替换 / 否则 `compactMap` 去重 append，`hasMoreData = searchResults.count < total`；失败 → `print` 且仅在 `reset` 时清空（**不弹 alert**）。
+  4. 记录 `let requestPage = currentPage`（失败回滚用），调 `searchCompanyUsers(keyword:companyId:pageNum: requestPage, pageSize:)`（注意参数顺序是 `keyword` 在前）。
+  5. 主线程回调：`isSearchLoading = false`、`isLoadingMore = false`；
+     - 成功 → `reset` 整体替换 / 否则 `compactMap` 去重 append；`hasMoreData` 判定：`total > 0` 时 `searchResults.count < total`，`total` 为 0（后端未返回被兜底）时按 `users.count >= pageSize` 判断本页是否满页。
+     - 失败 → `print` + `presentAlert("搜索用户失败：…")`；`reset` 清空列表，非 `reset` 时 `currentPage = max(1, requestPage - 1)` 回滚页码。
+  6. 无论成功失败，最后 `completion?()`（供 `refreshData` 等待）。
 
 ### `loadMoreUsers()`
-- **触发**：列表底部 `ProgressView.onAppear`
-- **步骤**：`guard !isLoadingMore && hasMoreData && !searchText.isEmpty` → `isLoadingMore = true` → `currentPage += 1` → `performSearch(reset: false)`。
+- **触发**：列表底部居中 `ProgressView.onAppear`（往上滚动到底部）
+- **步骤**：`guard !isLoadingMore, !isRefreshing, hasMoreData, !searchText.isEmpty` → `isLoadingMore = true` → `currentPage += 1` → `performSearch(reset: false)`，每页 20 条。
 
-### `refreshData() async`
+### `refreshData() async`（`@MainActor`）
 - **触发**：`ScrollView.refreshable`
-- **步骤**：`MainActor.run { isRefreshing = true }` → `searchText` 非空则 `performSearch(reset: true)` → `MainActor.run { isRefreshing = false }`（不等回调）。
+- **步骤**：`isRefreshing = true` → `searchText` 非空时用 `withCheckedContinuation` 包住 `performSearch(reset: true) { continuation.resume() }`，**等请求真正返回**后 → `isRefreshing = false`。
 
 ### `loadAddedUsers()`
 - **触发**：`.onAppear`
-- **步骤**：`guard companyId` → `getCompanyUsers(companyId:pageNum: 1, pageSize: 1000)` → 成功 `addedUserIds = Set(users.compactMap { $0.id })`；失败仅 `print`。
+- **步骤**：`guard companyId` → `getCompanyUsers(companyId:pageNum: 1, pageSize: 1000)` → 成功 `addedUserIds = Set(users.compactMap { $0.id })`（`company_user` 表主键）；失败仅 `print`。行内「已添加」还会叠加后端 `checked` 兜底。
+
+### `isUserAdded(_:)` / `isUserAdding(_:)`
+- **触发**：`userListView` 里给每行算三态
+- **实现**：`isUserAdded` = `addedUserIds` 命中 `user.id` 或 `user.isAdded`（后端 `checked == 1`）；`isUserAdding` 在 `user.id == nil` 时直接返回 `false`，避免多条空 id 的行互相串状态。
 
 ### `resetDialogState()`
 - **触发**：对话框「取消」、点遮罩、`addUserToCompany` 内部
-- **步骤**：`selectedRole = "0"`、`selectedDepartmentId = nil`、`selectedPositionId = nil`、`departments = []`、`positions = []`（**不清 `selectedUser`**）。
+- **步骤**：`selectedRole = 0`、`selectedDepartmentId = nil`、`selectedPositionId = nil`、`departments = []`、`positions = []`（**不清 `selectedUser`**）。
 
 ### `loadDepartmentsAndPositions()`
 - **触发**：行内「添加」按钮（在 `showAddDialog = true` 之前调用）
@@ -196,28 +204,28 @@ ZStack
   1. `guard companyId`，否则 `print("❌ 未找到公司ID")` 并 return（此时对话框仍会被打开）。
   2. 重置 `departments` / `positions` / `selectedDepartmentId` / `selectedPositionId`。
   3. `isLoadingDepartments = true` → `getDepartments(companyId:)`。
-  4. 主线程回调：`isLoadingDepartments = false`；成功 → `departments = depts` + `print`；失败 → `print` + `showAlert(message: "获取部门列表失败")`。
+  4. 主线程回调：`isLoadingDepartments = false`；成功 → `departments = depts` + `print`；失败 → `print` + `presentAlert("获取部门列表失败")`。
 - **注意**：方法名与注释说「先加载部门，部门加载完成后自动加载职位」，实际**只加载部门**，职位靠 Picker 的 `onChange(of: selectedDepartmentId)` 触发。
 
 ### `loadPositions(departmentId: String)`
 - **触发**：部门 Picker 的 `.onChange(of: selectedDepartmentId)`（非 nil 分支）
-- **步骤**：`isLoadingPositions = true` → 清空 `positions` / `selectedPositionId` → `getPositions(departmentId:)` → 成功 `positions = posList`；失败 `print` + `showAlert(message: "获取职位列表失败")`。
+- **步骤**：`isLoadingPositions = true` → 清空 `positions` / `selectedPositionId` → `getPositions(departmentId:)` → 成功 `positions = posList`；失败 `print` + `presentAlert("获取职位列表失败")`。
 
 ### `addUserToCompany(user: SearchUserResult, role: Int, positionId: String?)`
 - **触发**：对话框「确定」按钮
 - **步骤**：
-  1. `guard let companyId = ... , let userId = user.id else { showAlert(message: "缺少必要参数"); return }`。
+  1. `guard let companyId = ... , let userId = user.id else { presentAlert("缺少必要参数"); return }`。
   2. 角色降级：`isNormalAdmin` → `finalRole = 0`，否则 `finalRole = role`。
   3. `addingUserIds.insert(userId)`。
   4. `showAddDialog = false` + `resetDialogState()`（**先关框再请求**）。
-  5. 调 `addCompanyUser(companyId:userId:role: finalRole, positionId:)`。
+  5. 调 `addCompanyUser(companyId:userId:role: finalRole, positionId:)`（只提交 `positionId`，不提交 `departmentId`）。
   6. 主线程回调先 `addingUserIds.remove(userId)`，再分支：
-     - `data > 0` → `showAlert(message: "添加成功")`、`addedUserIds.insert(userId)`、**`performSearch(reset: true)` 重新搜索**。
+     - `data > 0`（后端添加成功返回 `data = 1`）→ `presentAlert("添加成功")`、`addedUserIds.insert(userId)`、**`performSearch(reset: true)` 重新搜索**。
      - `data <= 0` → 「添加失败，请稍后重试」。
      - `.failure` → `error.localizedDescription`。
 
-### `showAlert(message: String)`
-- **步骤**：`alertMessage = message`、`showAlert = true`。与 `@State private var showAlert` 同名（属性 vs 方法），可编译但极易误读。
+### `presentAlert(_ message: String)`
+- **步骤**：`alertMessage = message`、`showAlert = true`。与 `@State showAlert` 区分开，避免属性/方法同名误读。
 
 ## 6. 接口调用
 
@@ -256,9 +264,9 @@ ZStack
 ### 6.3 getDepartments
 
 - **Swift 签名**：`func getDepartments(companyId: String, completion: @escaping (Result<[Department], NetworkError>) -> Void)`
-- **APIEndpoint**：**没有对应 case**。方法直接用 `URLComponents(string: baseURL + Constants.API.getDepartments)` 手工拼 GET 请求并自己设 `Authorization`。
+- **APIEndpoint**：`.getDepartments`（GET / `Constants.API.getDepartments = "/service/company/getDepartments"`），走统一 `request(endpoint:parameters:)`。
 - **请求**：Query `companyId`。
-- **响应**：`BaseResponse<[Department]>`。后端文档 §7 示例为 `{"id","companyId","departmentName","role"}`，客户端 `Department` 解 `id/companyId/departmentName/description/createTime`（**多解 `description`、`createTime`，不解 `role`**，均为可选或后端文档未覆盖字段）。
+- **响应**：`BaseResponse<[Department]>`。后端文档 §7 示例为 `{"id","companyId","departmentName","role"}`，客户端 `Department`（`Models/Department.swift`）解 `id/companyId/departmentName/description/createTime`（**多解 `description`、`createTime`，不解 `role`**，均为可选或后端文档未覆盖字段）。
 - **UI 处理**：成功 → `departments`；失败 → alert「获取部门列表失败」。
 
 ### 6.4 getPositions
@@ -266,7 +274,7 @@ ZStack
 - **Swift 签名**：`func getPositions(departmentId: String, completion: @escaping (Result<[Position], NetworkError>) -> Void)`
 - **APIEndpoint**：`.getPositions`（GET / `Constants.API.getPositions = "/service/company/getPositions"`），走统一 `request(endpoint:parameters:)`。
 - **请求**：Query `departmentId`。
-- **响应**：`BaseResponse<[Position]>`。后端文档 §8 示例为 `{"id","departmentId","positionName"}`，客户端 `Position` 另解可选 `description` / `createTime`。
+- **响应**：`BaseResponse<[Position]>`。后端文档 §8 示例为 `{"id","departmentId","positionName"}`，客户端 `Position`（`Models/Position.swift`）另解可选 `description` / `createTime`。
 - **鉴权**：后端文档明确写「除 `getPositions` 外，其余接口均需 token」，即本接口无需鉴权，但客户端仍会带 `Authorization`（无害）。
 - **UI 处理**：成功 → `positions`；失败 → alert「获取职位列表失败」。
 
@@ -285,15 +293,15 @@ ZStack
   | `userId` | Body | String | 是 | 被添加用户 ID |
   | `companyId` | Body | String | 是 | 公司 ID |
   | `role` | Body | Int | 是 | 0 普通成员 / 1 管理员（普通管理员强制 0） |
-  | `positionId` | Body | String | 否 | 非空才拼入 |
-  | ~~`departmentId`~~ | — | — | — | **后端 `AddCompanyUserSchema` 有此字段，客户端不发送**（见 10.1） |
+  | `positionId` | Body | String | 否 | 非空才拼入；**部门不提交，后端用 positionId 反查 departmentId** |
+  | ~~`departmentId`~~ | — | — | — | 后端 `AddCompanyUserSchema` 虽有此字段，但 `company_user` 表只存 `positionId`，客户端**故意不发送** |
 
-- **响应**：`BaseResponse<Int>`。`HTTPClient` 里 `isSuccess` 但 `data` 为 nil 时会兜底 `completion(.success(0))`，页面按 `data > 0` 判成功 → **后端若返回 `data: null`（文档 §4 示例即为 null），页面会提示「添加失败，请稍后重试」**。
+- **响应**：`BaseResponse<Int>`，**添加成功后端返回 `data = 1`**（后端文档 §4 出参示例写 `null` 是文档笔误）。`HTTPClient` 里 `isSuccess` 但 `data` 为 nil 时兜底 `completion(.success(0))`，页面按 `data > 0` 判成功。
 - **UI 处理**：成功 → alert「添加成功」+ `addedUserIds.insert` + 重新搜索；否则 alert 失败文案。
 
 ## 7. 数据模型
 
-### 7.1 Department（**定义在 `AddCompanyUserPage.swift` 顶部**）
+### 7.1 Department（`Models/Department.swift`）
 
 | 字段 | 类型 | 可选 | 说明 |
 |---|---|---|---|
@@ -303,7 +311,7 @@ ZStack
 | `description` | `String?` | 是 | 描述（未展示；后端文档未覆盖） |
 | `createTime` | `String?` | 是 | 创建时间（未展示；后端文档未覆盖） |
 
-### 7.2 Position（**同样定义在页面文件里**）
+### 7.2 Position（`Models/Position.swift`）
 
 | 字段 | 类型 | 可选 | 说明 |
 |---|---|---|---|
@@ -319,7 +327,7 @@ ZStack
 
 ### 7.4 CompanyUser（`Models/CompanyUser.swift`）
 
-本页只取 `id` 组装 `addedUserIds`，完整字段见 [UserManagePage](UserManagePage.md) §7。注意该模型同时有 `id` 与 `userId` 两个字段。
+本页只取 `id`（`company_user` 表主键）组装 `addedUserIds`，完整字段见 [UserManagePage](UserManagePage.md) §7。该模型同时有 `id` 与 `userId` 两个字段，本页取的是 `id`。
 
 ## 8. 样式落地清单
 
@@ -364,8 +372,13 @@ UserManagePage 点「plus」→ navigationDestination → AddCompanyUserPage
   → performSearch(reset: true)
       guard companyId & searchText 非空
       → GET /service/company/searchUsers?keyword&companyId&pageNum=1&pageSize=20
-      → searchResults 填充；hasMoreData = count < total
-滚到底 ProgressView.onAppear → loadMoreUsers() → currentPage += 1 → performSearch(reset: false)
+      → searchResults 填充；hasMoreData = total > 0 ? count < total : 本页满 20 条
+      失败 → alert「搜索用户失败：…」
+往上滚动到底部 → ProgressView.onAppear → loadMoreUsers()
+      guard !isLoadingMore && !isRefreshing && hasMoreData
+      → currentPage += 1 → performSearch(reset: false)（每页 20 条，去重 append）
+      失败 → currentPage 回滚 + alert
+下拉刷新 → refreshData()：isRefreshing = true → 等 performSearch(reset: true) 回调返回 → isRefreshing = false
 ```
 
 ### 9.3 添加用户（含部门/职位级联）
@@ -380,13 +393,13 @@ UserManagePage 点「plus」→ navigationDestination → AddCompanyUserPage
   → showAddDialog = true → overlay 渲染 addUserDialog
 
 对话框内：
-  超管 → 显示「角色」单选（默认 "0" 普通用户）；非超管 → 不显示，角色按 0 提交
+  超管 → 显示「角色」单选（默认 0 普通用户）；非超管 → 不显示，角色按 0 提交
   选部门（Picker） → onChange(selectedDepartmentId)
        非 nil → loadPositions(departmentId:)：清空职位 → GET getPositions(departmentId)
        nil    → positions = []、selectedPositionId = nil
   未选部门时职位区显示「请先选择部门」
   「确定」按钮：仅当 selectedDepartmentId != nil && selectedPositionId != nil 时可点（否则灰底 + disabled）
-       role = showRoleOption ? (Int(selectedRole) ?? 0) : 0
+       role = showRoleOption ? selectedRole : 0
        → addUserToCompany(user:role:positionId:)
             isNormalAdmin → finalRole 强制 0
             addingUserIds.insert → 立即关框 + resetDialogState()
@@ -400,38 +413,30 @@ UserManagePage 点「plus」→ navigationDestination → AddCompanyUserPage
 ### 9.4 「已添加」状态的两个来源
 
 ```
-isAdded = addedUserIds.contains(user.id ?? "")   ← onAppear 拉全量成员列表得到
-        || user.isAdded                          ← 后端 searchUsers 返回的 checked == 1
+isAdded = isUserAdded(user)
+        = addedUserIds.contains(user.id)  ← onAppear 拉成员列表得到（company_user.id）
+       || user.isAdded                    ← 后端 searchUsers 返回的 checked == 1
 两者任一为真即显示灰色「已添加」标签，行内不再有「添加」按钮
 ```
 
 ## 10. 二次开发指引
 
-- **改文案/样式**：导航栏 → `customNavigationBar`；搜索框 → `searchBarView`；空态 → `emptyStateView` / `emptySearchView`；对话框（含角色单选、两个 Picker、按钮区）→ `addUserDialog`；行样式 → `AddUserRow`。
-- **加字段**：`SearchUserResult`（含 `CodingKeys`）→ `searchCompanyUsers` 解码 → `AddUserRow`；部门/职位字段则改本文件顶部的 `Department` / `Position`（建议同时迁移到 `Models/`）。
-- **加接口**：`Constants.API` → `APIEndpoint`（case + `path` + `method`）→ `HTTPClient` 方法 → 页面调用。注意 `getDepartments` 目前**绕过**了 `APIEndpoint`，新增同类接口时不要照抄这种手工拼 URL 的写法。
-- **要把 `departmentId` 提交给后端**：在 `addCompanyUser` 签名里加 `departmentId: String?` → `parameters["departmentId"]` → 页面 `addUserToCompany` 传 `selectedDepartmentId`（对话框已有这个值）。
+- **改文案/样式**：导航栏 → `customNavigationBar`；搜索框 → `searchBarView`；空态 → `emptyStateView` / `emptySearchView`；对话框（含角色单选、两个 Picker、按钮区）→ `addUserDialog`；行样式 → `UI/Components/UserSearchRow.swift`（**改动会同时影响 [AddTenantUserPage](AddTenantUserPage.md)**）。
+- **加字段**：`SearchUserResult`（含 `CodingKeys`）→ `searchCompanyUsers` 解码 → `UserSearchRow`；部门/职位字段则改 `Models/Department.swift` / `Models/Position.swift`。
+- **加接口**：`Constants.API` → `APIEndpoint`（case + `path` + `method`）→ `HTTPClient` 方法 → 页面调用。本页 5 个接口里 `searchCompanyUsers` / `getDepartments` / `getPositions` / `addCompanyUser` 都已走统一 `request(endpoint:)`，只有 `getCompanyUsers` 仍是手工拼 URL，新增接口不要照抄它。
+- **部门为什么不提交**：`company_user` 表只存 `positionId`，后端可由 `positionId` 反查 `departmentId`，所以对话框里的 `selectedDepartmentId` 只用于级联职位，**不要**再往请求体里加 `departmentId`。
 
 ### 10.1 已知坑
 
-1. **`departmentId` 选了但没提交**：对话框强制要求选部门（`isFormValid` 里 `selectedDepartmentId != nil`），但 `addCompanyUser` 的请求体只有 `userId` / `companyId` / `role` / `positionId`。后端 `AddCompanyUserSchema`（`docs/api/company.md` §「请求体实体字段」）明确包含 `departmentId`。当前部门只用于级联出职位，**并未随请求落库**，只能靠后端从 `positionId` 反查部门。
-2. **`addedUserIds` 用的可能是错误的 ID**：`loadAddedUsers` 取 `CompanyUser.id`（`compactMap { $0.id }`），而比对对象是 `SearchUserResult.id`（用户 ID）。`CompanyUser` 同时有 `id` 与 `userId` 两个字段，若后端 `getCompanyUsers` 返回的 `id` 是 `company_user` 关联记录 ID 而非用户 ID，则「已添加」判断完全失效。对比 [AddTenantUserPage](AddTenantUserPage.md) 的 `loadAddedUsers` 取的是 `$0.userId`。当前之所以看起来能用，是因为叠加了 `|| user.isAdded`（后端 `checked`）兜底。
-3. **`@State showAlert` 与 `func showAlert(message:)` 同名**：属性和方法同名可编译（签名不同），但 `showAlert = true` 与 `showAlert(message:)` 出现在同一文件里极易误读，建议方法改名 `presentAlert(_:)`。
-4. **`isFormValid` 注释与实现不符**：注释写「如果是超级管理员，还需要选择角色（默认已选0）」，实现是 `guard` 完部门职位后直接 `return true`，`selectedRole` 从未参与校验。
-5. **`getDepartments` 没有 `APIEndpoint` case**：直接用 `Constants.API.getDepartments` 手工拼 URL，method/鉴权/解码各写一遍，与项目「所有接口经 `APIEndpoint` 声明」的约定不符（`getTenantUserList`、`getCompanyUsers` 有 case 但同样绕过了 `request()`）。
-6. **`Department` / `Position` 模型定义在页面文件里**：不在 `Models/` 目录，其他页面若要复用只能连页面文件一起编译，且与后端文档的字段对不齐（多解 `description`/`createTime`、不解 `role`）。
-7. **角色权限只在客户端限制**：`isNormalAdmin` 时强制 `finalRole = 0`，`showRoleOption` 为 false 时按钮传 `role = 0`；若既非超管也非普通管理员（普通成员）仍能进本页，则会以 `role = 0` 提交。真正的权限校验依赖后端。
-8. **`selectedRole` 用 `String` 存角色**：`"0"` / `"1"` 再 `Int(selectedRole) ?? 0` 转回来，多了一层无意义转换，容易与 `CompanyUser.role: Int?` 混淆。
-9. **部门加载失败时对话框仍打开**：`onAdd` 里先 `loadDepartmentsAndPositions()` 再 `showAddDialog = true`；接口失败只弹「获取部门列表失败」，对话框照样显示且部门 Picker 为空，用户只能取消。
-10. **职位加载依赖 Picker 的 `onChange`**：`loadPositions` 只由部门 `Picker.onChange(of: selectedDepartmentId)` 触发，而该 Picker 在 `isLoadingDepartments == true` 时不存在于视图树。若后续把默认部门改成代码预选，`onChange` 可能不触发，职位列表会一直为空。方法名 `loadDepartmentsAndPositions` 也名不副实（只加载部门）。
-11. **先关框再请求导致 `isAdding` 几乎不可见**：`addUserToCompany` 里 `addingUserIds.insert` 之后立刻 `showAddDialog = false`，行内 `ProgressView` 只在关框后的极短时间内显示。
-12. **`data > 0` 与后端出参示例不一致**：`docs/api/company.md` §4 出参示例 `data` 为 `null`，`HTTPClient.addCompanyUser` 在 `data == nil` 时兜底 `success(0)`，页面按 `data > 0` 判定 → 会误报「添加失败，请稍后重试」，尽管后端其实成功了。上线前必须与后端对齐 `data` 语义。
-13. **添加成功后 `performSearch(reset: true)` 会重置列表**：滚动位置与分页状态全部丢失，用户需要重新滑到原位置继续添加。
-14. **对话框宽度写死**：`UIScreen.main.bounds.width - Dimens.largeMargin * 4`（即左右各留 40）用的是全屏宽度，iPad 分屏 / 多窗口场景下不自适应；且未复用项目通用 `CustomDialog` 组件，样式演进要改两处。
-15. **Picker 样式不完全符合输入框规范**：背景用 `Colors.pageBackgroundColor`、无描边，而样式铁律里输入框是 `whiteColor` + `grayColor.opacity(0.5)` 描边。
-16. **搜索失败静默 / `refreshData` async 时序错位 / 加载更多失败不回滚页码 / `hasMoreData` 依赖 `total` 兜底 0 / `ForEach(id: \.element.id)` 的 id 为 `String?`**：这五点与 [AddTenantUserPage](AddTenantUserPage.md) 完全同源，详见该文档 §10.1 第 3～6、11 条。
-17. **`AddUserRow` 与 `UserSearchRow` 是两份重复实现**：本页 `AddUserRow` 与 `AddTenantUserPage` 的 `UserSearchRow` 结构、样式、三态逻辑一致，仅 `isAdded` 计算方式不同，可抽成公共组件放进 `UI/Components/`。
-18. **`pageSize` 用 `@State` 但从不变化**；`loadAddedUsers` 的 `pageSize: 1000` 是隐式上限，成员超 1000 会漏判「已添加」。
+1. **`isFormValid` 注释与实现不符**（保持现状）：注释写「如果是超级管理员，还需要选择角色（默认已选0）」，实现是 `guard` 完部门职位后直接 `return true`，`selectedRole` 从未参与校验。因为角色有默认值 0，不需要额外校验，注释仅作说明。
+2. **角色权限只在客户端限制**（保持现状）：`UserPage` 的「用户管理」入口已做权限控制，非管理员/超管看不到入口，进不到本页；本页 `isNormalAdmin` 强制 `finalRole = 0` 只是二次保险，最终仍以后端校验为准。
+3. **部门加载失败时对话框仍打开**（保持现状）：`onAdd` 里先 `loadDepartmentsAndPositions()` 再 `showAddDialog = true`；接口失败只弹「获取部门列表失败」，对话框照样显示且部门 Picker 为空，用户只能取消。
+4. **职位加载依赖 Picker 的 `onChange`**（保持现状）：`loadPositions` 只由部门 `Picker.onChange(of: selectedDepartmentId)` 触发，而该 Picker 在 `isLoadingDepartments == true` 时不在视图树。若后续改成代码预选默认部门，`onChange` 可能不触发，职位列表会一直为空。方法名 `loadDepartmentsAndPositions` 也名不副实（只加载部门）。
+5. **先关框再请求导致 `isAdding` 几乎不可见**（保持现状）：`addUserToCompany` 里 `addingUserIds.insert` 之后立刻 `showAddDialog = false`，行内 `ProgressView` 只在关框后的极短时间内显示。
+6. **添加成功后 `performSearch(reset: true)` 会重置列表**（保持现状）：滚动位置与分页状态全部丢失，用户需要重新滑到原位置继续添加。
+7. **对话框宽度写死**（保持现状）：`UIScreen.main.bounds.width - Dimens.largeMargin * 4` 用的是全屏宽度，iPad 分屏/多窗口不自适应；且未复用通用 `CustomDialog`。
+8. **Picker 样式不完全符合输入框规范**（保持现状）：背景用 `Colors.pageBackgroundColor`、无描边，而样式铁律里输入框是 `whiteColor` + `grayColor.opacity(0.5)` 描边。
+9. **`loadAddedUsers` 的 `pageSize: 1000` 是隐式上限**：公司成员超过 1000 人时，超出部分不会进 `addedUserIds`，只能靠后端 `checked` 兜底判断「已添加」。
 
 ## 相关文档
 

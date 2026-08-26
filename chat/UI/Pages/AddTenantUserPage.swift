@@ -413,66 +413,7 @@ struct AddTenantUserPage: View {
     }
 }
 
-// MARK: - 用户搜索行组件
-
-/// 用户搜索行视图
-struct UserSearchRow: View {
-    let user: SearchUserResult  // 修改为 SearchUserResult 类型
-    let isAdded: Bool
-    let isAdding: Bool
-    let onAdd: () -> Void
-    
-    var body: some View {
-        HStack(spacing: Dimens.middleMargin) {
-            // 用户头像
-            UserAvatar(
-                avatarUrl: user.avater,
-                username: user.username,
-                size: Dimens.middleAvater
-            )
-            
-            // 用户信息
-            VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                Text(user.username)
-                    .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.black)
-                
-                Text(user.userAccount)
-                    .font(.system(size: Dimens.normalFont - 2))
-                    .foregroundColor(Colors.grayColor)
-            }
-            
-            Spacer()
-            
-            // 添加按钮 / 已添加标签 / 加载状态
-            if isAdded {
-                Text("已添加")
-                    .font(.system(size: Dimens.normalFont - 2))
-                    .foregroundColor(Colors.grayColor)
-                    .padding(.horizontal, Dimens.middleMargin)
-                    .padding(.vertical, Dimens.smallMargin)
-                    .background(Colors.grayColor.opacity(0.2))
-                    .cornerRadius(Dimens.borderRadius * 2)
-            } else if isAdding {
-                // 加载状态
-                ProgressView()
-                    .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
-            } else {
-                Button(action: onAdd) {
-                    Text("添加")
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(Colors.whiteColor)
-                        .padding(.horizontal, Dimens.middleMargin)
-                        .padding(.vertical, Dimens.smallMargin)
-                        .background(Colors.primaryColor)
-                        .cornerRadius(Dimens.borderRadius * 2)
-                }
-            }
-        }
-        .padding(.horizontal, Dimens.middleMargin)
-        .padding(.vertical, Dimens.middleMargin)
-    }
-}
+// MARK: - 用户搜索行组件（已抽为公共组件 UI/Components/UserSearchRow.swift）
 
 #Preview {
     AddTenantUserPage()

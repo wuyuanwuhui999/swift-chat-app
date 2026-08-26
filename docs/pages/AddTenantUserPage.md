@@ -21,10 +21,10 @@ apis:
 
 ## 2. 位置与依赖
 
-- **源码**：`chat/chat/UI/Pages/AddTenantUserPage.swift`（约 478 行，含内嵌 `UserSearchRow` 组件）
+- **源码**：`chat/chat/UI/Pages/AddTenantUserPage.swift`（约 419 行）
 - **入口**：[TenantManagePage](TenantManagePage.md) 导航栏「plus」按钮 → `.navigationDestination(isPresented: $navigateToAddUser) { AddTenantUserPage().navigationBarHidden(true) }`（父页在 `NavigationStack` 内）
 - **出口**：仅 `dismiss()` 返回 [TenantManagePage](TenantManagePage.md)，无其他跳转
-- **依赖组件**：`UI/Components/UserAvatar.swift`、同文件内嵌 `UserSearchRow`
+- **依赖组件**：`UI/Components/UserAvatar.swift`、`UI/Components/UserSearchRow.swift`（与 [AddCompanyUserPage](AddCompanyUserPage.md) 共用的公共行组件）
 - **依赖模型**：`Models/SearchUserResult.swift`（搜索结果）、`Models/TenantUser.swift`（间接：`getTenantUserList` 的解码类型）
 - **依赖服务**：`HTTPClient.shared.searchTenantUsers`、`HTTPClient.shared.getTenantUserList`、`HTTPClient.shared.addTenantUser`、`AppState.shared`（`currentTenant`、`currentCompany`、`getCachedCompanyId()`）、`@Environment(\.dismiss)`
 
@@ -97,7 +97,7 @@ LazyVStack(spacing: 0)
 | `emptyStateView` | `searchResults.isEmpty && !searchText.isEmpty` | `person.slash`（`bigIcon`/`grayColor`）+「未找到相关用户」（`normalFont`）+「请尝试其他关键词」（`normalFont - 2`） |
 | `emptySearchView` | `searchResults.isEmpty`（且 `searchText` 为空） | `magnifyingglass`（`bigIcon`/`grayColor`）+「输入姓名或工号搜索用户」（`normalFont`） |
 
-### 4.3 UserSearchRow（同文件内嵌）
+### 4.3 UserSearchRow（`UI/Components/UserSearchRow.swift`，与 [AddCompanyUserPage](AddCompanyUserPage.md) 共用）
 
 ```
 HStack(spacing: Dimens.middleMargin)
@@ -294,7 +294,7 @@ TenantManagePage 点「plus」（tenantUserRole >= 1）
 
 ## 10. 二次开发指引
 
-- **改文案/样式**：导航栏 → `customNavigationBar`；搜索框 → `searchBarView`；两种空态 → `emptyStateView` / `emptySearchView`；行样式与三态按钮 → `UserSearchRow.body`。
+- **改文案/样式**：导航栏 → `customNavigationBar`；搜索框 → `searchBarView`；两种空态 → `emptyStateView` / `emptySearchView`；行样式与三态按钮 → `UI/Components/UserSearchRow.swift`（**公共组件，改动会同时影响 [AddCompanyUserPage](AddCompanyUserPage.md)**）。
 - **加字段**：`Models/SearchUserResult.swift`（含 `CodingKeys`）→ `searchTenantUsers` 解码 → `UserSearchRow` 展示，三处同步。
 - **加接口**：`Constants.API` → `APIEndpoint`（case + `path` 占位符替换 + `method` 分支）→ `HTTPClient` 方法 → 页面调用。
 - **想支持「加入时直接指定角色」**：本页无角色 UI，可参考 [AddCompanyUserPage](AddCompanyUserPage.md) 的 `addUserDialog` 做法（弹层 + Picker），但 `addTenantUser` 目前的接口签名只有 Path 上的 `tenantId`/`userId`，需要后端先扩参。

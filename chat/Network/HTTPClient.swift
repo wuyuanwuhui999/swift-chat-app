@@ -363,13 +363,16 @@ extension HTTPClient {
         companyId: String,
         apiKey: String?,
         baseUrl: String,
+        disabled: Int = 0,
         completion: @escaping (Result<Int, NetworkError>) -> Void
     ) {
         var parameters: [String: Any] = [
             "modelName": modelName,
             "type": type,
             "companyId": companyId,
-            "baseUrl": baseUrl
+            "baseUrl": baseUrl,
+            // 启用状态：0 启用 / 1 禁用。显式提交，避免依赖后端/数据库默认值
+            "disabled": disabled
         ]
         
         if let apiKey = apiKey, !apiKey.isEmpty {
@@ -1353,81 +1356,25 @@ extension HTTPClient {
     // MARK: - 部门/职位相关方法
 
     /// 获取部门列表
+    /// - Parameters:
+    ///   - companyId: 公司ID
+    ///   - completion: 完成回调，返回部门列表
     func getDepartments(companyId: String, completion: @escaping (Result<[Department], NetworkError>) -> Void) {
         let parameters: [String: Any] = ["companyId": companyId]
         
-        guard var urlComponents = URLComponents(string: baseURL + Constants.API.getDepartments) else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        urlComponents.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
-        
-        guard let url = urlComponents.url else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let authHeader = TokenManager.shared.getAuthorizationHeader() {
-            request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        }
-        
-        print("🌐 获取部门列表URL: \(url)")
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.custom(message: "无效的响应")))
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.serverError(statusCode: httpResponse.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(BaseResponse<[Department]>.self, from: data)
-                
+        // 统一走 request 方法（APIEndpoint 声明 path 与 method）
+        request(endpoint: .getDepartments, parameters: parameters) { (result: Result<BaseResponse<[Department]>, NetworkError>) in
+            switch result {
+            case .success(let response):
                 if response.isSuccess, let departments = response.data {
-                    DispatchQueue.main.async {
-                        completion(.success(departments))
-                    }
+                    completion(.success(departments))
                 } else {
-                    DispatchQueue.main.async {
-                        completion(.failure(.custom(message: response.msg ?? "获取部门列表失败")))
-                    }
+                    completion(.failure(.custom(message: response.msg ?? "获取部门列表失败")))
                 }
-            } catch {
-                print("❌ 解析部门列表失败: \(error)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 
     // MARK: - 部门/职位相关方法

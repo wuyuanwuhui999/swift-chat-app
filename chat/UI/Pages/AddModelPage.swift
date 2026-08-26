@@ -24,8 +24,14 @@ struct AddModelPage: View {
     @State private var alertMessage = ""
     @State private var shouldDismiss = false
     
-    // 模型类型选项
+    // 模型类型选项（提交给后端的原始值）
     private let modelTypes = ["ollama", "online"]
+    
+    /// 模型类型 → 中文展示文案映射（Picker 只展示中文，提交仍用原始值）
+    private let modelTypeNames: [String: String] = [
+        "ollama": "ollama模型",
+        "online": "在线模型"
+    ]
     
     init(onModelAdded: (() -> Void)? = nil) {
         self.onModelAdded = onModelAdded
@@ -54,8 +60,8 @@ struct AddModelPage: View {
         .background(Colors.pageBackgroundColor)
         .alert("提示", isPresented: $showAlert) {
             Button("确定", role: .cancel) {
+                // 父页面刷新已在请求成功时触发，这里只负责关页
                 if shouldDismiss {
-                    onModelAdded?()
                     dismiss()
                 }
             }
@@ -127,7 +133,7 @@ struct AddModelPage: View {
                 content: AnyView(
                     Picker("", selection: $modelType) {
                         ForEach(modelTypes, id: \.self) { type in
-                            Text(type).tag(type)
+                            Text(displayName(for: type)).tag(type)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
@@ -153,12 +159,12 @@ struct AddModelPage: View {
             
             DividerLine()
             
-            // API Key
+            // API Key（在线模型必填，ollama 本地模型可选）
             formRow(
                 label: "API Key",
-                isRequired: false,
+                isRequired: isApiKeyRequired,
                 content: AnyView(
-                    TextField("", text: $apiKey, prompt: Text("请输入API Key（可选）").foregroundColor(Colors.grayColor))
+                    TextField("", text: $apiKey, prompt: Text(isApiKeyRequired ? "请输入API Key" : "请输入API Key（可选）").foregroundColor(Colors.grayColor))
                         .font(.system(size: Dimens.normalFont))
                         .foregroundColor(.black)
                         .autocapitalization(.none)
@@ -238,13 +244,40 @@ struct AddModelPage: View {
         }
     }
     
-    // MARK: - 表单校验
+    // MARK: - 校验与展示辅助
     
-    /// 表单是否有效
+    /// 是否必须填写 API Key（在线模型需要凭证，ollama 本地模型不需要）
+    private var isApiKeyRequired: Bool {
+        return modelType == "online"
+    }
+    
+    /// 取模型类型的中文展示文案（无映射时回退为原始值）
+    /// - Parameter type: 提交给后端的模型类型原始值
+    private func displayName(for type: String) -> String {
+        return modelTypeNames[type] ?? type
+    }
+    
+    /// 校验模型地址格式：scheme 必须是 http/https，且能解析出非空 host
+    /// - Parameter urlString: 已 trim 的模型地址
+    private func isValidBaseUrl(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString),
+              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              let host = url.host, !host.isEmpty else {
+            return false
+        }
+        return true
+    }
+    
+    /// 表单是否有效（控制「确定」按钮的可点状态）：必填项 + 在线模型的 API Key
     private var isFormValid: Bool {
         let trimmedName = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedUrl = baseUrl.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmedName.isEmpty && !trimmedUrl.isEmpty
+        let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedName.isEmpty, !trimmedUrl.isEmpty else {
+            return false
+        }
+        return !isApiKeyRequired || !trimmedApiKey.isEmpty
     }
     
     // MARK: - 数据提交方法
@@ -261,6 +294,13 @@ struct AddModelPage: View {
         let trimmedUrl = baseUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         
+        // 模型地址格式校验（必填项由 isFormValid 拦在按钮上，这里只补格式）
+        guard isValidBaseUrl(trimmedUrl) else {
+            alertMessage = "模型地址格式不正确，需以 http:// 或 https:// 开头"
+            showAlert = true
+            return
+        }
+        
         isSubmitting = true
         
         HTTPClient.shared.addModel(
@@ -268,7 +308,8 @@ struct AddModelPage: View {
             type: modelType,
             companyId: companyId,
             apiKey: trimmedApiKey.isEmpty ? nil : trimmedApiKey,
-            baseUrl: trimmedUrl
+            baseUrl: trimmedUrl,
+            disabled: 0
         ) { result in
             DispatchQueue.main.async {
                 self.isSubmitting = false
@@ -276,6 +317,8 @@ struct AddModelPage: View {
                 switch result {
                 case .success(let data):
                     if data > 0 {
+                        // 立即通知父页面刷新，刷新不再依赖弹窗的「确定」按钮
+                        self.onModelAdded?()
                         self.alertMessage = "添加成功"
                         self.shouldDismiss = true
                         self.showAlert = true

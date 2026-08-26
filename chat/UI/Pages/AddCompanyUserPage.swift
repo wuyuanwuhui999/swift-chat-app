@@ -7,24 +7,6 @@
 
 import SwiftUI
 
-/// 部门模型
-struct Department: Codable, Identifiable {
-    let id: String
-    let companyId: String
-    let departmentName: String
-    let description: String?
-    let createTime: String?
-}
-
-/// 职位模型
-struct Position: Codable, Identifiable {
-    let id: String
-    let positionName: String
-    let departmentId: String
-    let description: String?
-    let createTime: String?
-}
-
 /// 添加用户页面
 struct AddCompanyUserPage: View {
     @ObservedObject private var appState = AppState.shared
@@ -36,7 +18,8 @@ struct AddCompanyUserPage: View {
     @State private var isSearchLoading = false
     @State private var searchWorkItem: DispatchWorkItem?
     @State private var currentPage = 1
-    @State private var pageSize = 20
+    /// 每页条数：固定 20 条，往上滚动到列表底部时加载下一页
+    private let pageSize = 20
     @State private var hasMoreData = true
     @State private var isLoadingMore = false
     
@@ -48,7 +31,7 @@ struct AddCompanyUserPage: View {
     // 添加对话框相关状态
     @State private var showAddDialog = false
     @State private var selectedUser: SearchUserResult?
-    @State private var selectedRole = "0"  // 0: 普通用户, 1: 管理员
+    @State private var selectedRole = 0  // 0: 普通用户, 1: 管理员
     @State private var departments: [Department] = []
     @State private var positions: [Position] = []
     @State private var selectedDepartmentId: String?
@@ -233,11 +216,11 @@ struct AddCompanyUserPage: View {
     @ViewBuilder
     private var userListView: some View {
         LazyVStack(spacing: 0) {
-            ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, user in
-                AddUserRow(
+            ForEach(Array(searchResults.enumerated()), id: \.offset) { index, user in
+                UserSearchRow(
                     user: user,
-                    isAdded: addedUserIds.contains(user.id ?? "") || user.isAdded,
-                    isAdding: addingUserIds.contains(user.id ?? ""),
+                    isAdded: isUserAdded(user),
+                    isAdding: isUserAdding(user),
                     onAdd: {
                         selectedUser = user
                         // 加载部门和职位数据，然后显示对话框
@@ -252,13 +235,17 @@ struct AddCompanyUserPage: View {
                 }
             }
             
-            // 加载更多指示器
-            if hasMoreData && !isLoadingMore && !isRefreshing && !searchText.isEmpty {
-                ProgressView()
-                    .padding(.vertical, Dimens.middleMargin)
-                    .onAppear {
-                        loadMoreUsers()
-                    }
+            // 加载更多指示器：往上滚动到底部时自动加载下一页（每页 20 条）
+            if hasMoreData && !searchText.isEmpty {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+                .padding(.vertical, Dimens.middleMargin)
+                .onAppear {
+                    loadMoreUsers()
+                }
             }
         }
     }
@@ -297,11 +284,11 @@ struct AddCompanyUserPage: View {
                             
                             HStack(spacing: Dimens.middleMargin) {
                                 Button(action: {
-                                    selectedRole = "0"
+                                    selectedRole = 0
                                 }) {
                                     HStack(spacing: Dimens.smallIcon) {
-                                        Image(systemName: selectedRole == "0" ? "largecircle.fill.circle" : "circle")
-                                            .foregroundColor(selectedRole == "0" ? Colors.primaryColor : Colors.grayColor)
+                                        Image(systemName: selectedRole == 0 ? "largecircle.fill.circle" : "circle")
+                                            .foregroundColor(selectedRole == 0 ? Colors.primaryColor : Colors.grayColor)
                                         Text("普通用户")
                                             .font(.system(size: Dimens.normalFont))
                                             .foregroundColor(.black)
@@ -310,11 +297,11 @@ struct AddCompanyUserPage: View {
                                 .buttonStyle(PlainButtonStyle())
                                 
                                 Button(action: {
-                                    selectedRole = "1"
+                                    selectedRole = 1
                                 }) {
                                     HStack(spacing: Dimens.smallIcon) {
-                                        Image(systemName: selectedRole == "1" ? "largecircle.fill.circle" : "circle")
-                                            .foregroundColor(selectedRole == "1" ? Colors.primaryColor : Colors.grayColor)
+                                        Image(systemName: selectedRole == 1 ? "largecircle.fill.circle" : "circle")
+                                            .foregroundColor(selectedRole == 1 ? Colors.primaryColor : Colors.grayColor)
                                         Text("管理员")
                                             .font(.system(size: Dimens.normalFont))
                                             .foregroundColor(.black)
@@ -421,7 +408,8 @@ struct AddCompanyUserPage: View {
                         
                         // 确定按钮
                         Button(action: {
-                            let role = showRoleOption ? (Int(selectedRole) ?? 0) : 0
+                            // 非超级管理员不显示角色选项，统一按普通用户（0）提交
+                            let role = showRoleOption ? selectedRole : 0
                             addUserToCompany(user: user, role: role, positionId: selectedPositionId)
                         }) {
                             Text("确定")
@@ -480,9 +468,28 @@ struct AddCompanyUserPage: View {
     
     // MARK: - 辅助方法
     
+    /// 判断用户是否已在公司
+    /// 两个来源：onAppear 拉取的公司成员集合 addedUserIds、后端搜索接口返回的 checked 标记
+    /// - Parameter user: 搜索结果用户
+    /// - Returns: 已在公司返回 true（行内展示灰色「已添加」）
+    private func isUserAdded(_ user: SearchUserResult) -> Bool {
+        if let userId = user.id, addedUserIds.contains(userId) {
+            return true
+        }
+        return user.isAdded
+    }
+    
+    /// 判断用户是否正在添加中（id 为空时恒为 false，避免多条空 id 的行互相串状态）
+    /// - Parameter user: 搜索结果用户
+    /// - Returns: 正在添加返回 true（行内展示 ProgressView）
+    private func isUserAdding(_ user: SearchUserResult) -> Bool {
+        guard let userId = user.id else { return false }
+        return addingUserIds.contains(userId)
+    }
+    
     /// 重置对话框状态
     private func resetDialogState() {
-        selectedRole = "0"
+        selectedRole = 0
         selectedDepartmentId = nil
         selectedPositionId = nil
         departments = []
@@ -539,13 +546,20 @@ struct AddCompanyUserPage: View {
     }
     
     /// 执行搜索
-    private func performSearch(reset: Bool = true) {
+    /// - Parameters:
+    ///   - reset: true 表示重新搜索（回到第 1 页并清空列表），false 表示追加下一页
+    ///   - completion: 请求结束（无论成功失败）后的回调，供下拉刷新等待真实结果
+    private func performSearch(reset: Bool = true, completion: (() -> Void)? = nil) {
         guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
             print("❌ 未找到公司ID")
+            completion?()
             return
         }
         
-        guard !searchText.isEmpty else { return }
+        guard !searchText.isEmpty else {
+            completion?()
+            return
+        }
         
         if reset {
             isSearchLoading = true
@@ -553,10 +567,13 @@ struct AddCompanyUserPage: View {
             searchResults = []
         }
         
+        // 记录本次请求的页码，失败时用于回滚
+        let requestPage = currentPage
+        
         HTTPClient.shared.searchCompanyUsers(
             keyword: searchText,
             companyId: companyId,
-            pageNum: currentPage,
+            pageNum: requestPage,
             pageSize: pageSize
         ) { result in
             DispatchQueue.main.async {
@@ -576,41 +593,53 @@ struct AddCompanyUserPage: View {
                         }
                         self.searchResults.append(contentsOf: newUsers)
                     }
-                    // 判断是否还有更多数据
-                    self.hasMoreData = self.searchResults.count < total
+                    // 是否还有下一页：total 有效时按 total 判断；total 缺失（兜底 0）时按本页是否满页判断
+                    if total > 0 {
+                        self.hasMoreData = self.searchResults.count < total
+                    } else {
+                        self.hasMoreData = users.count >= self.pageSize
+                    }
                     print("✅ 搜索用户成功，共 \(users.count) 条，总计 \(total) 条")
                     
                 case .failure(let error):
                     print("❌ 搜索用户失败: \(error.localizedDescription)")
                     if reset {
                         self.searchResults = []
+                    } else {
+                        // 加载下一页失败：页码回滚，避免下次触发时跳页丢数据
+                        self.currentPage = max(1, requestPage - 1)
                     }
+                    // 请求失败必须提示，避免与「未找到相关用户」空态混淆
+                    self.presentAlert("搜索用户失败：\(error.localizedDescription)")
                 }
+                
+                completion?()
             }
         }
     }
     
-    /// 加载更多用户
+    /// 加载更多用户（往上滚动到列表底部时触发，每页 20 条）
     private func loadMoreUsers() {
-        guard !isLoadingMore && hasMoreData && !searchText.isEmpty else { return }
+        guard !isLoadingMore, !isRefreshing, hasMoreData, !searchText.isEmpty else { return }
         isLoadingMore = true
         currentPage += 1
         performSearch(reset: false)
     }
     
-    /// 下拉刷新
+    /// 下拉刷新（等搜索请求真正返回后再收起刷新指示器）
+    @MainActor
     private func refreshData() async {
-        await MainActor.run {
-            isRefreshing = true
-        }
+        isRefreshing = true
         
         if !searchText.isEmpty {
-            performSearch(reset: true)
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                performSearch(reset: true) {
+                    continuation.resume()
+                }
+            }
         }
         
-        await MainActor.run {
-            isRefreshing = false
-        }
+        isRefreshing = false
     }
     
     // MARK: - 部门/职位加载方法
@@ -638,7 +667,7 @@ struct AddCompanyUserPage: View {
                     print("✅ 获取部门列表成功，共 \(depts.count) 个部门")
                 case .failure(let error):
                     print("❌ 获取部门列表失败: \(error.localizedDescription)")
-                    self.showAlert(message: "获取部门列表失败")
+                    self.presentAlert("获取部门列表失败")
                 }
             }
         }
@@ -660,7 +689,7 @@ struct AddCompanyUserPage: View {
                     print("✅ 获取职位列表成功，共 \(posList.count) 个职位")
                 case .failure(let error):
                     print("❌ 获取职位列表失败: \(error.localizedDescription)")
-                    self.showAlert(message: "获取职位列表失败")
+                    self.presentAlert("获取职位列表失败")
                 }
             }
         }
@@ -672,7 +701,7 @@ struct AddCompanyUserPage: View {
     private func addUserToCompany(user: SearchUserResult, role: Int, positionId: String?) {
         guard let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId(),
               let userId = user.id else {
-            showAlert(message: "缺少必要参数")
+            presentAlert("缺少必要参数")
             return
         }
         
@@ -704,87 +733,30 @@ struct AddCompanyUserPage: View {
                 switch result {
                 case .success(let data):
                     if data > 0 {
-                        self.showAlert(message: "添加成功")
+                        self.presentAlert("添加成功")
                         // 标记为已添加
                         self.addedUserIds.insert(userId)
                         // 更新搜索结果中的状态
                         self.performSearch(reset: true)
                     } else {
-                        self.showAlert(message: "添加失败，请稍后重试")
+                        self.presentAlert("添加失败，请稍后重试")
                     }
                 case .failure(let error):
-                    self.showAlert(message: error.localizedDescription)
+                    self.presentAlert(error.localizedDescription)
                 }
             }
         }
     }
     
     /// 显示提示框
-    private func showAlert(message: String) {
+    /// - Parameter message: 提示文案
+    private func presentAlert(_ message: String) {
         alertMessage = message
         showAlert = true
     }
 }
 
-// MARK: - 添加用户行组件
-
-/// 添加用户行视图（支持加载状态）
-struct AddUserRow: View {
-    let user: SearchUserResult
-    let isAdded: Bool
-    let isAdding: Bool
-    let onAdd: () -> Void
-    
-    var body: some View {
-        HStack(spacing: Dimens.middleMargin) {
-            // 用户头像
-            UserAvatar(
-                avatarUrl: user.avater,
-                username: user.username,
-                size: Dimens.middleAvater
-            )
-            
-            // 用户信息
-            VStack(alignment: .leading, spacing: Dimens.smallIcon) {
-                Text(user.username)
-                    .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(.black)
-                
-                Text(user.userAccount)
-                    .font(.system(size: Dimens.normalFont - 2))
-                    .foregroundColor(Colors.grayColor)
-            }
-            
-            Spacer()
-            
-            // 添加按钮 / 已添加标签 / 加载状态
-            if isAdded {
-                Text("已添加")
-                    .font(.system(size: Dimens.normalFont - 2))
-                    .foregroundColor(Colors.grayColor)
-                    .padding(.horizontal, Dimens.middleMargin)
-                    .padding(.vertical, Dimens.smallMargin)
-                    .background(Colors.grayColor.opacity(0.2))
-                    .cornerRadius(Dimens.borderRadius * 2)
-            } else if isAdding {
-                ProgressView()
-                    .frame(width: Dimens.middleIcon, height: Dimens.middleIcon)
-            } else {
-                Button(action: onAdd) {
-                    Text("添加")
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(Colors.whiteColor)
-                        .padding(.horizontal, Dimens.middleMargin)
-                        .padding(.vertical, Dimens.smallMargin)
-                        .background(Colors.primaryColor)
-                        .cornerRadius(Dimens.borderRadius * 2)
-                }
-            }
-        }
-        .padding(.horizontal, Dimens.middleMargin)
-        .padding(.vertical, Dimens.middleMargin)
-    }
-}
+// MARK: - 添加用户行组件（已抽为公共组件 UI/Components/UserSearchRow.swift）
 
 #Preview {
     AddCompanyUserPage()
