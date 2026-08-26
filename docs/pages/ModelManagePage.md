@@ -187,7 +187,7 @@ rowHeight = Dimens.middleAvater + Dimens.middleMargin * 2   // 50 + 30 = 80
 | `companyId` | Query | String | 是 | 由 `HTTPClient` 的 `parameters` 拼进查询串（GET/DELETE 统一走 query） |
 | `keyword` | Query | String | 否 | 非空才加入 `parameters`，后端按模型名模糊搜索 |
 
-- **响应**：`BaseResponse<[ChatModel]>`，`data` 为模型数组，`total` 为总数。后端文档 `chat.md` 示例中 `total` 为 `null`，且 data 元素含 `disabled` 字段（客户端 `ChatModel` 未解析）。
+- **响应**：`BaseResponse<[ChatModel]>`，`data` 为模型数组，`total` 为总数。后端文档 `chat.md` 示例中 `total` 为 `null`；data 元素的 `disabled` 字段客户端已解析（`ChatModel.disabled`，编辑时原样回传）。
 - **UI 处理**：成功 → 覆盖/追加 `models`、重算 `hasMoreData`；失败 → `alert`。
 - **鉴权**：`chat.md` 明确「除 `getModelList` 外，其余接口均需 token」，即本接口后端不要求鉴权，但客户端仍会带上 `Authorization` 头。
 
@@ -219,7 +219,7 @@ rowHeight = Dimens.middleAvater + Dimens.middleMargin * 2   // 50 + 30 = 80
 | `companyId` | `String` | 否 | 所属公司 ID |
 | `updateTime` / `createTime` | `String?` | 是 | 时间，本页不展示 |
 
-`CodingKeys` 与字段同名（后端已由 `ResultUtil` 把 snake_case 转驼峰）。后端表 `chat_model` 还有 `disabled`（0/1），客户端模型未包含。
+`CodingKeys` 与字段同名（后端已由 `ResultUtil` 把 snake_case 转驼峰）。后端表 `chat_model` 的 `disabled`（0/1）客户端已解析为 `ChatModel.disabled: Int?`，本页不展示，仅 [UpdateModelPage](UpdateModelPage.md) 提交时原样回传。
 
 ## 8. 样式落地清单
 

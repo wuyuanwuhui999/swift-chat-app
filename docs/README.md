@@ -55,6 +55,7 @@ chat/                          Xcode 工程根
     │   ├── Colors.swift           全部颜色
     │   └── Dimens.swift           全部尺寸、字号、间距
     ├── Utils/TokenManager.swift   token 读写（UserDefaults）
+    ├── Utils/Validators.swift     表单校验工具（模型地址格式等，各页共用）
     └── Resources/ Assets.xcassets
 ```
 
@@ -313,7 +314,8 @@ UserDefaults 缓存 key：
 | `SearchUserResult` | 同 User + `checked`(0/1) | 搜索结果，`isAdded` 表示是否已加入 |
 | `Department` | id, companyId, departmentName, description, createTime | 部门（`getDepartments` 返回，添加公司成员时级联出职位） |
 | `Position` | id, departmentId, positionName, description, createTime | 职位（`getPositions` 返回；添加成员只提交 `positionId`，后端由它反查部门） |
-| `ChatModel` | id, modelName, type(`ollama`/`online`), baseUrl, apiKey, companyId | 大模型配置 |
+| `ChatModel` | id, modelName, type(`ollama`/`online`), baseUrl, apiKey, companyId, disabled | 大模型配置；`disabled` 0 启用 / 1 禁用，更新时原样回传 |
+| `ChatModelType` | 枚举 `ollama` / `online` | 模型类型：`displayName` 中文文案、`requiresApiKey` 是否强制 API Key（新增/编辑模型页共用） |
 | `Prompt` | id, tenantId, userId, prompt | 提示词 |
 | `Directory` | id, userId, directory, tenantId | 知识库目录 |
 | `Document` | id, name, ext, userId, directoryId, directoryName, checked | 知识库文档 |

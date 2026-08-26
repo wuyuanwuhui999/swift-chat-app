@@ -16,7 +16,7 @@ struct UpdateModelPage: View {
     let onModelUpdated: (() -> Void)?
     
     @State private var modelName = ""
-    @State private var modelType = "ollama"
+    @State private var modelType = ChatModelType.ollama.rawValue
     @State private var baseUrl = ""
     @State private var apiKey = ""
     
@@ -24,8 +24,6 @@ struct UpdateModelPage: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var shouldDismiss = false
-    
-    private let modelTypes = ["ollama", "online"]
     
     init(model: ChatModel, onModelUpdated: (() -> Void)? = nil) {
         self.model = model
@@ -50,8 +48,8 @@ struct UpdateModelPage: View {
         .background(Colors.pageBackgroundColor)
         .alert("提示", isPresented: $showAlert) {
             Button("确定", role: .cancel) {
+                // 父页面刷新已在请求成功时触发，这里只负责关页
                 if shouldDismiss {
-                    onModelUpdated?()
                     dismiss()
                 }
             }
@@ -120,8 +118,8 @@ struct UpdateModelPage: View {
                 isRequired: true,
                 content: AnyView(
                     Picker("", selection: $modelType) {
-                        ForEach(modelTypes, id: \.self) { type in
-                            Text(type).tag(type)
+                        ForEach(ChatModelType.allCases) { type in
+                            Text(type.displayName).tag(type.rawValue)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
@@ -147,12 +145,12 @@ struct UpdateModelPage: View {
             
             DividerLine()
             
-            // API Key
+            // API Key（在线模型必填，ollama 本地模型可选）
             formRow(
                 label: "API Key",
-                isRequired: false,
+                isRequired: isApiKeyRequired,
                 content: AnyView(
-                    TextField("", text: $apiKey, prompt: Text("请输入API Key（可选）").foregroundColor(Colors.grayColor))
+                    TextField("", text: $apiKey, prompt: Text(isApiKeyRequired ? "请输入API Key" : "请输入API Key（可选）").foregroundColor(Colors.grayColor))
                         .font(.system(size: Dimens.normalFont))
                         .foregroundColor(.black)
                         .autocapitalization(.none)
@@ -236,12 +234,23 @@ struct UpdateModelPage: View {
         apiKey = model.apiKey ?? ""
     }
     
-    // MARK: - 表单校验
+    // MARK: - 校验与展示辅助
     
+    /// 是否必须填写 API Key（在线模型需要凭证，ollama 本地模型不需要）
+    private var isApiKeyRequired: Bool {
+        return ChatModelType.requiresApiKey(for: modelType)
+    }
+    
+    /// 表单是否有效（控制「确定」按钮的可点状态）：必填项 + 在线模型的 API Key
     private var isFormValid: Bool {
         let trimmedName = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedUrl = baseUrl.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmedName.isEmpty && !trimmedUrl.isEmpty
+        let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedName.isEmpty, !trimmedUrl.isEmpty else {
+            return false
+        }
+        return !isApiKeyRequired || !trimmedApiKey.isEmpty
     }
     
     // MARK: - 数据提交
@@ -257,6 +266,13 @@ struct UpdateModelPage: View {
         let trimmedUrl = baseUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         
+        // 模型地址格式校验（必填项由 isFormValid 拦在按钮上，这里只补格式）
+        guard Validators.isValidBaseUrl(trimmedUrl) else {
+            alertMessage = "模型地址格式不正确，需以 http:// 或 https:// 开头"
+            showAlert = true
+            return
+        }
+        
         isSubmitting = true
         
         HTTPClient.shared.updateModel(
@@ -265,7 +281,8 @@ struct UpdateModelPage: View {
             type: modelType,
             companyId: companyId,
             apiKey: trimmedApiKey.isEmpty ? nil : trimmedApiKey,
-            baseUrl: trimmedUrl
+            baseUrl: trimmedUrl,
+            disabled: model.disabled
         ) { result in
             DispatchQueue.main.async {
                 self.isSubmitting = false
@@ -273,6 +290,8 @@ struct UpdateModelPage: View {
                 switch result {
                 case .success(let data):
                     if data > 0 {
+                        // 立即通知父页面刷新，刷新不再依赖弹窗的「确定」按钮
+                        self.onModelUpdated?()
                         self.alertMessage = "更新成功"
                         self.shouldDismiss = true
                         self.showAlert = true
@@ -297,6 +316,7 @@ struct UpdateModelPage: View {
         baseUrl: "https://api.deepseek.com/v1",
         apiKey: "sk-xxx",
         companyId: "company1",
+        disabled: 0,
         updateTime: "2026-07-01 10:00:00",
         createTime: "2026-07-01 10:00:00"
     ))

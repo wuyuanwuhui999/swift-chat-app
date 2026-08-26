@@ -417,6 +417,7 @@ extension HTTPClient {
         companyId: String,
         apiKey: String?,
         baseUrl: String,
+        disabled: Int? = nil,
         completion: @escaping (Result<Int, NetworkError>) -> Void
     ) {
         var parameters: [String: Any] = [
@@ -426,6 +427,11 @@ extension HTTPClient {
             "companyId": companyId,
             "baseUrl": baseUrl
         ]
+        
+        // 启用状态：原样回传模型当前值，缺失时不提交，避免把禁用的模型改成启用
+        if let disabled = disabled {
+            parameters["disabled"] = disabled
+        }
         
         if let apiKey = apiKey, !apiKey.isEmpty {
             parameters["apiKey"] = apiKey

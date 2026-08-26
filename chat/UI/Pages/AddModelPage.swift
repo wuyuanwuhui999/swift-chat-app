@@ -15,7 +15,7 @@ struct AddModelPage: View {
     let onModelAdded: (() -> Void)?
     
     @State private var modelName = ""
-    @State private var modelType = "ollama"
+    @State private var modelType = ChatModelType.ollama.rawValue
     @State private var baseUrl = ""
     @State private var apiKey = ""
     
@@ -23,15 +23,6 @@ struct AddModelPage: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var shouldDismiss = false
-    
-    // 模型类型选项（提交给后端的原始值）
-    private let modelTypes = ["ollama", "online"]
-    
-    /// 模型类型 → 中文展示文案映射（Picker 只展示中文，提交仍用原始值）
-    private let modelTypeNames: [String: String] = [
-        "ollama": "ollama模型",
-        "online": "在线模型"
-    ]
     
     init(onModelAdded: (() -> Void)? = nil) {
         self.onModelAdded = onModelAdded
@@ -132,8 +123,8 @@ struct AddModelPage: View {
                 isRequired: true,
                 content: AnyView(
                     Picker("", selection: $modelType) {
-                        ForEach(modelTypes, id: \.self) { type in
-                            Text(displayName(for: type)).tag(type)
+                        ForEach(ChatModelType.allCases) { type in
+                            Text(type.displayName).tag(type.rawValue)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
@@ -248,24 +239,7 @@ struct AddModelPage: View {
     
     /// 是否必须填写 API Key（在线模型需要凭证，ollama 本地模型不需要）
     private var isApiKeyRequired: Bool {
-        return modelType == "online"
-    }
-    
-    /// 取模型类型的中文展示文案（无映射时回退为原始值）
-    /// - Parameter type: 提交给后端的模型类型原始值
-    private func displayName(for type: String) -> String {
-        return modelTypeNames[type] ?? type
-    }
-    
-    /// 校验模型地址格式：scheme 必须是 http/https，且能解析出非空 host
-    /// - Parameter urlString: 已 trim 的模型地址
-    private func isValidBaseUrl(_ urlString: String) -> Bool {
-        guard let url = URL(string: urlString),
-              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
-              let host = url.host, !host.isEmpty else {
-            return false
-        }
-        return true
+        return ChatModelType.requiresApiKey(for: modelType)
     }
     
     /// 表单是否有效（控制「确定」按钮的可点状态）：必填项 + 在线模型的 API Key
@@ -295,7 +269,7 @@ struct AddModelPage: View {
         let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         
         // 模型地址格式校验（必填项由 isFormValid 拦在按钮上，这里只补格式）
-        guard isValidBaseUrl(trimmedUrl) else {
+        guard Validators.isValidBaseUrl(trimmedUrl) else {
             alertMessage = "模型地址格式不正确，需以 http:// 或 https:// 开头"
             showAlert = true
             return
