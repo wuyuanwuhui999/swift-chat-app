@@ -28,7 +28,7 @@ App 的唯一根视图（由 `ChatApp.swift` 的 `WindowGroup` 直接渲染）�
 - **依赖模型**：`Models/User.swift`、`Models/BaseResponse.swift`、`Models/AppState.swift`
 - **依赖服务**：
   - `HTTPClient.shared.getUserData(completion:)`
-  - `AppState.shared.updateUserData(_:)` / `AppState.shared.isLoggedIn` / `AppState.shared.clearUserData()`
+  - `AppState.shared.updateUserData(_:)` / `AppState.shared.isLoggedIn`
   - `TokenManager.shared.getToken()`
 - **主题**：`Colors.pageBackgroundColor`
 
@@ -37,7 +37,7 @@ App 的唯一根视图（由 `ChatApp.swift` 的 `WindowGroup` 直接渲染）�
 | 属性 | 类型 | 初值 | 作用 |
 |---|---|---|---|
 | `appState`（`@ObservedObject private`） | `AppState` | `AppState.shared` | 全局状态单例引用；本页只写不读（读写都直接用 `AppState.shared`） |
-| `isCheckingLogin`（`@State private`） | `Bool` | `true` | 「正在校验登录态」标记；**视图层从未使用它**（见 §10 已知坑） |
+| `isCheckingLogin`（`@State private`） | `Bool` | `true` | 「正在校验登录态」标记；`true` 时在 Logo 下方显示 `ProgressView` 加载指示（见 §4） |
 | `showLoginPage`（`@State private`） | `Bool` | `false` | 控制 `LoginPage` 的 `fullScreenCover` |
 | `navigateToCompanyPage`（`@State private`） | `Bool` | `false` | 控制 `CompanyPage` 的 `fullScreenCover` |
 
@@ -51,6 +51,7 @@ body: ZStack
 └─ VStack
    ├─ Spacer()
    ├─ AIAvatar.large()                               = AIAvatar.largeSquare()，80x80 方形
+   ├─ if isCheckingLogin { ProgressView() }          校验中的加载指示（tint primaryColor）
    └─ Spacer()
 
 修饰器（挂在 ZStack 上）
@@ -71,7 +72,7 @@ body: ZStack
 - **签名**：`private func checkLoginStatus()`
 - **触发**：`.onAppear`（App 冷启动首帧）
 - **步骤**：
-  1. `if let token = TokenManager.shared.getToken()` —— 从 `UserDefaults`（key `auth_token`）读 token。
+  1. `if TokenManager.shared.getToken() != nil` —— 从 `UserDefaults`（key `auth_token`）读 token 判断存在性，不取用其值。
   2. **有 token 分支**：调用 `HTTPClient.shared.getUserData { result in ... }`，回调内 `DispatchQueue.main.async` 切主线程：
      - `.success(let userData)`：
        1. `AppState.shared.updateUserData(userData)`
@@ -79,9 +80,8 @@ body: ZStack
        3. `self.navigateToCompanyPage = true` → 弹出 `CompanyPage`
      - `.failure(let error)`：
        1. `print("获取用户信息失败: \(error.localizedDescription)")`
-       2. `AppState.shared.clearUserData()`（清 token、清租户/模型/公司内存态、清 `current_tenant_id` 与 `current_model_id` 缓存；**不清 `companyId_<userId>`**）
-       3. `AppState.shared.isLoggedIn = false`
-       4. `self.showLoginPage = true` → 弹出 `LoginPage`
+       2. `AppState.shared.isLoggedIn = false`
+       3. `self.showLoginPage = true` → 弹出 `LoginPage`
      - 两个分支最后统一 `isCheckingLogin = false`
   3. **无 token 分支**：`DispatchQueue.main.asyncAfter(deadline: .now() + 1)`（**硬编码延迟 1 秒**）后依次
      `isCheckingLogin = false`、`AppState.shared.isLoggedIn = false`、`showLoginPage = true`。
@@ -130,7 +130,7 @@ body: ZStack
   - `HTTPClient` 层：`BaseResponse.token` 非空时，**通用 `request` 方法**先 `TokenManager.shared.saveToken(token)`；
     `getUserData` 内部**再一次** `TokenManager.shared.saveToken(token)` + `AppState.shared.updateToken(token)`（token 会被续期两遍，无副作用但重复）。
   - 页面层成功：写 `AppState.userData`、`isLoggedIn = true`，置 `navigateToCompanyPage = true`。
-  - 页面层失败：`clearUserData()` + `showLoginPage = true`，无 UI 提示。
+  - 页面层失败：`isLoggedIn = false` + `showLoginPage = true`，无 UI 提示（**不再调用 `clearUserData()`**，本地 token 保留，供下次启动重新自检）。
   - HTTP 401 会在 `request` 中被转换为 `NetworkError.unauthorized`（文案「未授权，请重新登录」），走 `.failure` 分支。
 
 ## 7. 数据模型
@@ -164,7 +164,7 @@ App 冷启动
             │         │    → AppState.updateUserData / isLoggedIn = true
             │         │    → fullScreenCover: CompanyPage
             │         └─ FAIL / 401 / 网络错误 / data 为空
-            │              → AppState.clearUserData() + isLoggedIn = false
+            │              → isLoggedIn = false
             │              → fullScreenCover: LoginPage
             └─ token == nil
                  └─ 延迟 1.0s（asyncAfter）
@@ -174,9 +174,9 @@ App 冷启动
 
 边界条件：
 
-- **token 存在但已过期**：网关返回 401 → `NetworkError.unauthorized` → 走失败分支清态，用户无感知地看到登录页。
+- **token 存在但已过期**：网关返回 401 → `NetworkError.unauthorized` → 走失败分支置 `isLoggedIn = false`，用户无感知地看到登录页。
 - **`status == "FAIL"` 或 `data` 为空**：`getUserData` 内部转成 `NetworkError.custom(message: response.msg ?? "获取用户信息失败")`，同样走失败分支。
-- **无网络**：`NetworkError.networkError`，同样降级到 `LoginPage`（有 token 的用户会被"登出"，因为 `clearUserData()` 已清掉本地 token）。
+- **无网络**：`NetworkError.networkError`，同样降级到 `LoginPage`（本地 token 保留、不再 `clearUserData()`；下次启动会用该 token 重新自检，网络恢复即可进入）。
 - **缓存命中**：本页不读任何业务缓存（租户/模型/公司 ID 由 `CompanyPage` / `HomePage` 自己处理）。
 
 ## 10. 二次开发指引
@@ -192,15 +192,9 @@ App 冷启动
 
 1. **同一视图挂了两个 `fullScreenCover`**：`.fullScreenCover(isPresented: $showLoginPage)` 与
    `.fullScreenCover(isPresented: $navigateToCompanyPage)` 直接叠加在同一个 `ZStack` 上。SwiftUI 对同一视图的多个同类 presentation 修饰器支持并不可靠（历史上存在只有最后一个生效的问题）。由于两条分支互斥、且同一时刻只有一个为 `true`，目前表现正常，但**新增第三个 cover 或改成可能同时为 true 的逻辑时会踩坑**。稳妥做法是改用单个枚举驱动的 `fullScreenCover(item:)`。
-2. **`isCheckingLogin` 是死状态**：声明、赋值（三处）但视图里从未读取，没有任何 loading 反馈；`getUserData` 慢时用户只看到静止的 Logo。
-3. **`if let token = ...` 中的 `token` 未被使用**：只用来判断存在性，Swift 会给 unused-variable 警告，应写成 `if TokenManager.shared.getToken() != nil`。
-4. **无 token 时硬编码 1 秒延迟**：`asyncAfter(deadline: .now() + 1)` 是为了让 Logo 露一下脸，属于写死的体验参数，改动前先确认没有别处依赖这个时序。
-5. **失败静默**：网络异常与 token 失效的处理完全相同（都是清态 + 跳登录），且只 `print`，线上无法区分"服务挂了"和"登录过期"。
-6. **`clearUserData()` 不清公司缓存**：`AppState.clearUserData()` 内注释明确"不清除 companyId 缓存，因为切换账号时需要"，所以启动失败后 `companyId_<userId>` 仍在 `UserDefaults` 里。
-7. **本页混用 `appState` 与 `AppState.shared`**：`@ObservedObject private var appState` 声明了但 `checkLoginStatus()` 里全部写成 `AppState.shared.xxx`，`appState` 实际只起到"订阅刷新"的作用。
-8. **共享文档中的底层签名与实现不符**：`docs/_共享上下文与文档模板.md` 写的是
-   `HTTPClient.request<T>(endpoint:body:queryItems:completion:)`，真实签名是
-   `request<T: Codable>(endpoint:method:parameters:customBody:customHeaders:completion:)`（`HTTPClient.swift` 第 57 行）。GET/DELETE 时 `parameters` 拼到 query，其余方法序列化成 JSON body。
+2. **无 token 时硬编码 1 秒延迟**：`asyncAfter(deadline: .now() + 1)` 是为了让 Logo 露一下脸，属于写死的体验参数，改动前先确认没有别处依赖这个时序。
+3. **失败静默**：网络异常与 token 失效的处理完全相同（都是降级跳登录页），且只 `print`，线上无法区分"服务挂了"和"登录过期"。
+4. **本页混用 `appState` 与 `AppState.shared`**：`@ObservedObject private var appState` 声明了但 `checkLoginStatus()` 里全部写成 `AppState.shared.xxx`，`appState` 实际只起到"订阅刷新"的作用。
 
 ## 相关文档
 
