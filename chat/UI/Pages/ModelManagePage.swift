@@ -531,7 +531,7 @@ struct SwipeableModelRow: View {
                     }
                     
                     // 第二行：模型类型标签
-                    Text(model.type)
+                    Text(ChatModelType.displayName(for: model.type))
                         .font(.system(size: Dimens.normalFont - 2))
                         .foregroundColor(Colors.grayColor)
                         .padding(.horizontal, Dimens.smallIcon)
