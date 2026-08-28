@@ -36,12 +36,11 @@ App 的唯一根视图（由 `ChatApp.swift` 的 `WindowGroup` 直接渲染）�
 
 | 属性 | 类型 | 初值 | 作用 |
 |---|---|---|---|
-| `appState`（`@ObservedObject private`） | `AppState` | `AppState.shared` | 全局状态单例引用；本页只写不读（读写都直接用 `AppState.shared`） |
 | `isCheckingLogin`（`@State private`） | `Bool` | `true` | 「正在校验登录态」标记；`true` 时在 Logo 下方显示 `ProgressView` 加载指示（见 §4） |
 | `showLoginPage`（`@State private`） | `Bool` | `false` | 控制 `LoginPage` 的 `fullScreenCover` |
 | `navigateToCompanyPage`（`@State private`） | `Bool` | `false` | 控制 `CompanyPage` 的 `fullScreenCover` |
 
-无 `@StateObject` / `@Binding` / `@Environment`。
+无 `@StateObject` / `@ObservedObject` / `@Binding` / `@Environment`。
 
 ## 4. 视图结构
 
@@ -194,7 +193,6 @@ App 冷启动
    `.fullScreenCover(isPresented: $navigateToCompanyPage)` 直接叠加在同一个 `ZStack` 上。SwiftUI 对同一视图的多个同类 presentation 修饰器支持并不可靠（历史上存在只有最后一个生效的问题）。由于两条分支互斥、且同一时刻只有一个为 `true`，目前表现正常，但**新增第三个 cover 或改成可能同时为 true 的逻辑时会踩坑**。稳妥做法是改用单个枚举驱动的 `fullScreenCover(item:)`。
 2. **无 token 时硬编码 1 秒延迟**：`asyncAfter(deadline: .now() + 1)` 是为了让 Logo 露一下脸，属于写死的体验参数，改动前先确认没有别处依赖这个时序。
 3. **失败静默**：网络异常与 token 失效的处理完全相同（都是降级跳登录页），且只 `print`，线上无法区分"服务挂了"和"登录过期"。
-4. **本页混用 `appState` 与 `AppState.shared`**：`@ObservedObject private var appState` 声明了但 `checkLoginStatus()` 里全部写成 `AppState.shared.xxx`，`appState` 实际只起到"订阅刷新"的作用。
 
 ## 相关文档
 

@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct WelcomePage: View {
-    @ObservedObject private var appState = AppState.shared
     @State private var isCheckingLogin = true
     @State private var showLoginPage = false
     @State private var navigateToCompanyPage = false
