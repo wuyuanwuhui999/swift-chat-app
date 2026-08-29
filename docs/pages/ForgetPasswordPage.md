@@ -27,7 +27,7 @@ apis:
 - **依赖组件**：**无外部组件**。导航栏与表单行都是页内私有实现
   （`customNavigationBar`、`formRow(label:isRequired:content:)`）；本页**没有** `DividerLine()`（只有一行表单）
 - **依赖模型**：`Models/BaseResponse.swift`（`BaseResponse<EmptyData>`）
-- **依赖服务**：`HTTPClient.shared.sendEmailVerificationCode(email:completion:)`
+- **依赖服务**：`HTTPClient.shared.sendEmailVertifyCode(email:completion:)`
 - **不依赖** `AppState` / `TokenManager`（本页不涉及登录态）
 
 ## 3. 状态定义
@@ -45,7 +45,7 @@ apis:
 
 | 属性 | 类型 | 规则 |
 |---|---|---|
-| `isEmailValid`（`private var`） | `Bool` | 每次求值都新建 `NSPredicate`，正则 `[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}` |
+| `isEmailValid`（`private var`） | `Bool` | 每次求值都调 `Validators.isValidEmail(email)`（`Utils/Validators.swift`，与登录/注册页共用同一段正则） |
 
 无 `@ObservedObject` / `@StateObject` / `@Binding`。
 
@@ -104,10 +104,7 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 ### `isEmailValid`（计算属性）
 - **签名**：`private var isEmailValid: Bool`
 - **触发**：`body` 每次求值（按钮底色 + `disabled` 都读它），**输入每变一个字符就重算一次**
-- **步骤**：
-  1. 正则字符串 `[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}`
-  2. `NSPredicate(format: "SELF MATCHES %@", emailRegex)`
-  3. `emailPredicate.evaluate(with: email)`
+- **步骤**：调 `Validators.isValidEmail(email)`（`Utils/Validators.swift`，与登录/注册页共用同一段正则）
 - **注意**：与 [LoginPage](LoginPage.md) 不同，这里是**计算属性**而非 `@State` + `onChange`；没有行内错误文案，校验失败只表现为按钮灰色不可点
 
 ### `handleSubmit()`
@@ -115,7 +112,7 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 - **触发**：「提交」按钮点击
 - **步骤**：
   1. `isSending = true`
-  2. `HTTPClient.shared.sendEmailVerificationCode(email: email)`
+  2. `HTTPClient.shared.sendEmailVertifyCode(email: email)`
   3. 回调内 `DispatchQueue.main.async` → `self.isSending = false`
   4. `.success(let response)` 且 `response.isSuccess`：
      1. `alertMessage = "验证码已发送到您的邮箱"`（**写死文案，不用后端 `msg`**）
@@ -131,15 +128,15 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 
 | # | HTTPClient 方法 | METHOD | 路径 | 触发时机 | 后端文档 |
 |---|---|---|---|---|---|
-| 1 | `sendEmailVerificationCode` | POST | `/service/user/sendEmailVertifyCode` | 点「提交」 | `docs/api/user.md` §6 |
+| 1 | `sendEmailVertifyCode` | POST | `/service/user/sendEmailVertifyCode` | 点「提交」 | `docs/api/user.md` §6 |
 
 该接口在后端**鉴权白名单**内（无需 token）。
 
-### 6.1 `sendEmailVerificationCode`
+### 6.1 `sendEmailVertifyCode`
 
-- **Swift 签名**：`func sendEmailVerificationCode(email: String, completion: @escaping (Result<BaseResponse<EmptyData>, NetworkError>) -> Void)`（`HTTPClient.swift` 第 274 行）
+- **Swift 签名**：`func sendEmailVertifyCode(email: String, completion: @escaping (Result<BaseResponse<EmptyData>, NetworkError>) -> Void)`（`HTTPClient.swift` 第 274 行）
 - **APIEndpoint**：`.sendEmailVertifyCode` → `Constants.API.sendEmailVertifyCode = "/service/user/sendEmailVertifyCode"`，method `"POST"`
-  （**路径拼写是 `Vertify`，与后端一致；Swift 方法名却是 `Verification`**）
+  （**路径与 Swift 方法名统一为 `Vertify`，与后端一致**）
 - **底层**：`request(endpoint: .sendEmailVertifyCode, parameters: parameters)`，POST 时 `parameters` 被 `JSONSerialization` 序列化成 JSON body
 - **请求**：
 
@@ -148,8 +145,8 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 | `email` | Body | String | 是 | 收件邮箱（后端实体 `MailRequest`） |
 
 - **响应**：`BaseResponse<EmptyData>`，后端文档 §6 出参示例中 `data` / `msg` / `total` / `token` 全为 `null`，只有 `status`。
-  与其它业务方法不同，`sendEmailVerificationCode` **把整个 `BaseResponse` 原样交给页面**，
-  不把 `status == "FAIL"` 转成 `.failure`，因此页面必须自己判 `response.isSuccess`（本页做了，[LoginPage](LoginPage.md) 没完全做）。
+  与其它业务方法不同，`sendEmailVertifyCode` **把整个 `BaseResponse` 原样交给页面**，
+  不把 `status == "FAIL"` 转成 `.failure`，因此页面必须自己判 `response.isSuccess`（本页与 [LoginPage](LoginPage.md) 都已按 `isSuccess` 分支处理）。
 - **UI 处理**：
   - `isSuccess` → alert「验证码已发送到您的邮箱」+ 1.5 秒后 push `ResetPasswordPage(email: email)`
   - `!isSuccess` → alert（文案取后端 `msg`，兜底「发送验证码失败」），留在本页
@@ -224,7 +221,7 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
   1. 加 `@State private var telephone`
   2. `body` 里追加 `formRow(...)`（需要分割线时得自己写，本页**没有** `DividerLine()`，可从 [RegisterPage](RegisterPage.md) 拷）
   3. 扩展 `isEmailValid` 的判定或改成组合校验
-  4. `HTTPClient.sendEmailVerificationCode` 的 `parameters` 加键 + 改签名
+  4. `HTTPClient.sendEmailVertifyCode` 的 `parameters` 加键 + 改签名
   5. 后端 `MailRequest` 实体 + `docs/api/user.md`
 - **加倒计时防重复发送**：参考 [LoginPage](LoginPage.md) 的 `startCountdown()` + `countdown` + `timer` 三件套（记得在 `onDisappear` 里 `invalidate`）。
 - **加接口**：`Constants.API` → `APIEndpoints.swift` 的 `case` + `path` + `method`（三处）→ `HTTPClient` 方法 → 页面调用。
@@ -233,16 +230,14 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 
 1. **alert 与自动跳转打架**：成功后先 `showAlert = true`，1.5 秒后又 `navigateToReset = true`。用户还没点掉「确定」，`ResetPasswordPage` 就被 push 上来了，alert 与新页面会叠在一起。要么改成 alert 的确定按钮里触发跳转，要么去掉 alert。
 2. **成功文案硬编码，丢掉了后端 `msg`**：`alertMessage = "验证码已发送到您的邮箱"`，后端的成功提示被忽略（失败分支才用 `msg`）。
-3. **`isEmailValid` 是计算属性，每帧重建 `NSPredicate`**：`body` 求值两次读它（按钮底色 + `disabled`），每次都新建正则谓词。字段多了会有可感知开销；[LoginPage](LoginPage.md) / [RegisterPage](RegisterPage.md) 用的是 `@State` + `onChange` 缓存结果，三处实现不统一。
-4. **邮箱正则的第三份拷贝**：同一段正则字符串在 `LoginPage.validateEmail()`、`RegisterPage.validateEmail()`、本页 `isEmailValid` 各存了一份，改规则要改三处。建议抽到 `Utils`。
-5. **没有行内错误提示**：邮箱格式不对时只有按钮变灰，不像 [RegisterPage](RegisterPage.md) 有红字「请输入正确的邮箱地址」，用户不知道为什么点不了。
-6. **无发送频率限制**：见 §9。
-7. **`formRow` 缺少固定标签列宽**：本页 `formRow` **没有** `.frame(width: 80, alignment: .leading)`，而 [RegisterPage](RegisterPage.md) / [ResetPasswordPage](ResetPasswordPage.md) 的同名方法有。三份实现独立拷贝，标签列宽不一致，多字段时对不齐。
-8. **导航栏返回图标颜色与 RegisterPage 不一致**：本页与 [ResetPasswordPage](ResetPasswordPage.md) 用 `Colors.subColor`（中灰），[RegisterPage](RegisterPage.md) 用 `Colors.grayColor`（浅灰）。
-9. **`Dimens.smallIcon` 被当作间距用**：按钮内 `HStack(spacing: Dimens.smallIcon)`，不符合「所有间距统一用 `Dimens.middleMargin`」的样式铁律（同样的问题在 [RegisterPage](RegisterPage.md) / [ResetPasswordPage](ResetPasswordPage.md) 也存在）。
-10. **`NavigationStack` 嵌在 `fullScreenCover` 里**：本页是被 `LoginPage` 以 `fullScreenCover` 弹出的，自带 `NavigationStack`；而 `ResetPasswordPage` 成功后又用 `fullScreenCover` 弹 `CompanyPage`。这条「cover → push → cover」的混合链路会让导航栈里残留 `ForgetPasswordPage` + `ResetPasswordPage`，`CompanyPage` 关闭时的回退路径不直观。
-11. **`ProgressView` 未限制尺寸**：按钮内的 `ProgressView` 没有 `.frame(...)`（[LoginPage](LoginPage.md) 设了 `Dimens.smallIcon`），依赖系统默认大小。
-12. **共享文档中的底层签名与实现不符**：真实签名是 `request<T: Codable>(endpoint:method:parameters:customBody:customHeaders:completion:)`（`HTTPClient.swift` 第 57 行），不是共享文档写的 `request<T>(endpoint:body:queryItems:completion:)`。
+3. **`isEmailValid` 是计算属性，每次求值都重跑正则**：`body` 求值两次读它（按钮底色 + `disabled`），每次都重新调用 `Validators.isValidEmail` 求值。字段多了会有可感知开销；[LoginPage](LoginPage.md) / [RegisterPage](RegisterPage.md) 用的是 `@State` + `onChange` 缓存结果，实现仍不统一（正则已抽到 `Utils/Validators.swift` 共用）。
+4. **没有行内错误提示**：邮箱格式不对时只有按钮变灰，不像 [RegisterPage](RegisterPage.md) 有红字「请输入正确的邮箱地址」，用户不知道为什么点不了。
+5. **无发送频率限制**：见 §9。
+6. **`formRow` 缺少固定标签列宽**：本页 `formRow` **没有** `.frame(width: 80, alignment: .leading)`，而 [RegisterPage](RegisterPage.md) / [ResetPasswordPage](ResetPasswordPage.md) 的同名方法有。三份实现独立拷贝，标签列宽不一致，多字段时对不齐。
+7. **导航栏返回图标颜色与 RegisterPage 不一致**：本页与 [ResetPasswordPage](ResetPasswordPage.md) 用 `Colors.subColor`（中灰），[RegisterPage](RegisterPage.md) 用 `Colors.grayColor`（浅灰）。
+8. **`Dimens.smallIcon` 被当作间距用**：按钮内 `HStack(spacing: Dimens.smallIcon)`，不符合「所有间距统一用 `Dimens.middleMargin`」的样式铁律（同样的问题在 [RegisterPage](RegisterPage.md) / [ResetPasswordPage](ResetPasswordPage.md) 也存在）。
+9. **`NavigationStack` 嵌在 `fullScreenCover` 里**：本页是被 `LoginPage` 以 `fullScreenCover` 弹出的，自带 `NavigationStack`；而 `ResetPasswordPage` 成功后又用 `fullScreenCover` 弹 `CompanyPage`。这条「cover → push → cover」的混合链路会让导航栈里残留 `ForgetPasswordPage` + `ResetPasswordPage`，`CompanyPage` 关闭时的回退路径不直观。
+10. **`ProgressView` 未限制尺寸**：按钮内的 `ProgressView` 没有 `.frame(...)`（[LoginPage](LoginPage.md) 设了 `Dimens.smallIcon`），依赖系统默认大小。
 
 ## 相关文档
 

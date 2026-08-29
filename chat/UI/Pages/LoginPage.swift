@@ -33,9 +33,11 @@ struct LoginPage: View {
     
     var isLoginButtonEnabled: Bool {
         if selectedTab == 0 {
-            return !account.isEmpty && !password.isEmpty
+            // 账号非空 + 密码至少 6 位（与注册/改密页口径一致）
+            return !account.isEmpty && password.count >= 6
         } else {
-            return isEmailValid && !verificationCode.isEmpty
+            // 邮箱合法 + 验证码 6 位
+            return isEmailValid && verificationCode.count == 6
         }
     }
     
@@ -128,12 +130,19 @@ struct LoginPage: View {
                                     )
                                 
                                 Button(action: sendVerificationCode) {
-                                    Image(systemName: "paperplane.fill")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
-                                        .foregroundColor(isEmailValid && countdown == 0 ? Colors.primaryColor : Colors.grayColor)
-                                        .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                                    if isSendingCode {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: Colors.primaryColor))
+                                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                                    } else {
+                                        Image(systemName: "paperplane.fill")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                                            .foregroundColor(isEmailValid && countdown == 0 ? Colors.primaryColor : Colors.grayColor)
+                                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                                    }
                                 }
                                 .disabled(!isEmailValid || isSendingCode || countdown > 0)
                                 .padding(.trailing, Dimens.middleMargin)
@@ -173,14 +182,14 @@ struct LoginPage: View {
                                     .progressViewStyle(CircularProgressViewStyle(tint: .themeWhite))
                                     .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
                             }
-                            Text(isLoggingIn ? "" : "登录")
+                            Text(isLoggingIn ? "登录中..." : "登录")
                                 .font(.system(size: Dimens.normalFont))
                         }
                         .foregroundColor(.themeWhite)
                         .frame(height: Dimens.btnHeight)
                         .frame(maxWidth: .infinity)
                         .background(isLoginButtonEnabled ? Colors.primaryColor : Colors.grayColor)
-                        .cornerRadius(Dimens.btnHeight)
+                        .cornerRadius(Dimens.btnHeight / 2)
                     }
                     .disabled(!isLoginButtonEnabled || isLoggingIn)
                     
@@ -193,7 +202,7 @@ struct LoginPage: View {
                             .frame(maxWidth: .infinity)
                             .background(Color.clear)
                             .overlay(
-                                RoundedRectangle(cornerRadius: Dimens.btnHeight)
+                                RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
                                     .stroke(Colors.grayColor, lineWidth: 1)
                             )
                     }
@@ -234,13 +243,17 @@ struct LoginPage: View {
             timer?.invalidate()
             timer = nil
         }
+        .onChange(of: selectedTab) { _ in
+            // 切换 Tab 时停止倒计时并重置，避免切回邮箱 Tab 时倒计时跳秒
+            timer?.invalidate()
+            timer = nil
+            countdown = 0
+        }
     }
     
     // MARK: - 邮箱验证
     private func validateEmail() {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        isEmailValid = emailPredicate.evaluate(with: email)
+        isEmailValid = Validators.isValidEmail(email)
     }
     
     // MARK: - 发送验证码
@@ -249,18 +262,20 @@ struct LoginPage: View {
         
         isSendingCode = true
         
-        HTTPClient.shared.sendEmailVerificationCode(email: email) { result in
+        HTTPClient.shared.sendEmailVertifyCode(email: email) { result in
             DispatchQueue.main.async {
                 isSendingCode = false
                 
                 switch result {
                 case .success(let response):
-                    alertMessage = response.msg ?? "验证码已发送"
-                    showAlert = true
-                    
-                    // 开始倒计时
                     if response.isSuccess {
+                        alertMessage = response.msg ?? "验证码已发送"
+                        showAlert = true
+                        // 开始倒计时
                         startCountdown()
+                    } else {
+                        alertMessage = response.msg ?? "发送验证码失败"
+                        showAlert = true
                     }
                     
                 case .failure(let error):
@@ -305,19 +320,9 @@ struct LoginPage: View {
                 
                 switch result {
                 case .success(let loginResponse):
-                    // 1. 先保存 token 到 TokenManager
-                    TokenManager.shared.saveToken(loginResponse.token)
-                    // 2. 更新 AppState
+                    // 更新用户信息与 token（updateToken 内部已 saveToken + isLoggedIn = true）
                     appState.updateUserData(loginResponse.userData)
                     appState.updateToken(loginResponse.token)
-                    appState.isLoggedIn = true
-                    
-                    // 3. 验证 token 是否保存成功
-                    if let _ = TokenManager.shared.getToken() {
-                        print("✅ Token 保存验证成功")
-                    } else {
-                        print("❌ Token 保存验证失败")
-                    }
                     
                     navigateToCompanyPage = true
                     
@@ -339,21 +344,11 @@ struct LoginPage: View {
                 
                 switch result {
                 case .success(let loginResponse):
-                    // 1. 先保存 token 到 TokenManager
-                    TokenManager.shared.saveToken(loginResponse.token)
-                    // 2. 更新 AppState
+                    // 更新用户信息与 token（updateToken 内部已 saveToken + isLoggedIn = true）
                     appState.updateUserData(loginResponse.userData)
                     appState.updateToken(loginResponse.token)
-                    appState.isLoggedIn = true
                     
-                    // 3. 验证 token 是否保存成功
-                    if let _ = TokenManager.shared.getToken() {
-                        print("✅ Token 保存验证成功")
-                    } else {
-                        print("❌ Token 保存验证失败")
-                    }
-                    
-                    // 4. 跳转到 CompanyPage
+                    // 跳转到 CompanyPage
                     navigateToCompanyPage = true
                     
                 case .failure(let error):

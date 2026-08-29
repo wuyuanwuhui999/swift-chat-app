@@ -435,15 +435,13 @@ struct RegisterPage: View {
         isPhoneValid = phonePredicate.evaluate(with: telephone)
     }
     
-    /// 验证邮箱格式
+    /// 验证邮箱格式（复用 Validators.isValidEmail）
     private func validateEmail() {
         if email.isEmpty {
             isEmailValid = false
             return
         }
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        isEmailValid = emailPredicate.evaluate(with: email)
+        isEmailValid = Validators.isValidEmail(email)
     }
     
     /// 格式化日期为字符串

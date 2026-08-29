@@ -20,4 +20,13 @@ enum Validators {
         }
         return true
     }
+
+    /// 校验邮箱格式（登录 / 注册 / 忘记密码 / 个人资料页共用同一段正则）
+    /// - Parameter email: 待校验邮箱字符串
+    /// - Returns: 合法返回 true
+    static func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
 }

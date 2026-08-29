@@ -263,7 +263,7 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 
 - **改文案 / 样式**：标题在 `customNavigationBar`；三个字段标签与占位在 `body` 的 `formRow(...)` 调用处；按钮文案在确定 `Button` 的 `Text(isResetting ? ... : ...)`；行样式改 `formRow`，分割线改 `DividerLine()`。
 - **加「重新发送验证码」**：需要 ① 在页面加 `countdown` / `timer` / `isSendingCode` 三个 `@State` ② 调
-  `HTTPClient.shared.sendEmailVerificationCode(email: email)`（已有方法，见 [ForgetPasswordPage](ForgetPasswordPage.md) §6.1）
+  `HTTPClient.shared.sendEmailVertifyCode(email: email)`（已有方法，见 [ForgetPasswordPage](ForgetPasswordPage.md) §6.1）
   ③ 参考 [LoginPage](LoginPage.md) 的 `startCountdown()` 实现倒计时并在 `onDisappear` 里 `invalidate`。
 - **加密码强度规则**：改 `handleResetPassword()` 里的 `newPassword.count < 6` 分支，或把规则提到 `isFormValid` 让按钮提前置灰（建议同步给 [RegisterPage](RegisterPage.md)，它目前**没有**长度校验）。
 - **加字段**：`Models/User.swift`（含 `CodingKeys`）→ `HTTPClient.resetPassword` 的 `parameters` → 页面 `@State` → `body` 的 `formRow` → 后端 `ResetPasswordConfirm` 实体 + `docs/api/user.md`。

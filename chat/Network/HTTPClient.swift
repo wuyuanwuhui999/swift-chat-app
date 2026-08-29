@@ -271,7 +271,7 @@ extension HTTPClient {
         }
     }
     
-    func sendEmailVerificationCode(email: String, completion: @escaping (Result<BaseResponse<EmptyData>, NetworkError>) -> Void) {
+    func sendEmailVertifyCode(email: String, completion: @escaping (Result<BaseResponse<EmptyData>, NetworkError>) -> Void) {
         let parameters: [String: Any] = [
             "email": email
         ]

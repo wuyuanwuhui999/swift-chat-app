@@ -156,7 +156,7 @@ body: VStack(spacing: 0)
 - 正则 `^1[3-9]\d{9}$`（大陆手机号），`NSPredicate` 校验。
 
 ### `validateEmail(_:)`
-- 正则 `[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}`，`NSPredicate` 校验。
+- 调 `Validators.isValidEmail(_:)`（`Utils/Validators.swift`，与登录/注册/忘记密码页共用同一段正则）。
 
 ### `handleLogout()`
 - **触发**：「确认退出」alert 的 `.destructive`「确定」按钮

@@ -420,7 +420,7 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
   4. `body` 里加 `formRow(...)` + `DividerLine()`
   5. 需要必填时同步 `isFormValid` 与 `handleRegister()` 的兜底校验
   6. 后端：`user` 表字段 + `UserCreate` 实体 + `docs/api/user.md`
-- **改校验规则**：手机号正则在 `validatePhone()`，邮箱正则在 `validateEmail()`（注意 `LoginPage` / `ForgetPasswordPage` 各有一份拷贝）。
+- **改校验规则**：手机号正则在 `validatePhone()`，邮箱校验统一走 `Utils/Validators.swift` 的 `isValidEmail(_:)`（登录/忘记密码/个人资料页共用）。
 - **改防抖时长**：`handleAccountChange` 里的 `.now() + 1`。
 - **加接口**：`Constants.API` → `APIEndpoints.swift` 的 `case` + `path` + `method`（三处）→ `HTTPClient` 方法 → 页面调用。
 
@@ -437,7 +437,7 @@ formRow(label:isRequired:content:): HStack(alignment: .center, spacing: Dimens.m
 9. **「帐号」与「账号」用字不统一**：本页标签与占位是「帐号」，[LoginPage](LoginPage.md) 是「账号」，`vertifyUser` 的 alert 文案又是「该账号已被注册」。
 10. **密码没有强度/长度校验**：只校验两次一致 + 非空。[ResetPasswordPage](ResetPasswordPage.md) 有 6 位下限校验，注册页没有，会出现「注册时能设 1 位密码，重置时却不允许」的不一致。
 11. **`isEmailValid` / `isPhoneValid` 初值都是 `true`**：进入页面尚未输入时它们为真，`isFormValid` 靠 `!email.isEmpty` 兜住邮箱；电话是非必填所以无影响。但 `validateEmail()` 会在空串时把 `isEmailValid` 置 `false`，导致「输入后再清空邮箱」和「从未输入邮箱」两种状态下 `isEmailValid` 值不同（`false` vs `true`），属隐式不一致。
-12. **注册成功不显式 `saveToken`**：依赖 `HTTPClient.request` 与 `AppState.updateToken` 的隐式保存（与 [LoginPage](LoginPage.md) 显式三连写法不一致）。改动 `AppState.updateToken` 时要注意本页会静默失去 token。
+12. **注册成功不显式 `saveToken`**：依赖 `HTTPClient.request` 与 `AppState.updateToken` 的隐式保存（[LoginPage](LoginPage.md) 现也如此，登录页已去掉冗余的手动 `saveToken`）。改动 `AppState.updateToken` 时要注意本页会静默失去 token。
 13. **无 `onDisappear` 清理**：`verifyWorkItem` 在页面关闭时不会被 cancel，1 秒内关页会执行一次无意义的查重请求。
 14. **后端文档 `register` 出参示例与客户端解码要求冲突**：见 §6.2 末尾提示。
 

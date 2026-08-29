@@ -55,7 +55,7 @@ chat/                          Xcode 工程根
     │   ├── Colors.swift           全部颜色
     │   └── Dimens.swift           全部尺寸、字号、间距
     ├── Utils/TokenManager.swift   token 读写（UserDefaults）
-    ├── Utils/Validators.swift     表单校验工具（模型地址格式等，各页共用）
+    ├── Utils/Validators.swift     表单校验工具（模型地址、邮箱格式，各页共用）
     └── Resources/ Assets.xcassets
 ```
 

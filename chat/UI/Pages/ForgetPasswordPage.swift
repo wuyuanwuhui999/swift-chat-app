@@ -9,11 +9,9 @@ struct ForgetPasswordPage: View {
     @State private var alertMessage = ""
     @State private var navigateToReset = false
     
-    // 邮箱格式校验
+    // 邮箱格式校验（复用 Validators.isValidEmail）
     private var isEmailValid: Bool {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        return emailPredicate.evaluate(with: email)
+        return Validators.isValidEmail(email)
     }
     
     var body: some View {
@@ -149,7 +147,7 @@ struct ForgetPasswordPage: View {
     private func handleSubmit() {
         isSending = true
         
-        HTTPClient.shared.sendEmailVerificationCode(email: email) { result in
+        HTTPClient.shared.sendEmailVertifyCode(email: email) { result in
             DispatchQueue.main.async {
                 self.isSending = false
                 
