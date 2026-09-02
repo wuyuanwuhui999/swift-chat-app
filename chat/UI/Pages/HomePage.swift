@@ -50,7 +50,12 @@ struct HomePage: View {
                 ChatActionButtons(
                     showThink: $showThink,
                     language: $language,
-                    showDocumentQuery: $showDocumentQuery
+                    showDocumentQuery: $showDocumentQuery,
+                    selectedDocCount: selectedDocIds.count,  // 新增：传递选中的文档数量
+                    onDocumentQueryToggle: {
+                        // 点击文档查询按钮时，直接弹出文档选择器
+                        showDocumentPicker = true
+                    }
                 )
                 // 底部输入栏
                 inputBarView
@@ -150,8 +155,8 @@ struct HomePage: View {
             onSend: sendMessage,
             onClear: clearAllMessages,
             selectedDocCount: selectedDocIds.count,
-            showDocumentSelectionButton: showDocumentQuery,
-            onDocumentPicker: { showDocumentPicker = true }
+            showDocumentSelectionButton: false, // 不再在输入栏显示文档选择按钮
+            onDocumentPicker: {}
         )
     }
 
@@ -204,11 +209,22 @@ struct HomePage: View {
             DocumentPickerDialog(
                 isPresented: $showDocumentPicker,
                 onConfirm: { selectedIds in
-                    selectedDocIds = selectedIds
+                    // 选中文档并点击确定
                     if !selectedIds.isEmpty {
-                        showDocumentQuery = true
+                        selectedDocIds = selectedIds
+                        showDocumentQuery = true // 激活文档查询按钮
+                    } else {
+                        // 如果没选任何文档，重置状态
+                        showDocumentQuery = false
+                        selectedDocIds = []
                     }
                     print("✅ 已选择 \(selectedIds.count) 个文档")
+                },
+                onCancel: {
+                    // 点击取消时，重置状态
+                    showDocumentQuery = false
+                    selectedDocIds = []
+                    print("❌ 取消文档选择")
                 }
             )
         }

@@ -33,14 +33,6 @@ struct MessageInputBar: View {
                 .lineLimit(1...5)
                 .disabled(isSending)  // 发送中禁用输入框
             
-            // 文档选择按钮（仅在查询文档激活时显示）
-            if showDocumentSelectionButton {
-                DocumentSelectionButton(
-                    selectedCount: selectedDocCount,
-                    onTap: onDocumentPicker
-                )
-            }
-            
             // 发送按钮
             Button(action: onSend) {
                 if isSending {

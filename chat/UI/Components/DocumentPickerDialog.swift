@@ -14,6 +14,7 @@ struct DocumentPickerDialog: View {
     @FocusState private var isInputFocused: Bool
     
     let onConfirm: (Set<String>) -> Void
+    let onCancel: (() -> Void)?  // 新增：取消回调
     
     var body: some View {
         GeometryReader { geometry in
@@ -22,6 +23,7 @@ struct DocumentPickerDialog: View {
                 Color.black.opacity(0.5)
                     .ignoresSafeArea()
                     .onTapGesture {
+                        onCancel?()
                         isPresented = false
                     }
                 
@@ -177,6 +179,7 @@ struct DocumentPickerDialog: View {
             HStack(spacing: Dimens.middleMargin) {
                 // 取消按钮
                 Button(action: {
+                    onCancel?()  // 调用取消回调
                     isPresented = false
                 }) {
                     Text("取消")
@@ -207,6 +210,14 @@ struct DocumentPickerDialog: View {
                 .disabled(selectedDocIds.isEmpty)
             }
             .padding(.horizontal, Dimens.middleMargin)
+            .padding(.vertical, Dimens.middleMargin)
+            .background(Colors.whiteColor)
+            .overlay(
+                Rectangle()
+                    .fill(Colors.grayColor.opacity(0.3))
+                    .frame(height: 1),
+                alignment: .top
+            )
         }
         .padding(.vertical, Dimens.middleMargin)
         .background(Colors.whiteColor)
@@ -483,6 +494,7 @@ struct RoundedCorner: Shape {
 #Preview {
     DocumentPickerDialog(
         isPresented: .constant(true),
-        onConfirm: { _ in }
+        onConfirm: { _ in },
+        onCancel: { }
     )
 }
