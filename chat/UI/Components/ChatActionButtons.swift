@@ -1,15 +1,18 @@
 import SwiftUI
 
-/// 聊天操作按钮组（深度思考、中英切换、查询文档）
+/// 聊天操作按钮组（深度思考、中英切换、查询文档、提示词）
 struct ChatActionButtons: View {
     @Binding var showThink: Bool
     @Binding var language: String  // "zh" 或 "en"
     @Binding var showDocumentQuery: Bool  // 是否显示查询文档按钮激活状态
+    @Binding var showPromptActive: Bool  // 提示词按钮是否激活
     
     // 新增：文档数量（用于显示角标）
     var selectedDocCount: Int = 0
     // 新增：点击文档查询按钮的回调
     var onDocumentQueryToggle: () -> Void
+    // 新增：点击提示词按钮的回调
+    var onPromptToggle: () -> Void
     
     var body: some View {
         HStack(spacing: Dimens.middleMargin) {
@@ -61,6 +64,22 @@ struct ChatActionButtons: View {
                 }
             }
             
+            // 提示词按钮
+            Button(action: {
+                onPromptToggle()
+            }) {
+                Text("提示词")
+                    .font(.system(size: Dimens.normalFont))
+                    .foregroundColor(showPromptActive ? Colors.primaryColor : Colors.grayColor)
+                    .padding(.horizontal, Dimens.middleMargin)
+                    .frame(height: .smallBtnHeight)
+                    .background(Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                            .stroke(showPromptActive ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
+                    )
+            }
+            
             // 中英文切换按钮
             Button(action: {
                 language = language == "zh" ? "en" : "zh"
@@ -87,31 +106,24 @@ struct ChatActionButtons: View {
 
 #Preview {
     VStack(spacing: 20) {
-        // 查询文档未激活状态（无角标）
         ChatActionButtons(
             showThink: .constant(false),
             language: .constant("zh"),
             showDocumentQuery: .constant(false),
+            showPromptActive: .constant(false),
             selectedDocCount: 0,
-            onDocumentQueryToggle: {}
+            onDocumentQueryToggle: {},
+            onPromptToggle: {}
         )
         
-        // 查询文档激活状态（有角标）
         ChatActionButtons(
             showThink: .constant(true),
             language: .constant("en"),
             showDocumentQuery: .constant(true),
+            showPromptActive: .constant(true),
             selectedDocCount: 3,
-            onDocumentQueryToggle: {}
-        )
-        
-        // 查询文档激活但无文档（无角标）
-        ChatActionButtons(
-            showThink: .constant(false),
-            language: .constant("zh"),
-            showDocumentQuery: .constant(true),
-            selectedDocCount: 0,
-            onDocumentQueryToggle: {}
+            onDocumentQueryToggle: {},
+            onPromptToggle: {}
         )
     }
     .padding()

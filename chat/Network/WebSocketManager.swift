@@ -33,6 +33,7 @@ class WebSocketManager: NSObject, ObservableObject {
         language: String,
         docIds: [String] = [],
         type: String = "",
+        promptId: String? = nil,  // 新增：提示词ID参数
         onMessage: @escaping (String) -> Void,
         onComplete: @escaping () -> Void
     ) {
@@ -71,7 +72,8 @@ class WebSocketManager: NSObject, ObservableObject {
             showThink: showThink,
             language: language,
             docIds: docIds,
-            type: type
+            type: type,
+            promptId: promptId  // 新增
         )
         
         // 5. 开始接收消息
@@ -87,12 +89,13 @@ class WebSocketManager: NSObject, ObservableObject {
         showThink: Bool,
         language: String,
         docIds: [String] = [],
-        type: String = ""
+        type: String = "",
+        promptId: String? = nil  // 新增
     ) {
         // 从 AppState 获取当前提示词内容
         let systemPrompt = AppState.shared.currentPrompt?.prompt ?? ""
         
-        let message: [String: Any] = [
+        var message: [String: Any] = [
             "modelId": modelId,
             "chatId": chatId,
             "tenantId": tenantId,
@@ -104,6 +107,11 @@ class WebSocketManager: NSObject, ObservableObject {
             "showThink": showThink,
             "language": language
         ]
+
+        // 如果有选中的提示词ID，添加到消息中
+        if let promptId = promptId, !promptId.isEmpty {
+            message["promptId"] = promptId
+        }
         
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: message)

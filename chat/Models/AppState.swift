@@ -20,6 +20,8 @@ class AppState: ObservableObject {
     @Published var modelList: [ChatModel] = []  // 模型列表
     @Published var currentPrompt: Prompt?  // 当前用户的提示词
     @Published var currentCompany: Company?  // 当前选中的公司
+    @Published var currentSelectedPromptId: String?  // 当前选中的提示词ID（用于WebSocket发送）
+
 
     private let tenantIdKey = "current_tenant_id"
     private let modelIdKey = "current_model_id"

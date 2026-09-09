@@ -36,6 +36,9 @@ struct HomePage: View {
     @State private var showPromptManage = false  // 是否显示提示词管理页面
     @State private var showModelManage = false  // 是否显示模型管理页面
 
+    @State private var showPromptActive = false // 提示词按钮激活状态
+    @State private var showPromptSelection = false // 是否显示提示词选择对话框
+    @State private var selectedPromptId: String? // 当前选中的提示词ID
 
     var body: some View {
         ZStack {
@@ -51,10 +54,13 @@ struct HomePage: View {
                     showThink: $showThink,
                     language: $language,
                     showDocumentQuery: $showDocumentQuery,
-                    selectedDocCount: selectedDocIds.count,  // 新增：传递选中的文档数量
+                    showPromptActive: $showPromptActive,
+                    selectedDocCount: selectedDocIds.count,
                     onDocumentQueryToggle: {
-                        // 点击文档查询按钮时，直接弹出文档选择器
                         showDocumentPicker = true
+                    },
+                    onPromptToggle: {
+                        showPromptSelection = true
                     }
                 )
                 // 底部输入栏
@@ -75,6 +81,7 @@ struct HomePage: View {
         .overlay(chatHistoryOverlay)
         .overlay(uploadDocumentOverlay)
         .overlay(myDocumentsOverlay)
+        .overlay(promptSelectionOverlay)
         .fullScreenCover(isPresented: $showModelManage) {
             ModelManagePage()
         }
@@ -242,6 +249,36 @@ struct HomePage: View {
         }
     }
 
+    /// 提示词选择对话框覆盖层
+    @ViewBuilder
+    private var promptSelectionOverlay: some View {
+        if showPromptSelection {
+            PromptSelectionDialog(
+                isPresented: $showPromptSelection,
+                onConfirm: { promptId in
+                    if let id = promptId {
+                        // 用户选择了提示词
+                        selectedPromptId = id
+                        showPromptActive = true
+                        // 保存提示词ID到AppState（用于WebSocket发送）
+                        appState.currentSelectedPromptId = id
+                        print("✅ 已选择提示词: \(id)")
+                    } else {
+                        // 用户取消了选择，保持原有状态
+                        print("❌ 用户取消选择提示词")
+                    }
+                },
+                onCancel: {
+                    // 点击取消或遮罩层，清除选中状态
+                    if selectedPromptId == nil {
+                        showPromptActive = false
+                        appState.currentSelectedPromptId = nil
+                    }
+                }
+            )
+        }
+    }
+
 
     private var menuActionSheet: ActionSheet {
         var buttons: [ActionSheet.Button] = [
@@ -342,15 +379,15 @@ struct HomePage: View {
             modelId: model.id,
             chatId: currentChatId,
             tenantId: tenant.id,
-            companyId: companyId,  // 新增：传递公司ID
+            companyId: companyId,
             prompt: userMessageContent,
             showThink: showThink,
             language: language,
             docIds: docIds,
             type: messageType,
+            promptId: selectedPromptId,  // 新增：传递选中的提示词ID
             onMessage: { text in
                 DispatchQueue.main.async {
-                    // 收到消息时更新内容，loading 状态由 MessageBubble 内部自动切换
                     self.currentAIResponse += text
                     self.updateLastAIMessage(content: self.currentAIResponse)
                 }
