@@ -20,7 +20,7 @@ enum APIEndpoint {
     case createDir
     case getChatHistory
     case getChatHistoryByChatId
-    case uploadDoc(String, String)  // tenantId, directoryId
+    case uploadDoc
     case deleteDoc(String)
     case updateUser
     case updateAvater
@@ -82,10 +82,8 @@ enum APIEndpoint {
             return Constants.API.getChatHistory
         case .getChatHistoryByChatId:
             return Constants.API.getChatHistoryByChatId
-        case .uploadDoc(let tenantId, let directoryId):
+        case .uploadDoc:
             return Constants.API.uploadDoc
-                .replacingOccurrences(of: "{tenantId}", with: tenantId)
-                .replacingOccurrences(of: "{directoryId}", with: directoryId)
         case .deleteDoc(let docId):
             return Constants.API.deleteDoc.replacingOccurrences(of: "{docId}", with: docId)
         case .updateUser:

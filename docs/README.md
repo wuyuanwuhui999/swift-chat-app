@@ -266,7 +266,7 @@ ChatApp(@main)
 | `getDirectoryList` | GET | `/service/chat/getDirectoryList` |
 | `createDir` | POST | `/service/chat/createDir` |
 | `getDocListByDirId` | GET | `/service/chat/getDocListByDirId` |
-| `uploadDoc` | POST | `/service/chat/uploadDoc/{tenantId}/{directoryId}` |
+| `uploadDoc` | POST | `/service/chat/uploadDoc` |
 | `deleteDoc` | DELETE | `/service/chat/deleteDoc/{docId}` |
 | `getChatHistory` | GET | `/service/chat/getChatHistory` |
 | `getChatHistoryByChatId` | GET | `/service/chat/getChatHistoryByChatId` |

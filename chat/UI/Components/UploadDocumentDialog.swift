@@ -19,6 +19,11 @@ struct UploadDocumentDialog: View {
     @State private var showFilePicker = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var selectedFileURL: URL? = nil
+    @State private var showSettings = false
+    @State private var permission = "private"
+    @State private var splitMethod = "recursive"
+    @State private var chunkSize = "1000"
     
     let onUploadComplete: () -> Void
     
@@ -73,6 +78,20 @@ struct UploadDocumentDialog: View {
                 .background(Colors.whiteColor)
                 .clipShape(RoundedCorner(radius: Dimens.borderRadius, corners: [.topLeft, .topRight]))
                 .position(x: geometry.size.width / 2, y: geometry.size.height - (min(geometry.size.height * 0.8, geometry.size.height - 100) / 2))
+                
+                // 文档设置对话框（选择文件后弹出）
+                if showSettings {
+                    DocumentSettingsDialog(
+                        isPresented: $showSettings,
+                        permission: $permission,
+                        splitMethod: $splitMethod,
+                        chunkSize: $chunkSize,
+                        isSubmitting: isUploading,
+                        onConfirm: {
+                            confirmUpload()
+                        }
+                    )
+                }
             }
         }
         .onAppear {
@@ -217,17 +236,8 @@ struct UploadDocumentDialog: View {
     
     // MARK: - 文件处理方法
     
-    /// 处理文件选择结果
+    /// 处理文件选择结果：校验格式后弹出文档设置对话框
     private func handleFileSelection(_ url: URL) {
-        guard url.startAccessingSecurityScopedResource() else {
-            alertMessage = "无法访问文件"
-            showAlert = true
-            return
-        }
-        defer {
-            url.stopAccessingSecurityScopedResource()
-        }
-        
         let fileExtension = url.pathExtension.lowercased()
         let allowedExtensions = ["txt", "doc", "docx", "md"]
         
@@ -237,16 +247,43 @@ struct UploadDocumentDialog: View {
             return
         }
         
-        uploadFile(fileURL: url)
+        // 记录所选文件，重置设置项为默认值，弹出文档设置对话框
+        selectedFileURL = url
+        permission = "private"
+        splitMethod = "recursive"
+        chunkSize = "1000"
+        showSettings = true
     }
     
-    /// 上传文件
-    private func uploadFile(fileURL: URL) {
-        guard let tenantId = appState.currentTenant?.id,
+    /// 点击设置对话框「确定」：校验后发起上传
+    private func confirmUpload() {
+        // 分割方式为 fixed 时，分割大小必填且须为正整数
+        if splitMethod == "fixed" {
+            guard let size = Int(chunkSize), size > 0 else {
+                alertMessage = "请输入有效的分割大小（正整数）"
+                showAlert = true
+                return
+            }
+        }
+        uploadFile()
+    }
+    
+    /// 上传文件（携带权限、分割方式、分割大小等设置项）
+    private func uploadFile() {
+        guard let fileURL = selectedFileURL,
+              let tenantId = appState.currentTenant?.id,
               let directoryId = selectedDirectoryId else {
             alertMessage = "缺少必要参数"
             showAlert = true
             return
+        }
+        
+        // 重新获取安全作用域访问权限（文件选择与上传之间存在间隔）
+        let didAccess = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if didAccess {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
         }
         
         isUploading = true
@@ -254,10 +291,14 @@ struct UploadDocumentDialog: View {
         HTTPClient.shared.uploadDoc(
             fileURL: fileURL,
             tenantId: tenantId,
-            directoryId: directoryId
+            directoryId: directoryId,
+            splitMethod: splitMethod,
+            chunkSize: chunkSize,
+            permission: permission
         ) { result in
             DispatchQueue.main.async {
                 isUploading = false
+                showSettings = false
                 
                 switch result {
                 case .success(let message):
@@ -272,6 +313,164 @@ struct UploadDocumentDialog: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - 文档设置对话框
+
+/// 文档设置选项（value 为提交值，label 为展示文案）
+private struct DocumentSettingOption: Identifiable {
+    let value: String
+    let label: String
+    var id: String { value }
+}
+
+/// 文档设置对话框组件（选择文件后弹出，配置权限、分割方式等）
+struct DocumentSettingsDialog: View {
+    @Binding var isPresented: Bool
+    @Binding var permission: String
+    @Binding var splitMethod: String
+    @Binding var chunkSize: String
+    let isSubmitting: Bool
+    let onConfirm: () -> Void
+    
+    /// 权限选项
+    private let permissionOptions: [DocumentSettingOption] = [
+        DocumentSettingOption(value: "private", label: "私密"),
+        DocumentSettingOption(value: "tenant", label: "租户内公开"),
+        DocumentSettingOption(value: "company", label: "公司内公开")
+    ]
+    
+    /// 分割方式选项
+    private let splitMethodOptions: [DocumentSettingOption] = [
+        DocumentSettingOption(value: "recursive", label: "递归字符分割（推荐）"),
+        DocumentSettingOption(value: "paragraph", label: "按段落分割"),
+        DocumentSettingOption(value: "sentence", label: "按句子分割"),
+        DocumentSettingOption(value: "fixed", label: "固定长度分割")
+    ]
+    
+    var body: some View {
+        ZStack {
+            // 半透明遮罩层
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    if !isSubmitting {
+                        isPresented = false
+                    }
+                }
+            
+            // 对话框卡片
+            VStack(spacing: 0) {
+                // 标题栏
+                Text("文档设置")
+                    .font(.system(size: Dimens.middleFont))
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Dimens.middleMargin)
+                    .overlay(
+                        Rectangle()
+                            .fill(Colors.grayColor.opacity(0.3))
+                            .frame(height: 1),
+                        alignment: .bottom
+                    )
+                
+                // 设置项
+                VStack(spacing: Dimens.middleMargin) {
+                    // 权限下拉框
+                    settingRow(label: "权限") {
+                        Picker("", selection: $permission) {
+                            ForEach(permissionOptions) { option in
+                                Text(option.label).tag(option.value)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .tint(.black)
+                    }
+                    
+                    // 分割模式下拉框
+                    settingRow(label: "分割模式") {
+                        Picker("", selection: $splitMethod) {
+                            ForEach(splitMethodOptions) { option in
+                                Text(option.label).tag(option.value)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .tint(.black)
+                    }
+                    
+                    // 分割大小输入框（仅 fixed 可见）
+                    if splitMethod == "fixed" {
+                        settingRow(label: "分割大小") {
+                            TextField("", text: $chunkSize, prompt: Text("1000").foregroundColor(Colors.grayColor))
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(.black)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 140)
+                        }
+                    }
+                }
+                .padding(.horizontal, Dimens.middleMargin)
+                .padding(.vertical, Dimens.middleMargin)
+                
+                // 底部按钮
+                HStack(spacing: Dimens.middleMargin) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Text("取消")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.grayColor)
+                            .frame(height: Dimens.btnHeight)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                    .stroke(Colors.grayColor, lineWidth: 1)
+                            )
+                    }
+                    .disabled(isSubmitting)
+                    
+                    Button(action: {
+                        onConfirm()
+                    }) {
+                        if isSubmitting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("确定")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .frame(height: Dimens.btnHeight)
+                    .frame(maxWidth: .infinity)
+                    .background(Colors.primaryColor)
+                    .cornerRadius(Dimens.btnHeight / 2)
+                    .disabled(isSubmitting)
+                }
+                .padding(.horizontal, Dimens.middleMargin)
+                .padding(.vertical, Dimens.middleMargin)
+            }
+            .background(Colors.whiteColor)
+            .cornerRadius(Dimens.borderRadius)
+            .padding(.horizontal, Dimens.middleMargin * 2)
+        }
+    }
+    
+    /// 设置项行（左侧标签 + 右侧内容）
+    private func settingRow<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: Dimens.middleMargin) {
+            Text(label)
+                .font(.system(size: Dimens.normalFont))
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            content()
+        }
+        .frame(minHeight: Dimens.inputHeight)
     }
 }
 

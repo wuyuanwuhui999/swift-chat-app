@@ -649,12 +649,18 @@ extension HTTPClient {
     ///   - fileURL: 文件本地URL
     ///   - tenantId: 租户ID
     ///   - directoryId: 目录ID
+    ///   - splitMethod: 分割方式（recursive/paragraph/sentence/fixed）
+    ///   - chunkSize: 分割大小（splitMethod=fixed 时生效）
+    ///   - permission: 文档权限（private/tenant/company）
     ///   - completion: 完成回调，返回上传成功消息
     /// 上传文档
     func uploadDoc(
         fileURL: URL,
         tenantId: String,
         directoryId: String,
+        splitMethod: String,
+        chunkSize: String,
+        permission: String,
         completion: @escaping (Result<String, NetworkError>) -> Void
     ) {
         // 构建 multipart/form-data 请求体
@@ -664,6 +670,16 @@ extension HTTPClient {
         
         var body = Data()
         
+        // 追加文本表单字段（tenantId / directoryId / splitMethod / chunkSize / permission）
+        appendFormField(named: "tenantId", value: tenantId, to: &body, boundary: boundary)
+        appendFormField(named: "directoryId", value: directoryId, to: &body, boundary: boundary)
+        appendFormField(named: "splitMethod", value: splitMethod, to: &body, boundary: boundary)
+        if splitMethod == "fixed" {
+            appendFormField(named: "chunkSize", value: chunkSize, to: &body, boundary: boundary)
+        }
+        appendFormField(named: "permission", value: permission, to: &body, boundary: boundary)
+        
+        // 追加文件字段
         do {
             let fileData = try Data(contentsOf: fileURL)
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
@@ -683,11 +699,11 @@ extension HTTPClient {
         headers["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
         
         print("🌐 上传文档，租户ID: \(tenantId)，目录ID: \(directoryId)")
-        print("📁 文件名: \(filename)")
+        print("📁 文件名: \(filename)，分割方式: \(splitMethod)，权限: \(permission)")
         
         // 使用封装好的 request 方法
         request(
-            endpoint: .uploadDoc(tenantId, directoryId),
+            endpoint: .uploadDoc,
             method: "POST",
             parameters: nil,
             customBody: body,
@@ -704,6 +720,18 @@ extension HTTPClient {
                 completion(.failure(error))
             }
         }
+    }
+
+    /// 追加 multipart/form-data 文本表单字段
+    /// - Parameters:
+    ///   - name: 字段名
+    ///   - value: 字段值
+    ///   - body: 目标请求体
+    ///   - boundary: 分隔符
+    private func appendFormField(named name: String, value: String, to body: inout Data, boundary: String) {
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(value)\r\n".data(using: .utf8)!)
     }
 
     /// 根据文件名获取 MIME 类型
