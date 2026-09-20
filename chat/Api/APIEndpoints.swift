@@ -22,6 +22,7 @@ enum APIEndpoint {
     case getChatHistoryByChatId
     case uploadDoc
     case deleteDoc(String)
+    case updateDocPermission
     case updateUser
     case updateAvater
     case vertifyUser
@@ -86,6 +87,8 @@ enum APIEndpoint {
             return Constants.API.uploadDoc
         case .deleteDoc(let docId):
             return Constants.API.deleteDoc.replacingOccurrences(of: "{docId}", with: docId)
+        case .updateDocPermission:
+            return Constants.API.updateDocPermission
         case .updateUser:
             return Constants.API.updateUser
         case .updateAvater:
@@ -146,7 +149,7 @@ enum APIEndpoint {
             return "GET"
         case .deleteDoc,.deletePrompt,.deleteModel:
             return "DELETE"
-        case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin,.updateModel:
+        case .updateUser, .updatePassword, .updatePrompt, .addAdmin, .cancelAdmin,.updateModel,.updateDocPermission:
             return "PUT"
         }
     }

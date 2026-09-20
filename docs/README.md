@@ -268,6 +268,7 @@ ChatApp(@main)
 | `getDocListByDirId` | GET | `/service/chat/getDocListByDirId` |
 | `uploadDoc` | POST | `/service/chat/uploadDoc` |
 | `deleteDoc` | DELETE | `/service/chat/deleteDoc/{docId}` |
+| `updateDocPermission` | PUT | `/service/chat/updateDocPermission` |
 | `getChatHistory` | GET | `/service/chat/getChatHistory` |
 | `getChatHistoryByChatId` | GET | `/service/chat/getChatHistoryByChatId` |
 | `getPrompt` | GET | `/service/prompt/getPrompt` |

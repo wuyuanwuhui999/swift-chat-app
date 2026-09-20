@@ -270,9 +270,11 @@ struct DocumentPickerDialog: View {
                                 .foregroundColor(Colors.grayColor)
                         }
                         
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        Image(systemName: "chevron.right")
                             .foregroundColor(Colors.grayColor)
                             .font(.system(size: Dimens.smallIcon))
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            .animation(.easeInOut(duration: 0.2), value: isExpanded)
                     }
                     .padding(Dimens.middleMargin)
                 }

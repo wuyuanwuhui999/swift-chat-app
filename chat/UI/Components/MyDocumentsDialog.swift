@@ -1,13 +1,32 @@
 import SwiftUI
 
 /// 我的文档对话框组件
+/// 样式与「选择文档」对话框一致，但无复选框、无确定/取消按钮；
+/// 文档条目右侧为「三个点」操作图标，提供修改权限与删除两个操作。
 struct MyDocumentsDialog: View {
     @Binding var isPresented: Bool
     @ObservedObject private var appState = AppState.shared
     @State private var directories: [Directory] = []
     @State private var isLoading = false
-    @State private var expandedDirectories: Set<String> = []  // 展开的目录ID集合
-    
+    @State private var expandedDirectories: Set<String> = []
+    @State private var documentsByDirectory: [String: [Document]] = [:]
+    @State private var loadingDirectories: Set<String> = []
+    @State private var showCreateInput = false
+    @State private var newDirectoryName = ""
+    @State private var isCreating = false
+    @FocusState private var isInputFocused: Bool
+
+    // 修改权限弹窗状态
+    @State private var permissionTarget: Document? = nil
+    @State private var isUpdatingPermission = false
+
+    // 删除确认状态
+    @State private var documentToDelete: Document? = nil
+
+    // 操作结果提示
+    @State private var showResultAlert = false
+    @State private var resultMessage = ""
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
@@ -17,15 +36,15 @@ struct MyDocumentsDialog: View {
                     .onTapGesture {
                         isPresented = false
                     }
-                
+
                 // 对话框内容 - 从底部弹出
                 VStack(spacing: 0) {
                     // 标题栏
                     headerView
-                    
-                    // 可滚动的内容区域
+
+                    // 可滚动的内容区域 - 灰色背景
                     ScrollView {
-                        LazyVStack(spacing: 0) {
+                        LazyVStack(spacing: Dimens.middleMargin) {
                             if isLoading {
                                 ProgressView()
                                     .padding(.vertical, Dimens.largeMargin)
@@ -33,21 +52,23 @@ struct MyDocumentsDialog: View {
                                 emptyStateView
                             } else {
                                 ForEach(directories) { directory in
-                                    DirectoryExpandableSection(
+                                    DirectoryCard(
                                         directory: directory,
                                         isExpanded: expandedDirectories.contains(directory.id),
+                                        documents: documentsByDirectory[directory.id],
+                                        isLoadingDocs: loadingDirectories.contains(directory.id),
                                         onToggleExpand: { toggleDirectory(directory.id) },
-                                        onDocumentDeleted: { deletedDocId in
-                                            // 文档删除后的回调，刷新当前目录的文档列表
-                                            refreshDirectoryDocuments(directoryId: directory.id)
-                                        }
+                                        onModifyPermission: { requestModifyPermission($0) },
+                                        onDeleteRequest: { documentToDelete = $0 }
                                     )
                                 }
                             }
                         }
+                        .padding(Dimens.middleMargin)
                     }
-                    
-                    // 底部关闭按钮
+                    .background(Colors.pageBackgroundColor)
+
+                    // 底部操作区域（仅创建目录，无确定/取消）
                     bottomActionView
                 }
                 .frame(
@@ -57,31 +78,64 @@ struct MyDocumentsDialog: View {
                 .background(Colors.whiteColor)
                 .clipShape(RoundedCorner(radius: Dimens.borderRadius, corners: [.topLeft, .topRight]))
                 .position(x: geometry.size.width / 2, y: geometry.size.height - (min(geometry.size.height * 0.8, geometry.size.height - 100) / 2))
+
+                // 修改权限对话框
+                if let document = permissionTarget {
+                    DocumentPermissionDialog(
+                        isPresented: Binding(
+                            get: { permissionTarget != nil },
+                            set: { if !$0 { permissionTarget = nil } }
+                        ),
+                        document: document,
+                        isSubmitting: isUpdatingPermission,
+                        onConfirm: { confirmUpdatePermission($0) }
+                    )
+                }
             }
         }
         .onAppear {
             loadDirectories()
         }
+        .alert("确认删除", isPresented: Binding(
+            get: { documentToDelete != nil },
+            set: { if !$0 { documentToDelete = nil } }
+        )) {
+            Button("取消", role: .cancel) { }
+            Button("确定", role: .destructive) {
+                if let doc = documentToDelete {
+                    confirmDelete(doc)
+                }
+            }
+        } message: {
+            Text("确定要删除文档「\(documentToDelete?.name ?? "")」吗？")
+        }
+        .alert("提示", isPresented: $showResultAlert) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(resultMessage)
+        }
+        .ignoresSafeArea(.keyboard)
     }
-    
+
     // MARK: - 视图组件
-    
+
     /// 标题栏视图
     private var headerView: some View {
-        Text("我的文档")
-            .font(.system(size: Dimens.middleFont))
-            .foregroundColor(.black)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Dimens.middleMargin)
-            .background(Colors.whiteColor)
-            .overlay(
-                Rectangle()
-                    .fill(Colors.grayColor.opacity(0.3))
-                    .frame(height: 1),
-                alignment: .bottom
-            )
+        VStack(spacing: 0) {
+            Text("我的文档")
+                .font(.system(size: Dimens.middleFont))
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Dimens.middleMargin)
+
+            // 灰色分隔线
+            Rectangle()
+                .fill(Colors.grayColor.opacity(0.3))
+                .frame(height: 1)
+        }
+        .background(Colors.whiteColor)
     }
-    
+
     /// 空状态视图
     private var emptyStateView: some View {
         VStack(spacing: Dimens.middleMargin) {
@@ -91,31 +145,78 @@ struct MyDocumentsDialog: View {
             Text("暂无目录")
                 .font(.system(size: Dimens.normalFont))
                 .foregroundColor(Colors.grayColor)
+            Text("请点击下方「创建目录」按钮")
+                .font(.system(size: Dimens.normalFont - 2))
+                .foregroundColor(Colors.grayColor)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, Dimens.largeMargin)
     }
-    
-    /// 底部操作区域视图
+
+    /// 底部操作区域视图（仅创建目录，无确定/取消按钮）
     @ViewBuilder
     private var bottomActionView: some View {
-        HStack(spacing: Dimens.middleMargin) {
-            // 关闭按钮
-            Button(action: {
-                isPresented = false
-            }) {
-                Text("关闭")
-                    .font(.system(size: Dimens.normalFont))
-                    .foregroundColor(Colors.grayColor)
-                    .frame(height: Dimens.btnHeight)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.clear)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
-                            .stroke(Colors.grayColor, lineWidth: 1)
-                    )
+        VStack(spacing: Dimens.middleMargin) {
+            if showCreateInput {
+                // 创建目录输入框
+                HStack(spacing: Dimens.middleMargin) {
+                    TextField("请输入目录名称", text: $newDirectoryName)
+                        .font(.system(size: Dimens.normalFont))
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .frame(height: Dimens.inputHeight)
+                        .background(Colors.pageBackgroundColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
+                                .stroke(isInputFocused ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
+                        )
+                        .focused($isInputFocused)
+
+                    // 确认按钮
+                    Button(action: createDirectory) {
+                        Image(systemName: "checkmark")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                            .foregroundColor(.white)
+                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                            .background(newDirectoryName.isEmpty ? Colors.grayColor : Colors.primaryColor)
+                            .clipShape(Circle())
+                    }
+                    .disabled(newDirectoryName.isEmpty || isCreating)
+
+                    // 取消按钮
+                    Button(action: {
+                        showCreateInput = false
+                        newDirectoryName = ""
+                    }) {
+                        Image(systemName: "xmark")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                            .foregroundColor(.white)
+                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                            .background(Colors.grayColor)
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.horizontal, Dimens.middleMargin)
+            } else {
+                // 创建按钮
+                Button(action: {
+                    showCreateInput = true
+                    isInputFocused = true
+                }) {
+                    Text("创建目录")
+                        .font(.system(size: Dimens.normalFont))
+                        .foregroundColor(.white)
+                        .frame(height: Dimens.btnHeight)
+                        .frame(maxWidth: .infinity)
+                        .background(Colors.primaryColor)
+                        .cornerRadius(Dimens.btnHeight / 2)
+                }
+                .padding(.horizontal, Dimens.middleMargin)
             }
         }
-        .padding(.horizontal, Dimens.middleMargin)
         .padding(.vertical, Dimens.middleMargin)
         .background(Colors.whiteColor)
         .overlay(
@@ -125,9 +226,168 @@ struct MyDocumentsDialog: View {
             alignment: .top
         )
     }
-    
+
+    // MARK: - 目录卡片组件
+
+    /// 目录卡片视图（卡片式展示，样式与文档选择对话框一致）
+    struct DirectoryCard: View {
+        let directory: Directory
+        let isExpanded: Bool
+        let documents: [Document]?
+        let isLoadingDocs: Bool
+        let onToggleExpand: () -> Void
+        let onModifyPermission: (Document) -> Void
+        let onDeleteRequest: (Document) -> Void
+
+        var body: some View {
+            VStack(spacing: 0) {
+                // 目录行（卡片头部）
+                Button(action: onToggleExpand) {
+                    HStack {
+                        // 文件夹图标
+                        Image(systemName: "folder")
+                            .font(.system(size: Dimens.smallIcon))
+                            .foregroundColor(Colors.primaryColor)
+
+                        Text(directory.directory)
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.black)
+
+                        Spacer()
+
+                        // 文档数量提示（收起时显示）
+                        if let docs = documents, !docs.isEmpty, !isExpanded {
+                            Text("\(docs.count)个文档")
+                                .font(.system(size: Dimens.normalFont - 2))
+                                .foregroundColor(Colors.grayColor)
+                        }
+
+                        // 展开箭头：向右，展开后顺时针旋转 90° 指向下
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(Colors.grayColor)
+                            .font(.system(size: Dimens.smallIcon))
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                    }
+                    .padding(Dimens.middleMargin)
+                }
+
+                // 文档列表（展开时显示）
+                if isExpanded {
+                    Divider()
+                        .padding(.horizontal, Dimens.middleMargin)
+
+                    VStack(spacing: 0) {
+                        if isLoadingDocs {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .padding(.vertical, Dimens.middleMargin)
+                                Spacer()
+                            }
+                        } else if let docs = documents, !docs.isEmpty {
+                            ForEach(docs) { document in
+                                DocumentRow(
+                                    document: document,
+                                    onModifyPermission: { onModifyPermission(document) },
+                                    onDelete: { onDeleteRequest(document) }
+                                )
+
+                                if document.id != docs.last?.id {
+                                    Divider()
+                                        .padding(.leading, Dimens.middleMargin)
+                                }
+                            }
+                        } else {
+                            HStack {
+                                Spacer()
+                                Text("暂无文档")
+                                    .font(.system(size: Dimens.normalFont))
+                                    .foregroundColor(Colors.grayColor)
+                                    .padding(.vertical, Dimens.middleMargin)
+                                Spacer()
+                            }
+                        }
+                    }
+                    .padding(.vertical, Dimens.smallIcon)
+                }
+            }
+            .background(Colors.whiteColor)
+            .cornerRadius(Dimens.borderRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                    .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
+            )
+        }
+    }
+
+    /// 文档行视图（无复选框、无文档格式标签，右侧为「三个点」操作图标）
+    struct DocumentRow: View {
+        let document: Document
+        let onModifyPermission: () -> Void
+        let onDelete: () -> Void
+
+        /// 根据文件扩展名获取图标名称
+        private var fileIconName: String {
+            let ext = document.ext.lowercased()
+            switch ext {
+            case "txt":
+                return "doc.plaintext"
+            case "doc", "docx":
+                return "doc"
+            case "md":
+                return "note.text"
+            case "pdf":
+                return "pdf"
+            default:
+                return "doc"
+            }
+        }
+
+        var body: some View {
+            HStack(spacing: Dimens.middleMargin) {
+                // 文件图标
+                Image(systemName: fileIconName)
+                    .font(.system(size: Dimens.smallIcon))
+                    .foregroundColor(Colors.grayColor)
+
+                // 文件名
+                Text(document.name)
+                    .font(.system(size: Dimens.normalFont))
+                    .foregroundColor(.black)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer()
+
+                // 三个点操作图标：修改权限 / 删除
+                Menu {
+                    Button {
+                        onModifyPermission()
+                    } label: {
+                        Label("修改权限", systemImage: "lock")
+                    }
+
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: Dimens.middleFont))
+                        .foregroundColor(Colors.grayColor)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                }
+            }
+            .padding(.horizontal, Dimens.middleMargin)
+            .padding(.vertical, Dimens.smallIcon)
+        }
+    }
+
     // MARK: - 数据加载方法
-    
+
     /// 加载目录列表
     private func loadDirectories() {
         isLoading = true
@@ -135,7 +395,7 @@ struct MyDocumentsDialog: View {
             isLoading = false
             return
         }
-        
+
         HTTPClient.shared.getDirectoryList(tenantId: tenantId) { result in
             DispatchQueue.main.async {
                 switch result {
@@ -148,267 +408,254 @@ struct MyDocumentsDialog: View {
             }
         }
     }
-    
-    /// 切换目录展开/收起状态
+
+    /// 切换目录展开/收起状态（首次展开才加载文档列表）
     private func toggleDirectory(_ directoryId: String) {
         if expandedDirectories.contains(directoryId) {
             expandedDirectories.remove(directoryId)
         } else {
             expandedDirectories.insert(directoryId)
+            if documentsByDirectory[directoryId] == nil {
+                loadDocuments(directoryId: directoryId)
+            }
         }
     }
-    
-    /// 刷新指定目录的文档列表
-    private func refreshDirectoryDocuments(directoryId: String) {
-        // 重新加载该目录的文档列表
-        if let index = directories.firstIndex(where: { $0.id == directoryId }) {
-            // 触发该目录的文档重新加载
-            // 这里通过重新展开目录来刷新
-            if expandedDirectories.contains(directoryId) {
-                // 先收起再展开，触发重新加载
-                expandedDirectories.remove(directoryId)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    expandedDirectories.insert(directoryId)
+
+    /// 加载指定目录下的文档列表
+    private func loadDocuments(directoryId: String) {
+        guard let tenantId = appState.currentTenant?.id else { return }
+        loadingDirectories.insert(directoryId)
+
+        HTTPClient.shared.getDocListByDirId(
+            tenantId: tenantId,
+            directoryId: directoryId
+        ) { result in
+            DispatchQueue.main.async {
+                loadingDirectories.remove(directoryId)
+                switch result {
+                case .success(let docs):
+                    documentsByDirectory[directoryId] = docs
+                case .failure(let error):
+                    documentsByDirectory[directoryId] = []
+                    print("❌ 获取文档列表失败: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    /// 创建目录
+    private func createDirectory() {
+        guard !newDirectoryName.isEmpty,
+              let tenantId = appState.currentTenant?.id else { return }
+
+        isCreating = true
+
+        HTTPClient.shared.createDirectory(
+            directory: newDirectoryName,
+            tenantId: tenantId
+        ) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let newDirectory):
+                    directories.append(newDirectory)
+                    showCreateInput = false
+                    newDirectoryName = ""
+                case .failure(let error):
+                    print("❌ 创建目录失败: \(error.localizedDescription)")
+                }
+                isCreating = false
+            }
+        }
+    }
+
+    // MARK: - 文档操作方法
+
+    /// 弹出修改权限对话框
+    private func requestModifyPermission(_ document: Document) {
+        permissionTarget = document
+    }
+
+    /// 确认修改权限
+    private func confirmUpdatePermission(_ newPermission: String) {
+        guard let document = permissionTarget else { return }
+        isUpdatingPermission = true
+
+        HTTPClient.shared.updateDocPermission(
+            docId: document.id,
+            permission: newPermission
+        ) { result in
+            DispatchQueue.main.async {
+                isUpdatingPermission = false
+                switch result {
+                case .success(let message):
+                    // 本地同步该文档的权限，保证再次打开时回显正确
+                    if var docs = documentsByDirectory[document.directoryId],
+                       let idx = docs.firstIndex(where: { $0.id == document.id }) {
+                        docs[idx].permission = newPermission
+                        documentsByDirectory[document.directoryId] = docs
+                    }
+                    permissionTarget = nil
+                    resultMessage = message
+                    showResultAlert = true
+                case .failure(let error):
+                    resultMessage = error.localizedDescription
+                    showResultAlert = true
+                }
+            }
+        }
+    }
+
+    /// 确认删除文档
+    private func confirmDelete(_ document: Document) {
+        HTTPClient.shared.deleteDoc(docId: document.id) { result in
+            DispatchQueue.main.async {
+                documentToDelete = nil
+                switch result {
+                case .success(let message):
+                    // 从本地列表移除
+                    if var docs = documentsByDirectory[document.directoryId] {
+                        docs.removeAll { $0.id == document.id }
+                        documentsByDirectory[document.directoryId] = docs
+                    }
+                    resultMessage = message
+                    showResultAlert = true
+                case .failure(let error):
+                    resultMessage = error.localizedDescription
+                    showResultAlert = true
                 }
             }
         }
     }
 }
 
-// MARK: - 可展开目录区域组件
+// MARK: - 文档权限选项
 
-/// 可展开目录区域视图
-struct DirectoryExpandableSection: View {
-    let directory: Directory
-    let isExpanded: Bool
-    let onToggleExpand: () -> Void
-    let onDocumentDeleted: (String) -> Void  // 文档删除回调
-    
-    @State private var documents: [Document] = []
-    @State private var isLoadingDocs = false
-    @State private var showDeleteAlert = false
-    @State private var documentToDelete: Document?  // 待删除的文档
-    
+/// 文档权限选项（value 为提交值，label 为展示文案）
+private struct PermissionOption: Identifiable {
+    let value: String
+    let label: String
+    var id: String { value }
+}
+
+// MARK: - 修改权限对话框
+
+/// 修改权限对话框（回显文档当前权限，确定后提交）
+struct DocumentPermissionDialog: View {
+    @Binding var isPresented: Bool
+    let document: Document
+    let isSubmitting: Bool
+    let onConfirm: (String) -> Void
+
+    @State private var permission = "private"
+
+    /// 权限选项（与上传接口的文档权限选项一致）
+    private let permissionOptions: [PermissionOption] = [
+        PermissionOption(value: "private", label: "私密"),
+        PermissionOption(value: "tenant", label: "租户内公开"),
+        PermissionOption(value: "company", label: "公司内公开")
+    ]
+
     var body: some View {
-        VStack(spacing: 0) {
-            // 目录行
-            Button(action: {
-                onToggleExpand()
-                if !isExpanded && documents.isEmpty {
-                    loadDocuments()
+        ZStack {
+            // 半透明遮罩层
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    if !isSubmitting {
+                        isPresented = false
+                    }
                 }
-            }) {
-                HStack {
-                    Text(directory.directory)
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.black)
-                    
-                    Spacer()
-                    
-                    // 箭头图标（向右或向下）
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+
+            // 对话框卡片
+            VStack(spacing: 0) {
+                // 标题栏
+                Text("修改权限")
+                    .font(.system(size: Dimens.middleFont))
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Dimens.middleMargin)
+                    .overlay(
+                        Rectangle()
+                            .fill(Colors.grayColor.opacity(0.3))
+                            .frame(height: 1),
+                        alignment: .bottom
+                    )
+
+                VStack(spacing: Dimens.middleMargin) {
+                    // 文档名提示
+                    Text(document.name)
+                        .font(.system(size: Dimens.normalFont - 2))
                         .foregroundColor(Colors.grayColor)
-                        .font(.system(size: Dimens.smallIcon))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    // 权限下拉框
+                    HStack(spacing: Dimens.middleMargin) {
+                        Text("文档权限")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.black)
+
+                        Spacer()
+
+                        Picker("", selection: $permission) {
+                            ForEach(permissionOptions) { option in
+                                Text(option.label).tag(option.value)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .tint(.black)
+                    }
+                    .frame(minHeight: Dimens.inputHeight)
+                }
+                .padding(.horizontal, Dimens.middleMargin)
+                .padding(.vertical, Dimens.middleMargin)
+
+                // 底部按钮
+                HStack(spacing: Dimens.middleMargin) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Text("取消")
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(Colors.grayColor)
+                            .frame(height: Dimens.btnHeight)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Dimens.btnHeight / 2)
+                                    .stroke(Colors.grayColor, lineWidth: 1)
+                            )
+                    }
+                    .disabled(isSubmitting)
+
+                    Button(action: {
+                        onConfirm(permission)
+                    }) {
+                        if isSubmitting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("确定")
+                                .font(.system(size: Dimens.normalFont))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .frame(height: Dimens.btnHeight)
+                    .frame(maxWidth: .infinity)
+                    .background(Colors.primaryColor)
+                    .cornerRadius(Dimens.btnHeight / 2)
+                    .disabled(isSubmitting)
                 }
                 .padding(.horizontal, Dimens.middleMargin)
                 .padding(.vertical, Dimens.middleMargin)
             }
             .background(Colors.whiteColor)
-            .overlay(
-                Rectangle()
-                    .fill(Colors.grayColor.opacity(0.3))
-                    .frame(height: 1),
-                alignment: .bottom
-            )
-            
-            // 文档列表（展开时显示）
-            if isExpanded {
-                VStack(spacing: 0) {
-                    if isLoadingDocs {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .padding(.vertical, Dimens.middleMargin)
-                            Spacer()
-                        }
-                    } else if documents.isEmpty {
-                        HStack {
-                            Spacer()
-                            Text("暂无文档")
-                                .font(.system(size: Dimens.normalFont))
-                                .foregroundColor(Colors.grayColor)
-                                .padding(.vertical, Dimens.middleMargin)
-                            Spacer()
-                        }
-                    } else {
-                        ForEach(documents) { document in
-                            DocumentInfoRow(
-                                document: document,
-                                onDelete: {
-                                    documentToDelete = document
-                                    showDeleteAlert = true
-                                }
-                            )
-                        }
-                    }
-                }
-                .padding(.leading, Dimens.middleMargin)
-                .background(Colors.pageBackgroundColor)
-            }
+            .cornerRadius(Dimens.borderRadius)
+            .padding(.horizontal, Dimens.middleMargin * 2)
         }
-        .alert("确认删除", isPresented: $showDeleteAlert) {
-            Button("取消", role: .cancel) { }
-            Button("确定", role: .destructive) {
-                if let doc = documentToDelete {
-                    deleteDocument(doc)
-                }
-            }
-        } message: {
-            Text("确定要删除文档 \"\(documentToDelete?.name ?? "")\" 吗？")
-        }
-    }
-    
-    /// 加载文档列表
-    private func loadDocuments() {
-        isLoadingDocs = true
-        guard let tenantId = AppState.shared.currentTenant?.id else {
-            isLoadingDocs = false
-            return
-        }
-        
-        HTTPClient.shared.getDocListByDirId(
-            tenantId: tenantId,
-            directoryId: directory.id
-        ) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let docs):
-                    documents = docs
-                case .failure(let error):
-                    print("❌ 获取文档列表失败: \(error.localizedDescription)")
-                }
-                isLoadingDocs = false
-            }
-        }
-    }
-    
-    /// 删除文档
-    private func deleteDocument(_ document: Document) {
-        HTTPClient.shared.deleteDoc(docId: document.id) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let deletedCount):
-                    if deletedCount == 1 {
-                        // 删除成功，从列表中移除
-                        if let index = documents.firstIndex(where: { $0.id == document.id }) {
-                            documents.remove(at: index)
-                        }
-                        // 显示成功提示
-                        showSuccessAlert(message: "文档删除成功")
-                        // 通知父组件文档已删除
-                        onDocumentDeleted(document.id)
-                    } else {
-                        showSuccessAlert(message: "未找到要删除的文档")
-                    }
-                case .failure(let error):
-                    print("❌ 删除文档失败: \(error.localizedDescription)")
-                    showErrorAlert(message: error.localizedDescription)
-                }
-            }
-        }
-    }
-    
-    /// 显示成功提示
-    private func showSuccessAlert(message: String) {
-        // 使用 UIAlertController 显示提示
-        let alert = UIAlertController(title: "提示", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "确定", style: .default))
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootVC = windowScene.windows.first?.rootViewController {
-            rootVC.present(alert, animated: true)
-        }
-    }
-    
-    /// 显示错误提示
-    private func showErrorAlert(message: String) {
-        let alert = UIAlertController(title: "错误", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "确定", style: .default))
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootVC = windowScene.windows.first?.rootViewController {
-            rootVC.present(alert, animated: true)
-        }
-    }
-}
-
-// MARK: - 文档信息行组件（支持滑动删除）
-
-/// 文档信息行视图
-struct DocumentInfoRow: View {
-    let document: Document
-    let onDelete: () -> Void
-    
-    /// 根据文件扩展名获取图标名称
-    private var fileIconName: String {
-        let ext = document.ext.lowercased()
-        switch ext {
-        case "txt":
-            return "doc.plaintext"
-        case "doc", "docx":
-            return "doc"
-        case "md":
-            return "note.text"
-        case "pdf":
-            return "pdf"
-        default:
-            return "doc"
-        }
-    }
-    
-    var body: some View {
-        // 使用 List 的滑动删除功能
-        HStack(spacing: Dimens.middleMargin) {
-            // 文件图标
-            Image(systemName: fileIconName)
-                .foregroundColor(Colors.primaryColor)
-                .font(.system(size: Dimens.smallIcon))
-            
-            // 文件名
-            Text(document.name)
-                .font(.system(size: Dimens.normalFont))
-                .foregroundColor(.black)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            
-            Spacer()
-            
-            // 文件类型标签
-            Text(document.ext.uppercased())
-                .font(.system(size: Dimens.normalFont - 2))
-                .foregroundColor(Colors.grayColor)
-                .padding(.horizontal, Dimens.smallIcon)
-                .padding(.vertical, 4)
-                .background(Colors.grayColor.opacity(0.2))
-                .cornerRadius(Dimens.smallIcon)
-        }
-        .padding(.horizontal, Dimens.middleMargin)
-        .padding(.vertical, Dimens.smallIcon)
-        .background(Colors.pageBackgroundColor)
-        .overlay(
-            Rectangle()
-                .fill(Colors.grayColor.opacity(0.2))
-                .frame(height: 0.5),
-            alignment: .bottom
-        )
-        // 添加滑动删除手势
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
-                Label("删除", systemImage: "trash")
-            }
-            .tint(Colors.warnColor)
+        .onAppear {
+            // 回显文档当前的权限字段
+            permission = document.permission ?? "private"
         }
     }
 }

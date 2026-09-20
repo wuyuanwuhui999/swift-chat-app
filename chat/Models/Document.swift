@@ -10,6 +10,7 @@ struct Document: Codable, Identifiable {
     let updateTime: String
     let directoryId: String
     let directoryName: String?  // 改为可选类型，因为服务器可能返回 null
+    var permission: String?  // 文档权限：private/tenant/company
     var checked: Bool?
     
     enum CodingKeys: String, CodingKey {
@@ -21,6 +22,7 @@ struct Document: Codable, Identifiable {
         case updateTime
         case directoryId
         case directoryName
+        case permission
         case checked
     }
 }

@@ -753,26 +753,49 @@ extension HTTPClient {
     }
 
     /// 删除文档
-    func deleteDoc(docId: String, completion: @escaping (Result<Int, NetworkError>) -> Void) {
+    /// - Parameters:
+    ///   - docId: 文档ID
+    ///   - completion: 完成回调，返回后端 msg（成功/失败均以 msg 作为提示语）
+    func deleteDoc(docId: String, completion: @escaping (Result<String, NetworkError>) -> Void) {
         // 使用 APIEndpoint 枚举，传入 docId
-        request(endpoint: .deleteDoc(docId)) { (result: Result<BaseResponse<Int>, NetworkError>) in
+        request(endpoint: .deleteDoc(docId)) { (result: Result<BaseResponse<EmptyData>, NetworkError>) in
             switch result {
             case .success(let response):
                 if response.isSuccess {
-                    if let deletedCount = response.data {
-                        print("✅ 删除文档成功，删除数量: \(deletedCount)")
-                        completion(.success(deletedCount))
-                    } else {
-                        print("⚠️ 删除文档响应中 data 字段为空")
-                        completion(.failure(.custom(message: "响应数据格式错误")))
-                    }
+                    completion(.success(response.msg ?? "文档删除成功"))
                 } else {
-                    let errorMsg = response.msg ?? "删除失败"
-                    print("❌ 删除文档失败: \(errorMsg)")
-                    completion(.failure(.custom(message: errorMsg)))
+                    completion(.failure(.custom(message: response.msg ?? "文档删除失败")))
                 }
             case .failure(let error):
-                print("❌ 删除文档请求失败: \(error.localizedDescription)")
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    /// 修改文档权限
+    /// - Parameters:
+    ///   - docId: 文档ID
+    ///   - permission: 文档权限（private/tenant/company）
+    ///   - completion: 完成回调，返回后端 msg（成功/失败均以 msg 作为提示语）
+    func updateDocPermission(
+        docId: String,
+        permission: String,
+        completion: @escaping (Result<String, NetworkError>) -> Void
+    ) {
+        let parameters: [String: Any] = [
+            "docId": docId,
+            "permission": permission
+        ]
+        
+        request(endpoint: .updateDocPermission, method: "PUT", parameters: parameters) { (result: Result<BaseResponse<EmptyData>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess {
+                    completion(.success(response.msg ?? "文档权限更新成功"))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "文档权限更新失败")))
+                }
+            case .failure(let error):
                 completion(.failure(error))
             }
         }

@@ -33,6 +33,7 @@ struct Constants {
         static let getChatHistoryByChatId = "/service/chat/getChatHistoryByChatId"
         static let uploadDoc = "/service/chat/uploadDoc"
         static let deleteDoc = "/service/chat/deleteDoc/{docId}"
+        static let updateDocPermission = "/service/chat/updateDocPermission"
         static let updateUser = "/service/user/updateUser"
         static let updateAvater = "/service/user/updateAvater"
         static let vertifyUser = "/service/user/vertifyUser"
