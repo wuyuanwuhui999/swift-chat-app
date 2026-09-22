@@ -232,6 +232,10 @@ struct HomePage: View {
                     showDocumentQuery = false
                     selectedDocIds = []
                     print("❌ 取消文档选择")
+                },
+                onUpload: {
+                    // 点击上传图标，打开上传文档对话框
+                    showUploadDocument = true
                 }
             )
         }

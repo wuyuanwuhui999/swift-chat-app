@@ -20,7 +20,8 @@ struct DocumentPickerDialog: View {
     @State private var expandedPublicDirectories: Set<String> = []
     
     let onConfirm: (Set<String>) -> Void
-    let onCancel: (() -> Void)?  // 新增：取消回调
+    let onCancel: (() -> Void)?  // 取消回调
+    let onUpload: (() -> Void)?  // 上传文档回调
     
     var body: some View {
         GeometryReader { geometry in
@@ -49,16 +50,27 @@ struct DocumentPickerDialog: View {
                                 } else if directories.isEmpty {
                                     emptyStateView
                                 } else {
-                                    ForEach(directories) { directory in
-                                        // 每个目录作为一张卡片
-                                        DirectoryCard(
-                                            directory: directory,
-                                            isExpanded: expandedDirectories.contains(directory.id),
-                                            selectedDocIds: selectedDocIds,
-                                            onToggleExpand: { toggleDirectory(directory.id) },
-                                            onToggleDocument: { toggleDocument($0) }
-                                        )
+                                    // 所有目录放入一张卡片，目录间用灰色横线隔开
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(directories.enumerated()), id: \.element.id) { index, directory in
+                                            DirectoryCard(
+                                                directory: directory,
+                                                isExpanded: expandedDirectories.contains(directory.id),
+                                                selectedDocIds: selectedDocIds,
+                                                onToggleExpand: { toggleDirectory(directory.id) },
+                                                onToggleDocument: { toggleDocument($0) }
+                                            )
+                                            if index < directories.count - 1 {
+                                                Divider()
+                                            }
+                                        }
                                     }
+                                    .background(Colors.whiteColor)
+                                    .cornerRadius(Dimens.borderRadius)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                                            .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
+                                    )
                                 }
                             } else {
                                 // 公共文档页签：按 directoryName 分组展示（已全部返回，无需按目录加载）
@@ -68,16 +80,28 @@ struct DocumentPickerDialog: View {
                                 } else if groupedPublicDocuments.isEmpty {
                                     publicEmptyStateView
                                 } else {
-                                    ForEach(groupedPublicDocuments, id: \.name) { group in
-                                        PublicDirectoryCard(
-                                            directoryName: group.name,
-                                            documents: group.documents,
-                                            isExpanded: expandedPublicDirectories.contains(group.name),
-                                            selectedDocIds: selectedDocIds,
-                                            onToggleExpand: { togglePublicDirectory(group.name) },
-                                            onToggleDocument: { toggleDocument($0) }
-                                        )
+                                    // 所有分组放入一张卡片，分组间用灰色横线隔开
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(groupedPublicDocuments.enumerated()), id: \.offset) { index, group in
+                                            PublicDirectoryCard(
+                                                directoryName: group.name,
+                                                documents: group.documents,
+                                                isExpanded: expandedPublicDirectories.contains(group.name),
+                                                selectedDocIds: selectedDocIds,
+                                                onToggleExpand: { togglePublicDirectory(group.name) },
+                                                onToggleDocument: { toggleDocument($0) }
+                                            )
+                                            if index < groupedPublicDocuments.count - 1 {
+                                                Divider()
+                                            }
+                                        }
                                     }
+                                    .background(Colors.whiteColor)
+                                    .cornerRadius(Dimens.borderRadius)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                                            .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
+                                    )
                                 }
                             }
                         }
@@ -105,17 +129,47 @@ struct DocumentPickerDialog: View {
     
     // MARK: - 视图组件
     
-    /// 标题栏视图（我的文档 | 公共文档 两个可切换页签，居中，默认我的文档激活）
+    /// 标题栏视图（左：刷新；中：我的文档｜公共文档页签；右：创建目录+上传）
     private var headerView: some View {
         VStack(spacing: 0) {
-            HStack(spacing: Dimens.middleMargin) {
-                tabItem(title: "我的文档", index: 0)
-                Text("|")
-                    .foregroundColor(Colors.grayColor)
-                    .font(.system(size: Dimens.normalFont))
-                tabItem(title: "公共文档", index: 1)
+            ZStack {
+                // 居中页签
+                HStack(spacing: Dimens.middleMargin) {
+                    tabItem(title: "我的文档", index: 0)
+                    Text("|")
+                        .foregroundColor(Colors.grayColor)
+                        .font(.system(size: Dimens.normalFont))
+                    tabItem(title: "公共文档", index: 1)
+                }
+                
+                // 左侧：刷新图标
+                HStack {
+                    Button(action: refresh) {
+                        ResourceIcon(resourceName: "icon_refresh", systemName: "arrow.clockwise")
+                    }
+                    .padding(.leading, Dimens.middleMargin)
+                    Spacer()
+                }
+                
+                // 右侧：创建目录 + 上传
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        selectedTab = 0
+                        showCreateInput = true
+                        isInputFocused = true
+                    }) {
+                        ResourceIcon(resourceName: "icon_create_directory", systemName: "folder.badge.plus")
+                    }
+                    Button(action: {
+                        onUpload?()
+                    }) {
+                        ResourceIcon(resourceName: "icon_upload", systemName: "square.and.arrow.up")
+                    }
+                    .padding(.leading, Dimens.middleMargin)
+                    .padding(.trailing, Dimens.middleMargin)
+                }
             }
-            .frame(maxWidth: .infinity)
             .padding(.vertical, Dimens.middleMargin)
             
             // 灰色分隔线
@@ -157,7 +211,7 @@ struct DocumentPickerDialog: View {
             Text("暂无目录")
                 .font(.system(size: Dimens.normalFont))
                 .foregroundColor(Colors.grayColor)
-            Text("请点击下方「创建目录」按钮")
+            Text("请点击右上角「创建目录」图标")
                 .font(.system(size: Dimens.normalFont - 2))
                 .foregroundColor(Colors.grayColor)
         }
@@ -183,67 +237,49 @@ struct DocumentPickerDialog: View {
     @ViewBuilder
     private var bottomActionView: some View {
         VStack(spacing: Dimens.middleMargin) {
-            // 创建目录（仅「我的文档」页签显示）
-            if selectedTab == 0 {
-                if showCreateInput {
-                    // 创建目录输入框
-                    HStack(spacing: Dimens.middleMargin) {
-                        TextField("请输入目录名称", text: $newDirectoryName)
-                            .font(.system(size: Dimens.normalFont))
-                            .padding(.horizontal, Dimens.middleMargin)
-                            .frame(height: Dimens.inputHeight)
-                            .background(Colors.pageBackgroundColor)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
-                                    .stroke(isInputFocused ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
-                            )
-                            .focused($isInputFocused)
-                        
-                        // 确认按钮
-                        Button(action: createDirectory) {
-                            Image(systemName: "checkmark")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
-                                .foregroundColor(.white)
-                                .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
-                                .background(newDirectoryName.isEmpty ? Colors.grayColor : Colors.primaryColor)
-                                .clipShape(Circle())
-                        }
-                        .disabled(newDirectoryName.isEmpty || isCreating)
-                        
-                        // 取消按钮
-                        Button(action: {
-                            showCreateInput = false
-                            newDirectoryName = ""
-                        }) {
-                            Image(systemName: "xmark")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
-                                .foregroundColor(.white)
-                                .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
-                                .background(Colors.grayColor)
-                                .clipShape(Circle())
-                        }
-                    }
-                    .padding(.horizontal, Dimens.middleMargin)
-                } else {
-                    // 创建按钮
-                    Button(action: {
-                        showCreateInput = true
-                        isInputFocused = true
-                    }) {
-                        Text("创建目录")
-                            .font(.system(size: Dimens.normalFont))
+            // 创建目录输入框（仅「我的文档」页签且点击创建图标后显示）
+            if selectedTab == 0 && showCreateInput {
+                HStack(spacing: Dimens.middleMargin) {
+                    TextField("请输入目录名称", text: $newDirectoryName)
+                        .font(.system(size: Dimens.normalFont))
+                        .padding(.horizontal, Dimens.middleMargin)
+                        .frame(height: Dimens.inputHeight)
+                        .background(Colors.pageBackgroundColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
+                                .stroke(isInputFocused ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
+                        )
+                        .focused($isInputFocused)
+                    
+                    // 确认按钮
+                    Button(action: createDirectory) {
+                        Image(systemName: "checkmark")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
                             .foregroundColor(.white)
-                            .frame(height: Dimens.btnHeight)
-                            .frame(maxWidth: .infinity)
-                            .background(Colors.primaryColor)
-                            .cornerRadius(Dimens.btnHeight / 2)
+                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                            .background(newDirectoryName.isEmpty ? Colors.grayColor : Colors.primaryColor)
+                            .clipShape(Circle())
                     }
-                    .padding(.horizontal, Dimens.middleMargin)
+                    .disabled(newDirectoryName.isEmpty || isCreating)
+                    
+                    // 取消按钮
+                    Button(action: {
+                        showCreateInput = false
+                        newDirectoryName = ""
+                    }) {
+                        Image(systemName: "xmark")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                            .foregroundColor(.white)
+                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                            .background(Colors.grayColor)
+                            .clipShape(Circle())
+                    }
                 }
+                .padding(.horizontal, Dimens.middleMargin)
             }
             
             // 确定和取消按钮
@@ -390,12 +426,6 @@ struct DocumentPickerDialog: View {
                     .padding(.vertical, Dimens.smallIcon)
                 }
             }
-            .background(Colors.whiteColor)
-            .cornerRadius(Dimens.borderRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: Dimens.borderRadius)
-                    .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
-            )
         }
         
         /// 加载文档列表
@@ -543,16 +573,19 @@ struct DocumentPickerDialog: View {
                     .padding(.vertical, Dimens.smallIcon)
                 }
             }
-            .background(Colors.whiteColor)
-            .cornerRadius(Dimens.borderRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: Dimens.borderRadius)
-                    .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
-            )
         }
     }
     
     // MARK: - 数据加载方法
+    
+    /// 刷新当前页签数据
+    private func refresh() {
+        if selectedTab == 0 {
+            loadDirectories()
+        } else {
+            loadPublicDocuments()
+        }
+    }
     
     /// 加载目录列表
     private func loadDirectories() {
@@ -686,6 +719,7 @@ struct RoundedCorner: Shape {
     DocumentPickerDialog(
         isPresented: .constant(true),
         onConfirm: { _ in },
-        onCancel: { }
+        onCancel: { },
+        onUpload: { }
     )
 }

@@ -16,6 +16,12 @@ struct MyDocumentsDialog: View {
     @State private var isCreating = false
     @FocusState private var isInputFocused: Bool
 
+    // 页签状态：0=我的文档，1=公共文档
+    @State private var selectedTab = 0
+    @State private var publicDocuments: [Document] = []
+    @State private var isLoadingPublic = false
+    @State private var expandedPublicDirectories: Set<String> = []
+
     // 修改权限弹窗状态
     @State private var permissionTarget: Document? = nil
     @State private var isUpdatingPermission = false
@@ -45,21 +51,64 @@ struct MyDocumentsDialog: View {
                     // 可滚动的内容区域 - 灰色背景
                     ScrollView {
                         LazyVStack(spacing: Dimens.middleMargin) {
-                            if isLoading {
-                                ProgressView()
-                                    .padding(.vertical, Dimens.largeMargin)
-                            } else if directories.isEmpty {
-                                emptyStateView
+                            if selectedTab == 0 {
+                                // 我的文档页签（原逻辑）
+                                if isLoading {
+                                    ProgressView()
+                                        .padding(.vertical, Dimens.largeMargin)
+                                } else if directories.isEmpty {
+                                    emptyStateView
+                                } else {
+                                    // 所有目录放入一张卡片，目录间用灰色横线隔开
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(directories.enumerated()), id: \.element.id) { index, directory in
+                                            DirectoryCard(
+                                                directory: directory,
+                                                isExpanded: expandedDirectories.contains(directory.id),
+                                                documents: documentsByDirectory[directory.id],
+                                                isLoadingDocs: loadingDirectories.contains(directory.id),
+                                                onToggleExpand: { toggleDirectory(directory.id) },
+                                                onModifyPermission: { requestModifyPermission($0) },
+                                                onDeleteRequest: { documentToDelete = $0 }
+                                            )
+                                            if index < directories.count - 1 {
+                                                Divider()
+                                            }
+                                        }
+                                    }
+                                    .background(Colors.whiteColor)
+                                    .cornerRadius(Dimens.borderRadius)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                                            .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
+                                    )
+                                }
                             } else {
-                                ForEach(directories) { directory in
-                                    DirectoryCard(
-                                        directory: directory,
-                                        isExpanded: expandedDirectories.contains(directory.id),
-                                        documents: documentsByDirectory[directory.id],
-                                        isLoadingDocs: loadingDirectories.contains(directory.id),
-                                        onToggleExpand: { toggleDirectory(directory.id) },
-                                        onModifyPermission: { requestModifyPermission($0) },
-                                        onDeleteRequest: { documentToDelete = $0 }
+                                // 公共文档页签：按 directoryName 分组展示（只读，无需加载）
+                                if isLoadingPublic && publicDocuments.isEmpty {
+                                    ProgressView()
+                                        .padding(.vertical, Dimens.largeMargin)
+                                } else if groupedPublicDocuments.isEmpty {
+                                    publicEmptyStateView
+                                } else {
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(groupedPublicDocuments.enumerated()), id: \.offset) { index, group in
+                                            PublicDirectoryCard(
+                                                directoryName: group.name,
+                                                documents: group.documents,
+                                                isExpanded: expandedPublicDirectories.contains(group.name),
+                                                onToggleExpand: { togglePublicDirectory(group.name) }
+                                            )
+                                            if index < groupedPublicDocuments.count - 1 {
+                                                Divider()
+                                            }
+                                        }
+                                    }
+                                    .background(Colors.whiteColor)
+                                    .cornerRadius(Dimens.borderRadius)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: Dimens.borderRadius)
+                                            .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
                                     )
                                 }
                             }
@@ -119,14 +168,18 @@ struct MyDocumentsDialog: View {
 
     // MARK: - 视图组件
 
-    /// 标题栏视图
+    /// 标题栏视图（我的文档｜公共文档 两个可切换页签，居中，默认我的文档激活）
     private var headerView: some View {
         VStack(spacing: 0) {
-            Text("我的文档")
-                .font(.system(size: Dimens.middleFont))
-                .foregroundColor(.black)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Dimens.middleMargin)
+            HStack(spacing: Dimens.middleMargin) {
+                tabItem(title: "我的文档", index: 0)
+                Text("|")
+                    .foregroundColor(Colors.grayColor)
+                    .font(.system(size: Dimens.normalFont))
+                tabItem(title: "公共文档", index: 1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Dimens.middleMargin)
 
             // 灰色分隔线
             Rectangle()
@@ -134,6 +187,28 @@ struct MyDocumentsDialog: View {
                 .frame(height: 1)
         }
         .background(Colors.whiteColor)
+    }
+    
+    /// 单个页签（激活态高亮，未激活态黑色）
+    private func tabItem(title: String, index: Int) -> some View {
+        let isActive = selectedTab == index
+        return Button(action: {
+            selectedTab = index
+            if index == 1 {
+                loadPublicDocuments()
+            }
+        }) {
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.system(size: Dimens.middleFont, weight: isActive ? .semibold : .regular))
+                    .foregroundColor(isActive ? Colors.primaryColor : .black)
+                // 激活指示条
+                Rectangle()
+                    .fill(isActive ? Colors.primaryColor : Color.clear)
+                    .frame(width: 40, height: 2)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 
     /// 空状态视图
@@ -153,68 +228,85 @@ struct MyDocumentsDialog: View {
         .padding(.vertical, Dimens.largeMargin)
     }
 
+    /// 公共文档空状态视图
+    private var publicEmptyStateView: some View {
+        VStack(spacing: Dimens.middleMargin) {
+            Image(systemName: "folder")
+                .font(.system(size: Dimens.bigIcon))
+                .foregroundColor(Colors.grayColor)
+            Text("暂无公开文档")
+                .font(.system(size: Dimens.normalFont))
+                .foregroundColor(Colors.grayColor)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Dimens.largeMargin)
+    }
+
     /// 底部操作区域视图（仅创建目录，无确定/取消按钮）
     @ViewBuilder
     private var bottomActionView: some View {
         VStack(spacing: Dimens.middleMargin) {
-            if showCreateInput {
-                // 创建目录输入框
-                HStack(spacing: Dimens.middleMargin) {
-                    TextField("请输入目录名称", text: $newDirectoryName)
-                        .font(.system(size: Dimens.normalFont))
-                        .padding(.horizontal, Dimens.middleMargin)
-                        .frame(height: Dimens.inputHeight)
-                        .background(Colors.pageBackgroundColor)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
-                                .stroke(isInputFocused ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
-                        )
-                        .focused($isInputFocused)
+            // 创建目录（仅「我的文档」页签显示）
+            if selectedTab == 0 {
+                if showCreateInput {
+                    // 创建目录输入框
+                    HStack(spacing: Dimens.middleMargin) {
+                        TextField("请输入目录名称", text: $newDirectoryName)
+                            .font(.system(size: Dimens.normalFont))
+                            .padding(.horizontal, Dimens.middleMargin)
+                            .frame(height: Dimens.inputHeight)
+                            .background(Colors.pageBackgroundColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Dimens.inputHeight / 2)
+                                    .stroke(isInputFocused ? Colors.primaryColor : Colors.grayColor, lineWidth: 1)
+                            )
+                            .focused($isInputFocused)
 
-                    // 确认按钮
-                    Button(action: createDirectory) {
-                        Image(systemName: "checkmark")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
-                            .foregroundColor(.white)
-                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
-                            .background(newDirectoryName.isEmpty ? Colors.grayColor : Colors.primaryColor)
-                            .clipShape(Circle())
+                        // 确认按钮
+                        Button(action: createDirectory) {
+                            Image(systemName: "checkmark")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                                .foregroundColor(.white)
+                                .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                                .background(newDirectoryName.isEmpty ? Colors.grayColor : Colors.primaryColor)
+                                .clipShape(Circle())
+                        }
+                        .disabled(newDirectoryName.isEmpty || isCreating)
+
+                        // 取消按钮
+                        Button(action: {
+                            showCreateInput = false
+                            newDirectoryName = ""
+                        }) {
+                            Image(systemName: "xmark")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                                .foregroundColor(.white)
+                                .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
+                                .background(Colors.grayColor)
+                                .clipShape(Circle())
+                        }
                     }
-                    .disabled(newDirectoryName.isEmpty || isCreating)
-
-                    // 取消按钮
+                    .padding(.horizontal, Dimens.middleMargin)
+                } else {
+                    // 创建按钮
                     Button(action: {
-                        showCreateInput = false
-                        newDirectoryName = ""
+                        showCreateInput = true
+                        isInputFocused = true
                     }) {
-                        Image(systemName: "xmark")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: Dimens.smallIcon, height: Dimens.smallIcon)
+                        Text("创建目录")
+                            .font(.system(size: Dimens.normalFont))
                             .foregroundColor(.white)
-                            .frame(width: Dimens.inputHeight, height: Dimens.inputHeight)
-                            .background(Colors.grayColor)
-                            .clipShape(Circle())
+                            .frame(height: Dimens.btnHeight)
+                            .frame(maxWidth: .infinity)
+                            .background(Colors.primaryColor)
+                            .cornerRadius(Dimens.btnHeight / 2)
                     }
+                    .padding(.horizontal, Dimens.middleMargin)
                 }
-                .padding(.horizontal, Dimens.middleMargin)
-            } else {
-                // 创建按钮
-                Button(action: {
-                    showCreateInput = true
-                    isInputFocused = true
-                }) {
-                    Text("创建目录")
-                        .font(.system(size: Dimens.normalFont))
-                        .foregroundColor(.white)
-                        .frame(height: Dimens.btnHeight)
-                        .frame(maxWidth: .infinity)
-                        .background(Colors.primaryColor)
-                        .cornerRadius(Dimens.btnHeight / 2)
-                }
-                .padding(.horizontal, Dimens.middleMargin)
             }
         }
         .padding(.vertical, Dimens.middleMargin)
@@ -312,15 +404,9 @@ struct MyDocumentsDialog: View {
                     .padding(.vertical, Dimens.smallIcon)
                 }
             }
-            .background(Colors.whiteColor)
-            .cornerRadius(Dimens.borderRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: Dimens.borderRadius)
-                    .stroke(Colors.grayColor.opacity(0.2), lineWidth: 0.5)
-            )
         }
     }
-
+    
     /// 文档行视图（无复选框、无文档格式标签，右侧为「三个点」操作图标）
     struct DocumentRow: View {
         let document: Document
@@ -386,6 +472,103 @@ struct MyDocumentsDialog: View {
         }
     }
 
+    /// 公共文档目录卡片视图（只读，按 directoryName 分组，文档已全部返回）
+    struct PublicDirectoryCard: View {
+        let directoryName: String
+        let documents: [Document]
+        let isExpanded: Bool
+        let onToggleExpand: () -> Void
+
+        var body: some View {
+            VStack(spacing: 0) {
+                Button(action: onToggleExpand) {
+                    HStack {
+                        Image(systemName: "folder")
+                            .font(.system(size: Dimens.smallIcon))
+                            .foregroundColor(Colors.primaryColor)
+
+                        Text(directoryName)
+                            .font(.system(size: Dimens.normalFont))
+                            .foregroundColor(.black)
+
+                        Spacer()
+
+                        if !isExpanded {
+                            Text("\(documents.count)个文档")
+                                .font(.system(size: Dimens.normalFont - 2))
+                                .foregroundColor(Colors.grayColor)
+                        }
+
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(Colors.grayColor)
+                            .font(.system(size: Dimens.smallIcon))
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                    }
+                    .padding(Dimens.middleMargin)
+                }
+
+                if isExpanded {
+                    Divider()
+                        .padding(.horizontal, Dimens.middleMargin)
+
+                    VStack(spacing: 0) {
+                        ForEach(documents) { document in
+                            PublicDocumentRow(document: document)
+                            if document.id != documents.last?.id {
+                                Divider()
+                                    .padding(.leading, Dimens.middleMargin)
+                            }
+                        }
+                    }
+                    .padding(.vertical, Dimens.smallIcon)
+                }
+            }
+        }
+    }
+
+    /// 公共文档行视图（只读，无操作图标）
+    struct PublicDocumentRow: View {
+        let document: Document
+
+        /// 根据文件扩展名获取图标名称
+        private var fileIconName: String {
+            let ext = document.ext.lowercased()
+            switch ext {
+            case "txt":
+                return "doc.plaintext"
+            case "doc", "docx":
+                return "doc"
+            case "md":
+                return "note.text"
+            case "pdf":
+                return "pdf"
+            default:
+                return "doc"
+            }
+        }
+
+        var body: some View {
+            HStack(spacing: Dimens.middleMargin) {
+                // 文件图标
+                Image(systemName: fileIconName)
+                    .font(.system(size: Dimens.smallIcon))
+                    .foregroundColor(Colors.grayColor)
+
+                // 文件名
+                Text(document.name)
+                    .font(.system(size: Dimens.normalFont))
+                    .foregroundColor(.black)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer()
+            }
+            .padding(.horizontal, Dimens.middleMargin)
+            .padding(.vertical, Dimens.smallIcon)
+        }
+    }
+
     // MARK: - 数据加载方法
 
     /// 加载目录列表
@@ -440,6 +623,54 @@ struct MyDocumentsDialog: View {
                     print("❌ 获取文档列表失败: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    /// 公共文档按 directoryName 分组（保持首次出现顺序）
+    private var groupedPublicDocuments: [(name: String, documents: [Document])] {
+        var order: [String] = []
+        var groups: [String: [Document]] = [:]
+        for doc in publicDocuments {
+            let key = doc.directoryName ?? "未分类"
+            if groups[key] == nil {
+                order.append(key)
+                groups[key] = [doc]
+            } else {
+                groups[key]?.append(doc)
+            }
+        }
+        return order.map { (name: $0, documents: groups[$0] ?? []) }
+    }
+
+    /// 加载公开文档列表（tenantId + companyId）
+    private func loadPublicDocuments() {
+        guard !isLoadingPublic else { return }
+        guard let tenantId = appState.currentTenant?.id,
+              let companyId = appState.currentCompany?.id ?? appState.getCachedCompanyId() else {
+            return
+        }
+
+        isLoadingPublic = true
+
+        HTTPClient.shared.getPublicDocList(tenantId: tenantId, companyId: companyId) { result in
+            DispatchQueue.main.async {
+                isLoadingPublic = false
+                switch result {
+                case .success(let docs):
+                    publicDocuments = docs
+                case .failure(let error):
+                    print("❌ 获取公开文档列表失败: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    /// 切换公共文档目录（分组）展开/收起状态
+    private func togglePublicDirectory(_ directoryName: String) {
+        if expandedPublicDirectories.contains(directoryName) {
+            expandedPublicDirectories.remove(directoryName)
+        } else {
+            expandedPublicDirectories.insert(directoryName)
         }
     }
 
