@@ -17,6 +17,7 @@ enum APIEndpoint {
     case updateModel
     case getDirectoryList
     case getDocListByDirId
+    case getPublicDocList
     case createDir
     case getChatHistory
     case getChatHistoryByChatId
@@ -77,6 +78,8 @@ enum APIEndpoint {
             return Constants.API.getDirectoryList
         case .getDocListByDirId:
             return Constants.API.getDocListByDirId
+        case .getPublicDocList:
+            return Constants.API.getPublicDocList
         case .createDir:
             return Constants.API.createDir
         case .getChatHistory:
@@ -145,7 +148,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .sendEmailVertifyCode, .loginByEmail, .logout, .createDir, .uploadDoc, .updateAvater, .vertifyUser, .resetPassword, .addTenantUser,.addCompanyUser,.insertPrompt,.addModel:
             return "POST"
-        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers,.getDepartments,.getPositions,.getPromptList:
+        case .getUserData, .getCompanyList, .getTenantList, .getModelList, .getDirectoryList, .getDocListByDirId, .getPublicDocList, .getChatHistory, .getChatHistoryByChatId, .getPrompt, .getTenantUserList, .getCompanyUsers, .searchCompanyUsers,.searchTenantUsers,.getDepartments,.getPositions,.getPromptList:
             return "GET"
         case .deleteDoc,.deletePrompt,.deleteModel:
             return "DELETE"

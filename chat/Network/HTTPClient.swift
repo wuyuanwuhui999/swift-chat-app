@@ -499,6 +499,31 @@ extension HTTPClient {
         }
     }
 
+    /// 获取公开文档列表（租户内公开 + 公司内公开，返回全部文档，含 directoryName 用于分组）
+    /// - Parameters:
+    ///   - tenantId: 租户ID
+    ///   - companyId: 公司ID
+    ///   - completion: 完成回调，返回公开文档列表
+    func getPublicDocList(tenantId: String, companyId: String, completion: @escaping (Result<[Document], NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "tenantId": tenantId,
+            "companyId": companyId
+        ]
+        
+        request(endpoint: .getPublicDocList, parameters: parameters) { (result: Result<BaseResponse<[Document]>, NetworkError>) in
+            switch result {
+            case .success(let response):
+                if response.isSuccess, let documents = response.data {
+                    completion(.success(documents))
+                } else {
+                    completion(.failure(.custom(message: response.msg ?? "获取公开文档列表失败")))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
     /// 创建目录
     func createDirectory(directory: String, tenantId: String, completion: @escaping (Result<Directory, NetworkError>) -> Void) {
         let parameters: [String: Any] = [

@@ -28,6 +28,7 @@ struct Constants {
         static let getTenantList = "/service/tenant/getTenantList"
         static let getDirectoryList = "/service/chat/getDirectoryList"
         static let getDocListByDirId = "/service/chat/getDocListByDirId"
+        static let getPublicDocList = "/service/chat/getPublicDocList"
         static let createDir = "/service/chat/createDir"
         static let getChatHistory = "/service/chat/getChatHistory"
         static let getChatHistoryByChatId = "/service/chat/getChatHistoryByChatId"
