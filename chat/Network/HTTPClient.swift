@@ -652,6 +652,7 @@ extension HTTPClient {
     ///   - splitMethod: 分割方式（recursive/paragraph/sentence/fixed）
     ///   - chunkSize: 分割大小（splitMethod=fixed 时生效）
     ///   - permission: 文档权限（private/tenant/company）
+    ///   - companyId: 所属公司ID（permission=company 时使用，可空）
     ///   - completion: 完成回调，返回上传成功消息
     /// 上传文档
     func uploadDoc(
@@ -661,6 +662,7 @@ extension HTTPClient {
         splitMethod: String,
         chunkSize: String,
         permission: String,
+        companyId: String? = nil,
         completion: @escaping (Result<String, NetworkError>) -> Void
     ) {
         // 构建 multipart/form-data 请求体
@@ -670,7 +672,7 @@ extension HTTPClient {
         
         var body = Data()
         
-        // 追加文本表单字段（tenantId / directoryId / splitMethod / chunkSize / permission）
+        // 追加文本表单字段（tenantId / directoryId / splitMethod / chunkSize / permission / companyId）
         appendFormField(named: "tenantId", value: tenantId, to: &body, boundary: boundary)
         appendFormField(named: "directoryId", value: directoryId, to: &body, boundary: boundary)
         appendFormField(named: "splitMethod", value: splitMethod, to: &body, boundary: boundary)
@@ -678,6 +680,9 @@ extension HTTPClient {
             appendFormField(named: "chunkSize", value: chunkSize, to: &body, boundary: boundary)
         }
         appendFormField(named: "permission", value: permission, to: &body, boundary: boundary)
+        if let companyId = companyId, !companyId.isEmpty {
+            appendFormField(named: "companyId", value: companyId, to: &body, boundary: boundary)
+        }
         
         // 追加文件字段
         do {

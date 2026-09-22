@@ -294,7 +294,8 @@ struct UploadDocumentDialog: View {
             directoryId: directoryId,
             splitMethod: splitMethod,
             chunkSize: chunkSize,
-            permission: permission
+            permission: permission,
+            companyId: appState.currentCompany?.id ?? appState.getCachedCompanyId()
         ) { result in
             DispatchQueue.main.async {
                 isUploading = false
