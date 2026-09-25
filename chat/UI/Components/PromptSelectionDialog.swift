@@ -525,7 +525,7 @@ struct SwipeablePromptSelectionRow: View {
             .padding(.horizontal, Dimens.middleMargin)
             .padding(.vertical, Dimens.middleMargin)
             .frame(height: rowHeight)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)  // 让 Text 占满宽度并左对齐
             .background(Colors.whiteColor)
             .offset(x: offset)
             .highPriorityGesture(

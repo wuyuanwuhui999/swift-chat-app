@@ -320,13 +320,16 @@ struct HomePage: View {
         }
     }
 
-    /// 清空所有消息
     private func clearAllMessages() {
         messages.removeAll()
         currentChatId = generateChatId()
         currentAIResponse = ""
         selectedDocIds.removeAll()
         showDocumentQuery = false
+        // 重置提示词状态
+        selectedPromptId = nil
+        showPromptActive = false
+        appState.currentSelectedPromptId = nil
         webSocketManager.reset()
         print("🗑️ 已清空聊天内容，新chatId: \(currentChatId)")
     }

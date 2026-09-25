@@ -145,7 +145,7 @@ struct DocumentPickerDialog: View {
                 // 左侧：刷新图标
                 HStack {
                     Button(action: refresh) {
-                        ResourceIcon(resourceName: "icon_refresh", systemName: "arrow.clockwise")
+                        ResourceIcon(resourceName: "icon_refresh", systemName: "arrow.clockwise").foregroundStyle(Colors.subColor) 
                     }
                     .padding(.leading, Dimens.middleMargin)
                     Spacer()
@@ -159,12 +159,12 @@ struct DocumentPickerDialog: View {
                         showCreateInput = true
                         isInputFocused = true
                     }) {
-                        ResourceIcon(resourceName: "icon_create_directory", systemName: "folder.badge.plus")
+                        ResourceIcon(resourceName: "icon_create_directory", systemName: "folder.badge.plus").foregroundStyle(Colors.subColor) 
                     }
                     Button(action: {
                         onUpload?()
                     }) {
-                        ResourceIcon(resourceName: "icon_upload", systemName: "square.and.arrow.up")
+                        ResourceIcon(resourceName: "icon_upload", systemName: "square.and.arrow.up").foregroundStyle(Colors.subColor) 
                     }
                     .padding(.leading, Dimens.middleMargin)
                     .padding(.trailing, Dimens.middleMargin)
@@ -489,17 +489,7 @@ struct DocumentPickerDialog: View {
                         .foregroundColor(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                    
-                    Spacer()
-                    
-                    // 文件类型标签
-                    Text(document.ext.uppercased())
-                        .font(.system(size: Dimens.normalFont - 2))
-                        .foregroundColor(Colors.grayColor)
-                        .padding(.horizontal, Dimens.smallIcon)
-                        .padding(.vertical, 4)
-                        .background(Colors.grayColor.opacity(0.2))
-                        .cornerRadius(Dimens.smallIcon)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     
                     // 选中图标
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
