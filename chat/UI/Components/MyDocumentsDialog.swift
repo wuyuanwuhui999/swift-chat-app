@@ -816,7 +816,7 @@ struct DocumentPermissionDialog: View {
                     // 文档名提示
                     Text(document.name)
                         .font(.system(size: Dimens.normalFont - 2))
-                        .foregroundColor(Colors.grayColor)
+                        .foregroundColor(Colors.subColor)
                         .lineLimit(1)
                         .truncationMode(.middle)
 
